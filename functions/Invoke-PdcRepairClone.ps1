@@ -48,12 +48,13 @@ function Invoke-PdcRepairClone {
     )
 
     begin {
-        # Get the configurations for the program database
-        $ecDatabaseName = Get-PSFConfigValue -FullName psdatabaseclone.database.name
-        $ecDatabaseServer = Get-PSFConfigValue -FullName psdatabaseclone.database.Server
-
         # Test the module database setup
-        Test-PdcDatabaseSetup -SqlInstance $ecDatabaseServer -SqlCredential $SqlCredential -Database $ecDatabaseName
+        $result = Test-PdcDatabaseSetup -SqlInstance $ecDatabaseServer -SqlCredential $SqlCredential -Database $ecDatabaseName
+
+        if(-not $result.Check){
+            Stop-PSFFunction -Message $result.Message -Target $result -Continue
+            return
+        }
 
     }
 

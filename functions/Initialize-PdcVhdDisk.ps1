@@ -41,7 +41,7 @@ function Initialize-PdcVhdDisk {
 
     Param(
         [Parameter(Mandatory = $true)]
-        [string[]]$Path,
+        [string]$Path,
         [System.Management.Automation.PSCredential]
         $Credential,
         [ValidateSet('GPT', 'MBR')]

@@ -1,4 +1,5 @@
 function Remove-PdcDatabaseImage {
+    [CmdLetBinding()]
 
     param(
         [parameter(Mandatory = $true)]
@@ -19,7 +20,13 @@ function Remove-PdcDatabaseImage {
         $ecDatabaseServer = Get-PSFConfigValue -FullName easyclone.database.server
 
         # Test the module database setup
-        Test-PdcDatabaseSetup -SqlInstance $ecDatabaseServer -SqlCredential $SqlCredential -Database $ecDatabaseName
+        $result = Test-PdcDatabaseSetup -SqlInstance $ecDatabaseServer -SqlCredential $SqlCredential -Database $ecDatabaseName
+
+        if(-not $result.Check){
+            Stop-PSFFunction -Message $result.Message -Target $result -Continue
+            return
+        }
+
     }
 
     process {

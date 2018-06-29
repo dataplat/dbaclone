@@ -80,6 +80,9 @@ function Set-PdcConfiguration {
 
     process {
 
+        # Test if there are any errors
+        if (Test-PSFFunctionInterrupt) { return }
+
         # Check if the database is already present
         if (($server.Databases.Name -contains $Database) -or ($server.Databases[$Database].Tables.Count -ge 1)) {
             if ($Force) {
@@ -116,9 +119,15 @@ function Set-PdcConfiguration {
         }
 
         # Setup the path to the sql file
-        $path = "$($MyInvocation.MyCommand.Module.ModuleBase)\internal\scripts\database.sql"
-        $query = [System.IO.File]::ReadAllText($path)
+        try {
+            $path = "$($MyInvocation.MyCommand.Module.ModuleBase)\internal\scripts\database.sql"
+            $query = [System.IO.File]::ReadAllText($path)
+        }
+        catch {
+            Stop-PSFFunction -Message "Couldn't find database script. Make sure you have a valid installation of the module" -ErrorRecord $_ -Target $SqlInstance
+        }
 
+        # Create the objects
         try {
             Write-PSFMessage -Message "Creating database objects" -Level Verbose
 
@@ -126,16 +135,16 @@ function Set-PdcConfiguration {
             Invoke-DbaSqlQuery -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database $Database -Query $query
         }
         catch {
-            Stop-PSFFunction -Message "Couldn't database objects" -ErrorRecord $_ -Target $SqlInstance
+            Stop-PSFFunction -Message "Couldn't create database objects" -ErrorRecord $_ -Target $SqlInstance
         }
 
         # Writing the setting to the configuration file
         Write-PSFMessage -Message "Registering config values" -Level Verbose
-        Set-PSFConfig -Module EasyClone -Name database.server -Value $SqlInstance -Initialize -Validation string
-        Set-PSFConfig -Module EasyClone -Name database.name -Value $Database -Initialize -Validation string
+        Set-PSFConfig -Module PSDatabaseClone -Name database.server -Value $SqlInstance -Initialize -Validation string
+        Set-PSFConfig -Module PSDatabaseClone -Name database.name -Value $Database -Initialize -Validation string
 
-        Get-PSFConfig -FullName easyclone.database.server | Register-PSFConfig -Scope SystemDefault
-        Get-PSFConfig -FullName easyclone.database.name | Register-PSFConfig -Scope SystemDefault
+        Get-PSFConfig -FullName psdatabaseclone.database.server | Register-PSFConfig -Scope SystemDefault
+        Get-PSFConfig -FullName psdatabaseclone.database.name | Register-PSFConfig -Scope SystemDefault
     }
 
     end {

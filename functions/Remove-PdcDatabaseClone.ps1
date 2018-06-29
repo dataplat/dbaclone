@@ -60,6 +60,8 @@ Remove-PdcDatabaseClone -HostName Host1
 Removes all clones from Host1
 
 #>
+    [CmdLetBinding()]
+
     param(
         [parameter(Mandatory = $true)]
         [ValidateNotNullOrEmpty()]
@@ -82,12 +84,13 @@ Removes all clones from Host1
     begin {
         Write-PSFMessage -Message "Started removing database clones" -Level Verbose
 
-        # Get the configurations for the program database
-        $ecDatabaseName = Get-PSFConfigValue -FullName psdatabaseclone.database.name
-        $ecDatabaseServer = Get-PSFConfigValue -FullName psdatabaseclone.database.server
-
         # Test the module database setup
-        Test-PdcDatabaseSetup -SqlInstance $ecDatabaseServer -SqlCredential $SqlCredential -Database $ecDatabaseName
+        $result = Test-PdcDatabaseSetup -SqlInstance $ecDatabaseServer -SqlCredential $SqlCredential -Database $ecDatabaseName
+
+        if(-not $result.Check){
+            Stop-PSFFunction -Message $result.Message -Target $result -Continue
+            return
+        }
     }
 
     process {
