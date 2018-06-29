@@ -95,7 +95,7 @@ function Initialize-PdcVhdDisk {
 
         # Create the partition, set the drive letter and format the volume
         try {
-            $volume = Get-Disk -Number $disk.DiskNumber | New-Partition -UseMaximumSize | Format-Volume -FileSystem NTFS -NewFileSystemLabel "EasyClone" -AllocationUnitSize $AllocationUnitSize -Confirm:$false
+            $volume = Get-Disk -Number $disk.DiskNumber | New-Partition -UseMaximumSize | Format-Volume -FileSystem NTFS -NewFileSystemLabel "PSDatabaseClone" -AllocationUnitSize $AllocationUnitSize -Confirm:$false
         }
         catch {
             # Dismount the drive
