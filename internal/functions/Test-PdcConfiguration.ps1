@@ -84,7 +84,7 @@ function Test-PdcConfiguration {
     }
 
     Write-PSFMessage -Message "Attempting to connect to PSDatabaseClone database server $SqlInstance.." -Level Verbose
-    if ($result.Check) {
+    if (-not $errorOccured) {
         try {
             $ecServer = Connect-DbaInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
         }
