@@ -79,6 +79,8 @@ function Invoke-PdcRepairClone {
                 WHERE h.HostName = '$hst';
             "
 
+            Write-PSFMessage -Message "Query Host Clones`n$query" -Level Debug
+
             # Get the clones registered for the host
             try {
                 Write-PSFMessage -Message "Get the clones for host $hst" -Level Verbose
