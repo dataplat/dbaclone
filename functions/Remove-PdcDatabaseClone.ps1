@@ -85,7 +85,7 @@ function Remove-PdcDatabaseClone {
         Write-PSFMessage -Message "Started removing database clones" -Level Verbose
 
         # Test the module database setup
-        $result = Test-PdcDatabaseSetup -SqlInstance $ecDatabaseServer -SqlCredential $SqlCredential -Database $ecDatabaseName
+        $result = Test-PdcConfiguration -SqlInstance $ecDatabaseServer -SqlCredential $SqlCredential -Database $ecDatabaseName
 
         if(-not $result.Check){
             Stop-PSFFunction -Message $result.Message -Target $result -Continue

@@ -95,7 +95,7 @@ function New-PdcDatabaseClone {
         Write-PSFMessage -Message "Started image creation" -Level Output
 
         # Test the module database setup
-        $result = Test-PdcDatabaseSetup -SqlInstance $ecDatabaseServer -SqlCredential $SqlCredential -Database $ecDatabaseName
+        $result = Test-PdcConfiguration -SqlInstance $ecDatabaseServer -SqlCredential $SqlCredential -Database $ecDatabaseName
 
         if(-not $result.Check){
             Stop-PSFFunction -Message $result.Message -Target $result -Continue

@@ -1,4 +1,4 @@
-function Test-PdcDatabaseSetup {
+function Test-PdcConfiguration {
 <#
 .SYNOPSIS
     Test the configuration of the module
