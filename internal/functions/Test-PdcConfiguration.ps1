@@ -49,7 +49,7 @@ function Test-PdcConfiguration {
     $result = [PSCustomObject]@{
         SqlInstance = $null
         Database    = $null
-        Check       = $true
+        Check       = $false
         Message     = ""
     }
 
@@ -105,6 +105,7 @@ function Test-PdcConfiguration {
     # Check if an error occured
     if (-not $errorOccured) {
         $result.Message = "All OK"
+        $result.Check = $true
     }
 
     Write-PSFMessage -Message "Finished checking configurations" -Level Verbose
