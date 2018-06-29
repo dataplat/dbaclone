@@ -323,6 +323,8 @@ function New-PdcDatabaseClone {
                             SELECT @HostID AS HostID
                         "
 
+                        Write-PSFMessage -Message "Query New Host`n$query" -Level Debug
+
                         $hostId = (Invoke-DbaSqlQuery -SqlInstance $ecDatabaseServer -Database $ecDatabaseName -Query $query).HostID
                     }
                     else {
@@ -355,6 +357,8 @@ function New-PdcDatabaseClone {
                                                 @DatabaseName = '$cloneDatabase',                    -- varchar(100)
                                                 @IsEnabled = $active                            -- bit
                         "
+
+                        Write-PSFMessage -Message "Query New Clone`n$query" -Level Debug
 
                         # execute the query
                         $null = Invoke-DbaSqlQuery -SqlInstance $ecDatabaseServer -Database $ecDatabaseName -Query $query
