@@ -18,12 +18,12 @@ function Initialize-PdcVhdDisk {
 .NOTES
     Author: Sander Stad (@sqlstad, sqlstad.nl)
 
-    Website: https://easyclone.io
+    Website: https://psdatabaseclone.io
     Copyright: (C) Sander Stad, sander@sqlstad.nl
     License: MIT https://opensource.org/licenses/MIT
 
 .LINK
-    https://easyclone.io/
+    https://psdatabaseclone.io/
 
 .EXAMPLE
     Initialize-PdcVhdDisk -Path $path
@@ -41,7 +41,7 @@ function Initialize-PdcVhdDisk {
 
     Param(
         [Parameter(Mandatory = $true)]
-        [string[]]$Path,
+        [string]$Path,
         [System.Management.Automation.PSCredential]
         $Credential,
         [ValidateSet('GPT', 'MBR')]
@@ -95,7 +95,7 @@ function Initialize-PdcVhdDisk {
 
         # Create the partition, set the drive letter and format the volume
         try {
-            $volume = Get-Disk -Number $disk.DiskNumber | New-Partition -UseMaximumSize | Format-Volume -FileSystem NTFS -NewFileSystemLabel "EasyClone" -AllocationUnitSize $AllocationUnitSize -Confirm:$false
+            $volume = Get-Disk -Number $disk.DiskNumber | New-Partition -UseMaximumSize | Format-Volume -FileSystem NTFS -NewFileSystemLabel "PSDatabaseClone" -AllocationUnitSize $AllocationUnitSize -Confirm:$false
         }
         catch {
             # Dismount the drive

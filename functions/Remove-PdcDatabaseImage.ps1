@@ -1,4 +1,35 @@
 function Remove-PdcDatabaseImage {
+    <#
+.SYNOPSIS
+    Remove-PdcDatabaseImage removes one or more images
+
+.DESCRIPTION
+    The command will remove an image from PSDatabaseClone.
+    It will also remove all the clones associated with it on the hosts.
+
+.PARAMETER ImageLocation
+    Location of the image as it's saved in the database or can be seen on the file system.
+
+.PARAMETER Credential
+    Allows you to login to servers using  Windows Auth/Integrated/Trusted. To use:
+
+    $scred = Get-Credential, then pass $scred object to the -Credential parameter.
+
+.PARAMETER Force
+    Forcefully remove the items.
+
+.NOTES
+    Author: Sander Stad (@sqlstad, sqlstad.nl)
+
+    Website: https://psdatabaseclone.io
+    Copyright: (C) Sander Stad, sander@sqlstad.nl
+    License: MIT https://opensource.org/licenses/MIT
+
+.LINK
+    https://psdatabaseclone.io/
+
+#>
+    [CmdLetBinding()]
 
     param(
         [parameter(Mandatory = $true)]
@@ -14,12 +45,17 @@ function Remove-PdcDatabaseImage {
     begin {
         Write-PSFMessage -Message "Started removing database images" -Level Verbose
 
-        # Get the configurations for the program database
-        $ecDatabaseName = Get-PSFConfigValue -FullName easyclone.database.name
-        $ecDatabaseServer = Get-PSFConfigValue -FullName easyclone.database.server
-
         # Test the module database setup
-        Test-PdcDatabaseSetup -SqlInstance $ecDatabaseServer -SqlCredential $SqlCredential -Database $ecDatabaseName
+        $result = Test-PdcConfiguration
+
+        if (-not $result.Check) {
+            Stop-PSFFunction -Message $result.Message -Target $result -Continue
+            return
+        }
+
+        # Get the database values
+        $pdcDatabaseServer = $result.SqlInstance
+        $pdcDatabaseName = $result.Database
     }
 
     process {
@@ -38,11 +74,11 @@ function Remove-PdcDatabaseImage {
                         h.IPAddress,
                         h.FQDN,
                         i.ImageLocation
-                FROM dbo.Clone AS c
+                FROM dbo.Image as i
+                    INNER JOIN dbo.Clone AS c
+                        ON c.ImageID = i.ImageID
                     INNER JOIN dbo.Host AS h
                         ON h.HostID = c.HostID
-                    INNER JOIN dbo.Image AS i
-                        ON i.ImageID = c.ImageID
                 WHERE i.ImageLocation = '$image'
                 ORDER BY h.HostName;
             "
@@ -64,35 +100,42 @@ function Remove-PdcDatabaseImage {
 
                     # Remove the clones for the host
                     try {
-                        Write-PSFMessage -Message "Removing clones for host $($result.HostName) and database $($result.DatabaseName)" -Level Verbose
-                        Remove-PdcDatabaseClone -HostName $result.HostName -Database $result.DatabaseName -Credential $Credential
+                        if ($result.HostName -ne $null) {
+                            Write-PSFMessage -Message "Removing clones for host $($result.HostName) and database $($result.DatabaseName)" -Level Verbose
+                            Remove-PdcDatabaseClone -HostName $result.HostName -Database $result.DatabaseName -Credential $Credential
+                        }
                     }
                     catch {
                         Stop-PSFFunction -Message "Couldn't remove clones from host $($result.HostName)" -Target $result -Continue
                     }
 
                 }
-
-                # Remove the image from the file system
-                try {
-                    Write-PSFMessage -Message "Removing image '$image' from file system" -Level Verbose
-                    $null = Remove-Item -Path $image -Credential $Credential -Force:$Force
-                }
-                catch {
-                    Stop-PSFFunction -Message "Couldn't remove image '$image' from file system" -Target $result
-                }
-
-                # Remove the image from the database
-                try {
-                    $query = "DELETE FROM dbo.Image WHERE ImageLocation = '$image'"
-                    $results = Invoke-DbaSqlQuery -SqlInstance $ecDatabaseServer -Database $ecDatabaseName -Query $query
-                }
-                catch {
-                    Stop-PSFFunction -Message "Couldn't remove image '$image' from database" -Target $result
-                }
             }
             else {
                 Write-PSFMessage -Message "No clones were found created with image $image" -Level Verbose
+            }
+
+            # Remove the image from the file system
+            try {
+                if (Test-Path -Path $image -Credential $Credential) {
+                    Write-PSFMessage -Message "Removing image '$image' from file system" -Level Verbose
+                    $null = Remove-Item -Path $image -Credential $Credential -Force:$Force
+                }
+                else{
+                    Write-PSFMessage -Message "Couldn't find image $image" -Level Verbose
+                }
+            }
+            catch {
+                Stop-PSFFunction -Message "Couldn't remove image '$image' from file system" -Target $result
+            }
+
+            # Remove the image from the database
+            try {
+                $query = "DELETE FROM dbo.Image WHERE ImageLocation = '$image'"
+                $results = Invoke-DbaSqlQuery -SqlInstance $pdcDatabaseServer -Database $pdcDatabaseName -Query $query
+            }
+            catch {
+                Stop-PSFFunction -Message "Couldn't remove image '$image' from database" -Target $result
             }
 
         } # End for each image

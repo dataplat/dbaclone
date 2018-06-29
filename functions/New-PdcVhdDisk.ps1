@@ -31,12 +31,12 @@ function New-PdcVhdDisk {
 .NOTES
     Author: Sander Stad (@sqlstad, sqlstad.nl)
 
-    Website: https://easyclone.io
+    Website: https://psdatabaseclone.io
     Copyright: (C) Sander Stad, sander@sqlstad.nl
     License: MIT https://opensource.org/licenses/MIT
 
 .LINK
-    https://easyclone.io/
+    https://psdatabaseclone.io/
 
 .EXAMPLE
     New-PdcVhdDisk -Destination C:\temp -Name Database1 -Size 1GB

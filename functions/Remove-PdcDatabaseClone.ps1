@@ -1,5 +1,5 @@
 function Remove-PdcDatabaseClone {
-    <#
+<#
 .SYNOPSIS
     Remove-PdcDatabaseClone removes one or more clones from a host
 
@@ -37,29 +37,31 @@ function Remove-PdcDatabaseClone {
 .NOTES
     Author: Sander Stad (@sqlstad, sqlstad.nl)
 
-    Website: https://easyclone.io
+    Website: https://psdatabaseclone.io
     Copyright: (C) Sander Stad, sander@sqlstad.nl
     License: MIT https://opensource.org/licenses/MIT
 
 .LINK
-    https://easyclone.io/
+    https://psdatabaseclone.io/
 
 .EXAMPLE
-Remove-PdcDatabaseClone -HostName Host1 -Database Clone1
+    Remove-PdcDatabaseClone -HostName Host1 -Database Clone1
 
-Removes the clones that are registered at Host1 and have the text "Clone1"
-
-.EXAMPLE
-Remove-PdcDatabaseClone -HostName Host1, Host2, Host3 -Database Clone
-
-Removes the clones that are registered at multiple hosts and have the text "Clone"
+    Removes the clones that are registered at Host1 and have the text "Clone1"
 
 .EXAMPLE
-Remove-PdcDatabaseClone -HostName Host1
+    Remove-PdcDatabaseClone -HostName Host1, Host2, Host3 -Database Clone
 
-Removes all clones from Host1
+    Removes the clones that are registered at multiple hosts and have the text "Clone"
+
+.EXAMPLE
+    Remove-PdcDatabaseClone -HostName Host1
+
+    Removes all clones from Host1
 
 #>
+    [CmdLetBinding()]
+
     param(
         [parameter(Mandatory = $true)]
         [ValidateNotNullOrEmpty()]
@@ -82,12 +84,13 @@ Removes all clones from Host1
     begin {
         Write-PSFMessage -Message "Started removing database clones" -Level Verbose
 
-        # Get the configurations for the program database
-        $ecDatabaseName = Get-PSFConfigValue -FullName psdatabaseclone.database.name
-        $ecDatabaseServer = Get-PSFConfigValue -FullName psdatabaseclone.database.server
-
         # Test the module database setup
-        Test-PdcDatabaseSetup -SqlInstance $ecDatabaseServer -SqlCredential $SqlCredential -Database $ecDatabaseName
+        $result = Test-PdcConfiguration
+
+        if(-not $result.Check){
+            Stop-PSFFunction -Message $result.Message -Target $result -Continue
+            return
+        }
     }
 
     process {
@@ -144,12 +147,12 @@ Removes all clones from Host1
         foreach ($result in $results) {
 
             # Connect to the instance
-            Write-PSFMessage -Message "Attempting to connect to easy clone database server $($result.SqlInstance).." -Level Verbose
+            Write-PSFMessage -Message "Attempting to connect to clone database server $($result.SqlInstance).." -Level Verbose
             try {
                 $server = Connect-DbaInstance -SqlInstance $result.SqlInstance -SqlCredential $SqlCredential
             }
             catch {
-                Stop-PSFFunction -Message "Could not connect to Sql Server instance $server" -ErrorRecord $_ -Target $server -Continue
+                Stop-PSFFunction -Message "Could not connect to clone Sql Server instance $server" -ErrorRecord $_ -Target $server -Continue
             }
 
             # Remove the database

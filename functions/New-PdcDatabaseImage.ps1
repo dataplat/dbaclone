@@ -1,5 +1,5 @@
 function New-PdcDatabaseImage {
-    <#
+<#
 .SYNOPSIS
     New-PdcDatabaseImage creates a new image
 
@@ -60,12 +60,12 @@ function New-PdcDatabaseImage {
 .NOTES
     Author: Sander Stad (@sqlstad, sqlstad.nl)
 
-    Website: https://easyclone.io
+    Website: https://psdatabaseclone.io
     Copyright: (C) Sander Stad, sander@sqlstad.nl
     License: MIT https://opensource.org/licenses/MIT
 
 .LINK
-    https://easyclone.io/
+    https://psdatabaseclone.io/
 
 .EXAMPLE
     New-PdcDatabaseImage -SourceSqlInstance SQLDB1 -DestinationSqlInstance SQLDB2 -ImageLocalPath C:\Temp\images\ -Database DB1 -CreateFullBackup
@@ -118,18 +118,17 @@ function New-PdcDatabaseImage {
 
     begin {
 
-        # Get the configurations for the program database
-        $ecDatabaseName = Get-PSFConfigValue -FullName psdatabaseclone.database.name -Fallback "NotConfigured"
-        $ecDatabaseServer = Get-PSFConfigValue -FullName psdatabaseclone.database.Server -Fallback "NotConfigured"
-
         # Test the module database setup
-        try{
-            Test-PdcDatabaseSetup -SqlInstance $ecDatabaseServer -SqlCredential $SqlCredential -Database $ecDatabaseName
-        }
-        catch{
-            Stop-PSFFunction -Message "Something went wrong testing the module configuration" -ErrorRecord $_ -Target $SourceSqlInstance
+        $result = Test-PdcConfiguration
+
+        if(-not $result.Check){
+            Stop-PSFFunction -Message $result.Message -Target $result -Continue
             return
         }
+
+        $pdcSqlInstance = Get-PSFConfigValue -FullName psdatabaseclone.database.Server
+        $pdcDatabase = Get-PSFConfigValue -FullName psdatabaseclone.database.name
+
 
         Write-PSFMessage -Message "Started image creation" -Level Output
 
@@ -265,7 +264,7 @@ function New-PdcDatabaseImage {
             try {
                 Write-PSFMessage -Message "Initializing the vhd $imageName.vhd" -Level Verbose
 
-                $diskResult = Initialize-PdcVhdDisk -Path $vhdDisk.Path -Credential $DestinationCredential
+                $diskResult = Initialize-PdcVhdDisk -Path $vhdPath -Credential $DestinationCredential
             }
             catch {
                 Stop-PSFFunction -Message "Couldn't initialize vhd $vhdPath" -Target $imageName -ErrorRecord $_ -Continue
@@ -321,7 +320,7 @@ function New-PdcDatabaseImage {
             }
 
             # Setup the temporary database name
-            $tempDbName = "$($db.Name)-EasyClone"
+            $tempDbName = "$($db.Name)-PSDatabaseClone"
 
             # Restore database to image folder
             try {
@@ -375,9 +374,11 @@ function New-PdcDatabaseImage {
                                         @DatabaseTimestamp = '$databaseTS'           -- datetime
                 "
 
+                Write-PSFMessage -Message "Query New Image`n$query" -Level Debug
+
                 Write-PSFMessage -Message "Saving image information in database" -Level Verbose
 
-                Invoke-DbaSqlQuery -SqlInstance $ecDatabaseServer -Database $ecDatabaseName -Query $query
+                Invoke-DbaSqlQuery -SqlInstance $pdcSqlInstance -Database $pdcDatabase -Query $query
 
             }
             catch {

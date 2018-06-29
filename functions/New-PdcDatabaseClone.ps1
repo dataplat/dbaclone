@@ -1,5 +1,5 @@
 function New-PdcDatabaseClone {
-    <#
+<#
 .SYNOPSIS
     New-PdcDatabaseClone creates a new clone
 
@@ -40,12 +40,12 @@ function New-PdcDatabaseClone {
 .NOTES
     Author: Sander Stad (@sqlstad, sqlstad.nl)
 
-    Website: https://easyclone.io
+    Website: https://psdatabaseclone.io
     Copyright: (C) Sander Stad, sander@sqlstad.nl
     License: MIT https://opensource.org/licenses/MIT
 
 .LINK
-    https://easyclone.io/
+    https://psdatabaseclone.io/
 
 .EXAMPLE
     New-PdcDatabaseClone -SqlInstance SQLDB1 -ParentVhd C:\Temp\images\DB1_20180623203204.vhdx -Destination C:\Temp\clones\ -CloneName DB1_Clone1
@@ -94,12 +94,13 @@ function New-PdcDatabaseClone {
 
         Write-PSFMessage -Message "Started image creation" -Level Output
 
-        # Get the configurations for the program database
-        $ecDatabaseName = Get-PSFConfigValue -FullName psdatabaseclone.database.name
-        $ecDatabaseServer = Get-PSFConfigValue -FullName psdatabaseclone.database.Server
-
         # Test the module database setup
-        Test-PdcDatabaseSetup -SqlInstance $ecDatabaseServer -SqlCredential $SqlCredential -Database $ecDatabaseName
+        $result = Test-PdcConfiguration
+
+        if(-not $result.Check){
+            Stop-PSFFunction -Message $result.Message -Target $result -Continue
+            return
+        }
 
         # Random string
         $random = -join ((65..90) + (97..122) | Get-Random -Count 5 | ForEach-Object {[char]$_})
@@ -156,7 +157,7 @@ function New-PdcDatabaseClone {
                                 [DatabaseName],
                                 [DatabaseTimestamp],
                                 [CreatedOn]
-                        FROM [EasyClone].[dbo].[Image]
+                        FROM [dbo].[Image]
                         WHERE DatabaseName = '$db'
                         ORDER BY CreatedOn DESC;
                     "
@@ -322,6 +323,8 @@ function New-PdcDatabaseClone {
                             SELECT @HostID AS HostID
                         "
 
+                        Write-PSFMessage -Message "Query New Host`n$query" -Level Debug
+
                         $hostId = (Invoke-DbaSqlQuery -SqlInstance $ecDatabaseServer -Database $ecDatabaseName -Query $query).HostID
                     }
                     else {
@@ -354,6 +357,8 @@ function New-PdcDatabaseClone {
                                                 @DatabaseName = '$cloneDatabase',                    -- varchar(100)
                                                 @IsEnabled = $active                            -- bit
                         "
+
+                        Write-PSFMessage -Message "Query New Clone`n$query" -Level Debug
 
                         # execute the query
                         $null = Invoke-DbaSqlQuery -SqlInstance $ecDatabaseServer -Database $ecDatabaseName -Query $query

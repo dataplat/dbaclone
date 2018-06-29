@@ -1,5 +1,5 @@
 function Set-PdcConfiguration {
-    <#
+<#
 .SYNOPSIS
     Set-PdcConfiguration sets up the module
 
@@ -27,24 +27,21 @@ function Set-PdcConfiguration {
 .PARAMETER Database
     Database to use to save all the information in
 
-.PARAMETER
 
 .NOTES
     Author: Sander Stad (@sqlstad, sqlstad.nl)
 
-    Website: https://easyclone.io
+    Website: https://psdatabaseclone.io
     Copyright: (C) Sander Stad, sander@sqlstad.nl
     License: MIT https://opensource.org/licenses/MIT
 
 .LINK
-    https://easyclone.io/
+    https://psdatabaseclone.io/
 
 .EXAMPLE
-    Set-PdcConfiguration -SqlInstance SQLDB1 -Database EasyClone
+    Set-PdcConfiguration -SqlInstance SQLDB1 -Database PSDatabaseClone
 
-    Set up the module to use SQLDB1 as the database servers and EasyClone to save the values in
-
-
+    Set up the module to use SQLDB1 as the database servers and PSDatabaseClone to save the values in
 #>
     [CmdLetBinding()]
     param(
@@ -60,7 +57,7 @@ function Set-PdcConfiguration {
     )
 
     begin {
-        Write-PSFMessage -Message "Started EasyCone Setup" -Level Output
+        Write-PSFMessage -Message "Started PSDatabaseClone Setup" -Level Output
 
         # Try connecting to the instance
         Write-PSFMessage -Message "Attempting to connect to Sql Server $SqlInstance.." -Level Output
@@ -79,6 +76,9 @@ function Set-PdcConfiguration {
     }
 
     process {
+
+        # Test if there are any errors
+        if (Test-PSFFunctionInterrupt) { return }
 
         # Check if the database is already present
         if (($server.Databases.Name -contains $Database) -or ($server.Databases[$Database].Tables.Count -ge 1)) {
@@ -116,9 +116,15 @@ function Set-PdcConfiguration {
         }
 
         # Setup the path to the sql file
-        $path = "$($MyInvocation.MyCommand.Module.ModuleBase)\internal\scripts\database.sql"
-        $query = [System.IO.File]::ReadAllText($path)
+        try {
+            $path = "$($MyInvocation.MyCommand.Module.ModuleBase)\internal\scripts\database.sql"
+            $query = [System.IO.File]::ReadAllText($path)
+        }
+        catch {
+            Stop-PSFFunction -Message "Couldn't find database script. Make sure you have a valid installation of the module" -ErrorRecord $_ -Target $SqlInstance
+        }
 
+        # Create the objects
         try {
             Write-PSFMessage -Message "Creating database objects" -Level Verbose
 
@@ -126,22 +132,22 @@ function Set-PdcConfiguration {
             Invoke-DbaSqlQuery -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database $Database -Query $query
         }
         catch {
-            Stop-PSFFunction -Message "Couldn't database objects" -ErrorRecord $_ -Target $SqlInstance
+            Stop-PSFFunction -Message "Couldn't create database objects" -ErrorRecord $_ -Target $SqlInstance
         }
 
         # Writing the setting to the configuration file
         Write-PSFMessage -Message "Registering config values" -Level Verbose
-        Set-PSFConfig -Module EasyClone -Name database.server -Value $SqlInstance -Initialize -Validation string
-        Set-PSFConfig -Module EasyClone -Name database.name -Value $Database -Initialize -Validation string
+        Set-PSFConfig -Module PSDatabaseClone -Name database.server -Value $SqlInstance -Initialize -Validation string
+        Set-PSFConfig -Module PSDatabaseClone -Name database.name -Value $Database -Initialize -Validation string
 
-        Get-PSFConfig -FullName easyclone.database.server | Register-PSFConfig -Scope SystemDefault
-        Get-PSFConfig -FullName easyclone.database.name | Register-PSFConfig -Scope SystemDefault
+        Get-PSFConfig -FullName psdatabaseclone.database.server | Register-PSFConfig -Scope SystemDefault
+        Get-PSFConfig -FullName psdatabaseclone.database.name | Register-PSFConfig -Scope SystemDefault
     }
 
     end {
         # Test if there are any errors
         if (Test-PSFFunctionInterrupt) { return }
 
-        Write-PSFMessage -Message "Finished setting up EasyClone" -Level Host
+        Write-PSFMessage -Message "Finished setting up PSDatabaseClone" -Level Host
     }
 }

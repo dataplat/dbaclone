@@ -1,5 +1,5 @@
 function Convert-PdcLocalUncPathToLocalPath {
-    <#
+<#
 .SYNOPSIS
     Convert a UNC path on a computer to a local path.
 
@@ -13,12 +13,12 @@ function Convert-PdcLocalUncPathToLocalPath {
 .NOTES
     Author: Sander Stad (@sqlstad, sqlstad.nl)
 
-    Website: https://easyclone.io
+    Website: https://psdatabaseclone.io
     Copyright: (C) Sander Stad, sander@sqlstad.nl
     License: MIT https://opensource.org/licenses/MIT
 
 .LINK
-    https://easyclone.io/
+    https://psdatabaseclone.io/
 
 .EXAMPLE
     Convert-PdcLocalUncPathToLocalPath -UncPath "\\server\share"
