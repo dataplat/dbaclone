@@ -1,5 +1,5 @@
 function Invoke-PdcRepairClone {
-    <#
+<#
 .SYNOPSIS
     Invoke-PdcRepairClone repairs the clones
 
@@ -24,12 +24,12 @@ function Invoke-PdcRepairClone {
 .NOTES
     Author: Sander Stad (@sqlstad, sqlstad.nl)
 
-    Website: https://easyclone.io
+    Website: https://psdatabaseclone.io
     Copyright: (C) Sander Stad, sander@sqlstad.nl
     License: MIT https://opensource.org/licenses/MIT
 
 .LINK
-    https://easyclone.io/
+    https://psdatabaseclone.io/
 
 .EXAMPLE
     Invoke-PdcRepairClone -Hostname Host1

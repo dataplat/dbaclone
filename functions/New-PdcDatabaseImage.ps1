@@ -1,5 +1,5 @@
 function New-PdcDatabaseImage {
-    <#
+<#
 .SYNOPSIS
     New-PdcDatabaseImage creates a new image
 
@@ -60,12 +60,12 @@ function New-PdcDatabaseImage {
 .NOTES
     Author: Sander Stad (@sqlstad, sqlstad.nl)
 
-    Website: https://easyclone.io
+    Website: https://psdatabaseclone.io
     Copyright: (C) Sander Stad, sander@sqlstad.nl
     License: MIT https://opensource.org/licenses/MIT
 
 .LINK
-    https://easyclone.io/
+    https://psdatabaseclone.io/
 
 .EXAMPLE
     New-PdcDatabaseImage -SourceSqlInstance SQLDB1 -DestinationSqlInstance SQLDB2 -ImageLocalPath C:\Temp\images\ -Database DB1 -CreateFullBackup

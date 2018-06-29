@@ -1,5 +1,5 @@
 function Set-PdcConfiguration {
-    <#
+<#
 .SYNOPSIS
     Set-PdcConfiguration sets up the module
 
@@ -27,24 +27,21 @@ function Set-PdcConfiguration {
 .PARAMETER Database
     Database to use to save all the information in
 
-.PARAMETER
 
 .NOTES
     Author: Sander Stad (@sqlstad, sqlstad.nl)
 
-    Website: https://easyclone.io
+    Website: https://psdatabaseclone.io
     Copyright: (C) Sander Stad, sander@sqlstad.nl
     License: MIT https://opensource.org/licenses/MIT
 
 .LINK
-    https://easyclone.io/
+    https://psdatabaseclone.io/
 
 .EXAMPLE
-    Set-PdcConfiguration -SqlInstance SQLDB1 -Database EasyClone
+    Set-PdcConfiguration -SqlInstance SQLDB1 -Database PSDatabaseClone
 
-    Set up the module to use SQLDB1 as the database servers and EasyClone to save the values in
-
-
+    Set up the module to use SQLDB1 as the database servers and PSDatabaseClone to save the values in
 #>
     [CmdLetBinding()]
     param(
@@ -60,7 +57,7 @@ function Set-PdcConfiguration {
     )
 
     begin {
-        Write-PSFMessage -Message "Started EasyCone Setup" -Level Output
+        Write-PSFMessage -Message "Started PSDatabaseClone Setup" -Level Output
 
         # Try connecting to the instance
         Write-PSFMessage -Message "Attempting to connect to Sql Server $SqlInstance.." -Level Output
@@ -151,6 +148,6 @@ function Set-PdcConfiguration {
         # Test if there are any errors
         if (Test-PSFFunctionInterrupt) { return }
 
-        Write-PSFMessage -Message "Finished setting up EasyClone" -Level Host
+        Write-PSFMessage -Message "Finished setting up PSDatabaseClone" -Level Host
     }
 }

@@ -1,4 +1,34 @@
 function Remove-PdcDatabaseImage {
+<#
+.SYNOPSIS
+    Remove-PdcDatabaseImage removes one or more images
+
+.DESCRIPTION
+    The command will remove an image from PSDatabaseClone.
+    It will also remove all the clones associated with it on the hosts.
+
+.PARAMETER ImageLocation
+    Location of the image as it's saved in the database or can be seen on the file system.
+
+.PARAMETER Credential
+    Allows you to login to servers using  Windows Auth/Integrated/Trusted. To use:
+
+    $scred = Get-Credential, then pass $scred object to the -Credential parameter.
+
+.PARAMETER Force
+    Forcefully remove the items.
+
+.NOTES
+    Author: Sander Stad (@sqlstad, sqlstad.nl)
+
+    Website: https://psdatabaseclone.io
+    Copyright: (C) Sander Stad, sander@sqlstad.nl
+    License: MIT https://opensource.org/licenses/MIT
+
+.LINK
+    https://psdatabaseclone.io/
+
+#>
     [CmdLetBinding()]
 
     param(

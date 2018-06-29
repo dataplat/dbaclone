@@ -1,5 +1,5 @@
 function Remove-PdcDatabaseClone {
-    <#
+<#
 .SYNOPSIS
     Remove-PdcDatabaseClone removes one or more clones from a host
 
@@ -37,27 +37,27 @@ function Remove-PdcDatabaseClone {
 .NOTES
     Author: Sander Stad (@sqlstad, sqlstad.nl)
 
-    Website: https://easyclone.io
+    Website: https://psdatabaseclone.io
     Copyright: (C) Sander Stad, sander@sqlstad.nl
     License: MIT https://opensource.org/licenses/MIT
 
 .LINK
-    https://easyclone.io/
+    https://psdatabaseclone.io/
 
 .EXAMPLE
-Remove-PdcDatabaseClone -HostName Host1 -Database Clone1
+    Remove-PdcDatabaseClone -HostName Host1 -Database Clone1
 
-Removes the clones that are registered at Host1 and have the text "Clone1"
-
-.EXAMPLE
-Remove-PdcDatabaseClone -HostName Host1, Host2, Host3 -Database Clone
-
-Removes the clones that are registered at multiple hosts and have the text "Clone"
+    Removes the clones that are registered at Host1 and have the text "Clone1"
 
 .EXAMPLE
-Remove-PdcDatabaseClone -HostName Host1
+    Remove-PdcDatabaseClone -HostName Host1, Host2, Host3 -Database Clone
 
-Removes all clones from Host1
+    Removes the clones that are registered at multiple hosts and have the text "Clone"
+
+.EXAMPLE
+    Remove-PdcDatabaseClone -HostName Host1
+
+    Removes all clones from Host1
 
 #>
     [CmdLetBinding()]

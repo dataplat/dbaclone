@@ -1,5 +1,5 @@
 function New-PdcDatabaseClone {
-    <#
+<#
 .SYNOPSIS
     New-PdcDatabaseClone creates a new clone
 
@@ -40,12 +40,12 @@ function New-PdcDatabaseClone {
 .NOTES
     Author: Sander Stad (@sqlstad, sqlstad.nl)
 
-    Website: https://easyclone.io
+    Website: https://psdatabaseclone.io
     Copyright: (C) Sander Stad, sander@sqlstad.nl
     License: MIT https://opensource.org/licenses/MIT
 
 .LINK
-    https://easyclone.io/
+    https://psdatabaseclone.io/
 
 .EXAMPLE
     New-PdcDatabaseClone -SqlInstance SQLDB1 -ParentVhd C:\Temp\images\DB1_20180623203204.vhdx -Destination C:\Temp\clones\ -CloneName DB1_Clone1

@@ -1,5 +1,37 @@
 function Test-PdcDatabaseSetup {
+<#
+.SYNOPSIS
+    Test the configuration of the module
 
+.DESCRIPTION
+    The configuration of the module is vital to let it function.
+    This function checks several configurations
+
+.PARAMETER SqlInstance
+    The instance that represents the PSDatabaseClone instance that holds the database
+
+.PARAMETER SqlCredential
+    Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
+
+    $scred = Get-Credential, then pass $scred object to the -SourceSqlCredential parameter.
+
+    Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
+    To connect as a different Windows user, run PowerShell as that user.
+
+.PARAMETER Database
+    The database that holds all the information for the PSDatabaseClone module
+
+.NOTES
+    Author: Sander Stad (@sqlstad, sqlstad.nl)
+
+    Website: https://psdatabaseclone.io
+    Copyright: (C) Sander Stad, sander@sqlstad.nl
+    License: MIT https://opensource.org/licenses/MIT
+
+.LINK
+    https://psdatabaseclone.io/
+
+#>
     [CmdLetBinding()]
     param(
         [Alias("ServerInstance", "SqlServerSqlServer")]
