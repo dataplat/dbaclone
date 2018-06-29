@@ -373,7 +373,9 @@ function New-PdcDatabaseImage {
                                         @DatabaseName = '$databaseName',			  -- varchar(100)
                                         @DatabaseTimestamp = '$databaseTS'           -- datetime
                 "
-                Write-Host $query
+
+                Write-PSFMessage -Message "Query New Image`n$query" -Level Debug
+
                 Write-PSFMessage -Message "Saving image information in database" -Level Verbose
 
                 Invoke-DbaSqlQuery -SqlInstance $pdcSqlInstance -Database $pdcDatabase -Query $query
