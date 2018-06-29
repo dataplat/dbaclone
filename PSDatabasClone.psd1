@@ -70,8 +70,7 @@
     'New-PdcVhdDisk',
     'Remove-PdcDatabaseClone',
 	'Remove-PdcDatabaseImage',
-    'Set-PdcConfiguration',
-    'Test-PdcDatabaseSetup'
+    'Set-PdcConfiguration'
 
     # Cmdlets to export from this module
     CmdletsToExport   = ''
