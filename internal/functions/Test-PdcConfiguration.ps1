@@ -55,7 +55,7 @@ function Test-PdcConfiguration {
 
     $errorOccured = $false
 
-    # Check if the values for the EasyClone database are set
+    # Check if the values for the PSDatabaseClone database are set
     if (($SqlInstance -eq $null) -or ($Database -eq $null)) {
         # Get the configurations for the program database
         $Database = Get-PSFConfigValue -FullName psdatabaseclone.database.name -Fallback "NotConfigured"
@@ -95,7 +95,7 @@ function Test-PdcConfiguration {
         }
     }
 
-    # Check if the easyclone database is present
+    # Check if the PSDatabaseClone database is present
     if ($ecServer.Databases.Name -notcontains $Database) {
         $errorOccured = $true
         $result.Check = $false

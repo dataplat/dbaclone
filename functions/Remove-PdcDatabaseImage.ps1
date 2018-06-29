@@ -45,12 +45,8 @@ function Remove-PdcDatabaseImage {
     begin {
         Write-PSFMessage -Message "Started removing database images" -Level Verbose
 
-        # Get the configurations for the program database
-        $ecDatabaseName = Get-PSFConfigValue -FullName easyclone.database.name
-        $ecDatabaseServer = Get-PSFConfigValue -FullName easyclone.database.server
-
         # Test the module database setup
-        $result = Test-PdcConfiguration -SqlInstance $ecDatabaseServer -SqlCredential $SqlCredential -Database $ecDatabaseName
+        $result = Test-PdcConfiguration
 
         if(-not $result.Check){
             Stop-PSFFunction -Message $result.Message -Target $result -Continue

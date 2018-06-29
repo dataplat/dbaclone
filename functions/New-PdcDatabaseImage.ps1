@@ -119,7 +119,7 @@ function New-PdcDatabaseImage {
     begin {
 
         # Test the module database setup
-        $result = Test-PdcConfiguration -SqlInstance $ecDatabaseServer -SqlCredential $SqlCredential -Database $ecDatabaseName
+        $result = Test-PdcConfiguration
 
         if(-not $result.Check){
             Stop-PSFFunction -Message $result.Message -Target $result -Continue

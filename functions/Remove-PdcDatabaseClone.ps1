@@ -85,7 +85,7 @@ function Remove-PdcDatabaseClone {
         Write-PSFMessage -Message "Started removing database clones" -Level Verbose
 
         # Test the module database setup
-        $result = Test-PdcConfiguration -SqlInstance $ecDatabaseServer -SqlCredential $SqlCredential -Database $ecDatabaseName
+        $result = Test-PdcConfiguration
 
         if(-not $result.Check){
             Stop-PSFFunction -Message $result.Message -Target $result -Continue
@@ -147,12 +147,12 @@ function Remove-PdcDatabaseClone {
         foreach ($result in $results) {
 
             # Connect to the instance
-            Write-PSFMessage -Message "Attempting to connect to easy clone database server $($result.SqlInstance).." -Level Verbose
+            Write-PSFMessage -Message "Attempting to connect to clone database server $($result.SqlInstance).." -Level Verbose
             try {
                 $server = Connect-DbaInstance -SqlInstance $result.SqlInstance -SqlCredential $SqlCredential
             }
             catch {
-                Stop-PSFFunction -Message "Could not connect to Sql Server instance $server" -ErrorRecord $_ -Target $server -Continue
+                Stop-PSFFunction -Message "Could not connect to clone Sql Server instance $server" -ErrorRecord $_ -Target $server -Continue
             }
 
             # Remove the database
