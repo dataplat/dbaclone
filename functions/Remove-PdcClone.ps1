@@ -1,10 +1,10 @@
-function Remove-PdcDatabaseClone {
+function Remove-PdcClone {
 <#
 .SYNOPSIS
-    Remove-PdcDatabaseClone removes one or more clones from a host
+    Remove-PdcClone removes one or more clones from a host
 
 .DESCRIPTION
-    Remove-PdcDatabaseClone is able to remove one or more clones from a host.
+    Remove-PdcClone is able to remove one or more clones from a host.
     The command looks up all the records dor a particular hostname.
     It will remove the database from the database server and all related files.
 
@@ -45,17 +45,17 @@ function Remove-PdcDatabaseClone {
     https://psdatabaseclone.io/
 
 .EXAMPLE
-    Remove-PdcDatabaseClone -HostName Host1 -Database Clone1
+    Remove-PdcClone -HostName Host1 -Database Clone1
 
     Removes the clones that are registered at Host1 and have the text "Clone1"
 
 .EXAMPLE
-    Remove-PdcDatabaseClone -HostName Host1, Host2, Host3 -Database Clone
+    Remove-PdcClone -HostName Host1, Host2, Host3 -Database Clone
 
     Removes the clones that are registered at multiple hosts and have the text "Clone"
 
 .EXAMPLE
-    Remove-PdcDatabaseClone -HostName Host1
+    Remove-PdcClone -HostName Host1
 
     Removes all clones from Host1
 

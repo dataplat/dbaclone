@@ -1,7 +1,7 @@
-function Remove-PdcDatabaseImage {
+function Remove-PdcImage {
     <#
 .SYNOPSIS
-    Remove-PdcDatabaseImage removes one or more images
+    Remove-PdcImage removes one or more images
 
 .DESCRIPTION
     The command will remove an image from PSDatabaseClone.
@@ -102,7 +102,7 @@ function Remove-PdcDatabaseImage {
                     try {
                         if ($result.HostName -ne $null) {
                             Write-PSFMessage -Message "Removing clones for host $($result.HostName) and database $($result.DatabaseName)" -Level Verbose
-                            Remove-PdcDatabaseClone -HostName $result.HostName -Database $result.DatabaseName -Credential $Credential
+                            Remove-PdcClone -HostName $result.HostName -Database $result.DatabaseName -Credential $Credential
                         }
                     }
                     catch {

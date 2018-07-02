@@ -1,10 +1,10 @@
-function New-PdcDatabaseClone {
+function New-PdcClone {
 <#
 .SYNOPSIS
-    New-PdcDatabaseClone creates a new clone
+    New-PdcClone creates a new clone
 
 .DESCRIPTION
-    New-PdcDatabaseClone willcreate a new clone based on an image.
+    New-PdcClone willcreate a new clone based on an image.
     The clone will be created in a certain directory, mounted and attached to a database server.
 
 .PARAMETER SqlInstance
@@ -48,17 +48,17 @@ function New-PdcDatabaseClone {
     https://psdatabaseclone.io/
 
 .EXAMPLE
-    New-PdcDatabaseClone -SqlInstance SQLDB1 -ParentVhd C:\Temp\images\DB1_20180623203204.vhdx -Destination C:\Temp\clones\ -CloneName DB1_Clone1
+    New-PdcClone -SqlInstance SQLDB1 -ParentVhd C:\Temp\images\DB1_20180623203204.vhdx -Destination C:\Temp\clones\ -CloneName DB1_Clone1
 
     Create a new clone based on the image DB1_20180623203204.vhdx and attach the database to SQLDB1 as DB1_Clone1
 
 .EXAMPLE
-    New-PdcDatabaseClone -SqlInstance SQLDB1 -Database DB1, DB2 -LatestImage
+    New-PdcClone -SqlInstance SQLDB1 -Database DB1, DB2 -LatestImage
 
     Create a new clone on SQLDB1 for the databases DB1 and DB2 with the latest image for those databases
 
 .EXAMPLE
-    New-PdcDatabaseClone -SqlInstance SQLDB1, SQLDB2 -Database DB1 -LatestImage
+    New-PdcClone -SqlInstance SQLDB1, SQLDB2 -Database DB1 -LatestImage
 
     Create a new clone on SQLDB1 and SQLDB2 for the databases DB1 with the latest image
 #>

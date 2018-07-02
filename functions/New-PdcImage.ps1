@@ -1,10 +1,10 @@
-function New-PdcDatabaseImage {
+function New-PdcImage {
 <#
 .SYNOPSIS
-    New-PdcDatabaseImage creates a new image
+    New-PdcImage creates a new image
 
 .DESCRIPTION
-    New-PdcDatabaseImage will create a new image based on a SQL Server database
+    New-PdcImage will create a new image based on a SQL Server database
 
     The command will either create a full backup or use the last full backup to create the image.
 
@@ -68,12 +68,12 @@ function New-PdcDatabaseImage {
     https://psdatabaseclone.io/
 
 .EXAMPLE
-    New-PdcDatabaseImage -SourceSqlInstance SQLDB1 -DestinationSqlInstance SQLDB2 -ImageLocalPath C:\Temp\images\ -Database DB1 -CreateFullBackup
+    New-PdcImage -SourceSqlInstance SQLDB1 -DestinationSqlInstance SQLDB2 -ImageLocalPath C:\Temp\images\ -Database DB1 -CreateFullBackup
 
     Create an image for databas DB1 from SQL Server SQLDB1. The temporary destination will be SQLDB2.
     The image will be saved in C:\Temp\images.
 .EXAMPLE
-    New-PdcDatabaseImage -SourceSqlInstance SQLDB1 -DestinationSqlInstance SQLDB2 -ImageLocalPath C:\Temp\images\ -Database DB1 -UseLastFullBackup
+    New-PdcImage -SourceSqlInstance SQLDB1 -DestinationSqlInstance SQLDB2 -ImageLocalPath C:\Temp\images\ -Database DB1 -UseLastFullBackup
 
     Create an image from the database DB1 on SQLDB1 using the last full backup and use SQLDB2 as the temporary database server.
     The image is written to c:\Temp\images
