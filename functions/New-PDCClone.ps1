@@ -4,7 +4,7 @@ function New-PDCClone {
     New-PDCClone creates a new clone
 
 .DESCRIPTION
-    New-PDCClone willcreate a new clone based on an image.
+    New-PDCClone will create a new clone based on an image.
     The clone will be created in a certain directory, mounted and attached to a database server.
 
 .PARAMETER SqlInstance
