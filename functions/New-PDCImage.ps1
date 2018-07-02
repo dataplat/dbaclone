@@ -1,5 +1,5 @@
 function New-PDCImage {
-<#
+    <#
 .SYNOPSIS
     New-PDCImage creates a new image
 
@@ -121,7 +121,7 @@ function New-PDCImage {
         # Test the module database setup
         $result = Test-PDCConfiguration
 
-        if(-not $result.Check){
+        if (-not $result.Check) {
             Stop-PSFFunction -Message $result.Message -Target $result -Continue
             return
         }
@@ -166,12 +166,18 @@ function New-PDCImage {
 
         # Get the local path from the network path
         if (-not $ImageLocalPath) {
-            if ($computer.IsLocalhost) {
-                $ImageLocalPath = Convert-PDCLocalUncPathToLocalPath -UncPath $ImageNetworkPath
-                Write-PSFMessage -Message "Converted '$ImageNetworkPath' to '$ImageLocalPath'" -Level Verbose
+            try {
+                if ($computer.IsLocalhost) {
+                    $ImageLocalPath = Convert-PDCLocalUncPathToLocalPath -UncPath $ImageNetworkPath
+                    Write-PSFMessage -Message "Converted '$ImageNetworkPath' to '$ImageLocalPath'" -Level Verbose
+                }
+                else {
+                    $ImageLocalPath = Invoke-PSFCommand -ComputerName $computer -ScriptBlock $commandGetLocalPath -Credential $DestinationCredential
+                }
             }
-            else {
-                $ImageLocalPath = Invoke-PSFCommand -ComputerName $computer -ScriptBlock $commandGetLocalPath -Credential $DestinationCredential
+            catch {
+                Stop-PSFFunction -Message "Something went wrong getting the local image path" -Target $ImageNetworkPath
+                return
             }
         }
 

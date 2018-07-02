@@ -92,8 +92,6 @@ function New-PDCClone {
 
     begin {
 
-        Write-PSFMessage -Message "Started image creation" -Level Output
-
         # Test the module database setup
         $result = Test-PDCConfiguration
 
@@ -101,6 +99,11 @@ function New-PDCClone {
             Stop-PSFFunction -Message $result.Message -Target $result -Continue
             return
         }
+
+        $pdcSqlInstance = Get-PSFConfigValue -FullName psdatabaseclone.database.Server
+        $pdcDatabase = Get-PSFConfigValue -FullName psdatabaseclone.database.name
+
+        Write-PSFMessage -Message "Started image creation" -Level Output
 
         # Random string
         $random = -join ((65..90) + (97..122) | Get-Random -Count 5 | ForEach-Object {[char]$_})
@@ -163,18 +166,18 @@ function New-PDCClone {
                     "
 
                     try {
-                        $result = Invoke-DbaSqlQuery -SqlInstance $ecDatabaseServer -Database $ecDatabaseName -Query $query
+                        $result = Invoke-DbaSqlQuery -SqlInstance $pdcSqlInstance -Database $pdcDatabase -Query $query
 
                         # Check the results
                         if ($result -eq $null) {
-                            Stop-PSFFunction -Message "No image could be found for database $db" -Target $ecDatabaseServer -Continue
+                            Stop-PSFFunction -Message "No image could be found for database $db" -Target $pdcSqlInstance -Continue
                         }
                         else {
                             $ParentVhd = $result.ImageLocation
                         }
                     }
                     catch {
-                        Stop-PSFFunction -Message "Could not execute query to retrieve latest image" -Target $ecDatabaseServer -Continue
+                        Stop-PSFFunction -Message "Could not execute query to retrieve latest image" -Target $pdcSqlInstance -Continue
                     }
                 }
 
@@ -307,7 +310,7 @@ function New-PDCClone {
                     "
 
                     # Execute the query
-                    $result = Invoke-DbaSqlQuery -SqlInstance $ecDatabaseServer -Database $ecDatabaseName -Query $query
+                    $result = Invoke-DbaSqlQuery -SqlInstance $pdcSqlInstance -Database $pdcDatabase -Query $query
 
                     # Add the host if the host is known
                     if (-not $result.HostKnown) {
@@ -325,20 +328,20 @@ function New-PDCClone {
 
                         Write-PSFMessage -Message "Query New Host`n$query" -Level Debug
 
-                        $hostId = (Invoke-DbaSqlQuery -SqlInstance $ecDatabaseServer -Database $ecDatabaseName -Query $query).HostID
+                        $hostId = (Invoke-DbaSqlQuery -SqlInstance $pdcSqlInstance -Database $pdcDatabase -Query $query).HostID
                     }
                     else {
                         Write-PSFMessage -Message "Selecting host $hostname from database" -Level Verbose
                         $query = "SELECT HostID FROM Host WHERE HostName = '$hostname'"
 
-                        $hostId = (Invoke-DbaSqlQuery -SqlInstance $ecDatabaseServer -Database $ecDatabaseName -Query $query).HostID
+                        $hostId = (Invoke-DbaSqlQuery -SqlInstance $pdcSqlInstance -Database $pdcDatabase -Query $query).HostID
                     }
 
 
                     # Get the image id from the database
                     Write-PSFMessage -Message "Selecting image from database" -Level Verbose
                     $query = "SELECT ImageID FROM dbo.Image WHERE ImageLocation = '$ParentVhd'"
-                    $imageId = (Invoke-DbaSqlQuery -SqlInstance $ecDatabaseServer -Database $ecDatabaseName -Query $query).ImageID
+                    $imageId = (Invoke-DbaSqlQuery -SqlInstance $pdcSqlInstance -Database $pdcDatabase -Query $query).ImageID
 
                     if ($imageId -ne $null) {
 
@@ -361,7 +364,7 @@ function New-PDCClone {
                         Write-PSFMessage -Message "Query New Clone`n$query" -Level Debug
 
                         # execute the query
-                        $null = Invoke-DbaSqlQuery -SqlInstance $ecDatabaseServer -Database $ecDatabaseName -Query $query
+                        $null = Invoke-DbaSqlQuery -SqlInstance $pdcSqlInstance -Database $pdcDatabase -Query $query
                     }
                     else {
                         Stop-PSFFunction -Message "Image couldn't be found" -Target $imageName -ErrorRecord $_ -Continue

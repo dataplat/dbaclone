@@ -64,12 +64,12 @@
 
     # Functions to export from this module
     FunctionsToExport = 'Initialize-PDCVhdDisk',
-    'Invoke-PDCCRepairClone',
-    'New-PDCDatabaseClone',
-    'New-PDCDatabaseImage',
+    'Invoke-PDCRepairClone',
+    'New-PDClone',
+    'New-PDCImage',
     'New-PDCVhdDisk',
-    'Remove-PDCDatabaseClone',
-	'Remove-PDCDatabaseImage',
+    'Remove-PDCClone',
+	'Remove-PDCImage',
     'Set-PDCConfiguration'
 
     # Cmdlets to export from this module
