@@ -1,39 +1,17 @@
 SET NUMERIC_ROUNDABORT OFF
-
+GO
 SET ANSI_PADDING, ANSI_WARNINGS, CONCAT_NULL_YIELDS_NULL, ARITHABORT, QUOTED_IDENTIFIER, ANSI_NULLS ON
-
+GO
 SET XACT_ABORT ON
-
+GO
 SET TRANSACTION ISOLATION LEVEL Serializable
-
+GO
 BEGIN TRANSACTION
-
+GO
 IF @@ERROR <> 0 SET NOEXEC ON
-
-PRINT N'Dropping [dbo].[Image_New]'
-
-IF OBJECT_ID(N'[dbo].[Image_New]', 'P') IS NOT NULL
-DROP PROCEDURE [dbo].[Image_New]
-
-IF @@ERROR <> 0 SET NOEXEC ON
-
-PRINT N'Dropping [dbo].[Host_New]'
-
-IF OBJECT_ID(N'[dbo].[Host_New]', 'P') IS NOT NULL
-DROP PROCEDURE [dbo].[Host_New]
-
-IF @@ERROR <> 0 SET NOEXEC ON
-
-PRINT N'Dropping [dbo].[Clone_New]'
-
-IF OBJECT_ID(N'[dbo].[Clone_New]', 'P') IS NOT NULL
-DROP PROCEDURE [dbo].[Clone_New]
-
-IF @@ERROR <> 0 SET NOEXEC ON
-
+GO
 PRINT N'Creating [dbo].[Clone]'
-
-IF OBJECT_ID(N'[dbo].[Clone]', 'U') IS NULL
+GO
 CREATE TABLE [dbo].[Clone]
 (
 [CloneID] [int] NOT NULL IDENTITY(1, 1),
@@ -45,19 +23,79 @@ CREATE TABLE [dbo].[Clone]
 [DatabaseName] [varchar] (100) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
 [IsEnabled] [bit] NOT NULL CONSTRAINT [DF_Clone_IsEnabled] DEFAULT ((1))
 )
-
+GO
 IF @@ERROR <> 0 SET NOEXEC ON
-
+GO
 PRINT N'Creating primary key [PK__Clone] on [dbo].[Clone]'
-
-IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'PK__Clone' AND object_id = OBJECT_ID(N'[dbo].[Clone]'))
+GO
 ALTER TABLE [dbo].[Clone] ADD CONSTRAINT [PK__Clone] PRIMARY KEY CLUSTERED  ([CloneID])
-
+GO
 IF @@ERROR <> 0 SET NOEXEC ON
+GO
+PRINT N'Creating [dbo].[Clone_GetAll]'
+GO
+CREATE PROCEDURE [dbo].[Clone_GetAll]
+AS
+BEGIN
+	SET NOCOUNT ON;
 
+	SELECT CloneID,
+		   ImageID,
+		   HostID,
+		   CloneLocation,
+		   AccessPath,
+		   SqlInstance,
+		   DatabaseName,
+		   IsEnabled
+	FROM dbo.Clone;
+END;
+
+GO
+IF @@ERROR <> 0 SET NOEXEC ON
+GO
+PRINT N'Creating [dbo].[Image]'
+GO
+CREATE TABLE [dbo].[Image]
+(
+[ImageID] [int] NOT NULL IDENTITY(1, 1),
+[ImageName] [varchar] (100) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
+[ImageLocation] [varchar] (255) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
+[SizeMB] [int] NOT NULL,
+[DatabaseName] [varchar] (100) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
+[DatabaseTimestamp] [datetime] NOT NULL,
+[CreatedOn] [datetime] NOT NULL
+)
+GO
+IF @@ERROR <> 0 SET NOEXEC ON
+GO
+PRINT N'Creating primary key [PK_Image] on [dbo].[Image]'
+GO
+ALTER TABLE [dbo].[Image] ADD CONSTRAINT [PK_Image] PRIMARY KEY CLUSTERED  ([ImageID])
+GO
+IF @@ERROR <> 0 SET NOEXEC ON
+GO
+PRINT N'Creating [dbo].[Image_GetAll]'
+GO
+CREATE PROCEDURE [dbo].[Image_GetAll]
+AS
+BEGIN
+	SET NOCOUNT ON;
+
+	SELECT ImageID,
+		   ImageName,
+		   ImageLocation,
+		   SizeMB,
+		   DatabaseName,
+		   DatabaseTimestamp,
+		   CreatedOn
+	FROM dbo.Image;
+END;
+
+GO
+IF @@ERROR <> 0 SET NOEXEC ON
+GO
 PRINT N'Creating [dbo].[Host]'
-
-IF OBJECT_ID(N'[dbo].[Host]', 'U') IS NULL
+GO
 CREATE TABLE [dbo].[Host]
 (
 [HostID] [int] NOT NULL IDENTITY(1, 1),
@@ -65,42 +103,35 @@ CREATE TABLE [dbo].[Host]
 [IPAddress] [varchar] (20) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 [FQDN] [varchar] (255) COLLATE SQL_Latin1_General_CP1_CI_AS NULL
 )
-
+GO
 IF @@ERROR <> 0 SET NOEXEC ON
-
+GO
 PRINT N'Creating primary key [PK__Host] on [dbo].[Host]'
-
-IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'PK__Host' AND object_id = OBJECT_ID(N'[dbo].[Host]'))
+GO
 ALTER TABLE [dbo].[Host] ADD CONSTRAINT [PK__Host] PRIMARY KEY CLUSTERED  ([HostID])
-
+GO
 IF @@ERROR <> 0 SET NOEXEC ON
+GO
+PRINT N'Creating [dbo].[Host_GetAll]'
+GO
+CREATE PROCEDURE [dbo].[Host_GetAll]
+AS
+BEGIN
+	SET NOCOUNT ON;
 
-PRINT N'Creating [dbo].[Image]'
+	SELECT HostID,
+		   HostName,
+		   IPAddress,
+		   FQDN
+	FROM dbo.Host;
+END;
 
-IF OBJECT_ID(N'[dbo].[Image]', 'U') IS NULL
-CREATE TABLE [dbo].[Image]
-(
-[ImageID] [int] NOT NULL IDENTITY(1, 1),
-[ImageLocation] [varchar] (255) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
-[SizeMB] [int] NOT NULL,
-[DatabaseName] [varchar] (100) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
-[DatabaseTimestamp] [datetime] NOT NULL,
-[CreatedOn] [datetime] NOT NULL
-)
-
+GO
 IF @@ERROR <> 0 SET NOEXEC ON
-
-PRINT N'Creating primary key [PK_Image] on [dbo].[Image]'
-
-IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'PK_Image' AND object_id = OBJECT_ID(N'[dbo].[Image]'))
-ALTER TABLE [dbo].[Image] ADD CONSTRAINT [PK_Image] PRIMARY KEY CLUSTERED  ([ImageID])
-
-IF @@ERROR <> 0 SET NOEXEC ON
-
+GO
 PRINT N'Creating [dbo].[Clone_New]'
-
-IF OBJECT_ID(N'[dbo].[Clone_New]', 'P') IS NULL
-EXEC sp_executesql N'/*
+GO
+/*
 Description:
 Procedure for adding a new clone
 
@@ -122,7 +153,7 @@ AS
 BEGIN
 
 	-- Set session options to make sure transactions are aborted correctly
-	-- and the procedure doesn''t return the count
+	-- and the procedure doesn't return the count
 	SET XACT_ABORT, NOCOUNT ON;
 
 	-- Declare variables
@@ -130,7 +161,7 @@ BEGIN
 	DECLARE @Params NVARCHAR(MAX);
 
 	SET @SqlCmd
-		= N''INSERT INTO dbo.Clone
+		= N'INSERT INTO dbo.Clone
 		(
 			ImageID,
 			HostID,
@@ -152,11 +183,11 @@ BEGIN
 			);
 
 			SELECT @CloneID = SCOPE_IDENTITY();
-		'';
+		';
 
 	-- Set the parameters
 	SET @Params
-		= N''
+		= N'
 			@CloneID INT OUTPUT,
 			@ImageID INT,
 			@HostID	 INT,
@@ -165,7 +196,7 @@ BEGIN
 			@SqlInstance  VARCHAR(50),
 			@DatabaseName VARCHAR(100),
 			@IsEnabled	BIT
-		'';
+		';
 
 	-- Execute the SQL command
 	EXECUTE sp_executesql @stmnt = @SqlCmd,
@@ -180,14 +211,13 @@ BEGIN
 						  @IsEnabled = @IsEnabled;
 
 
-END;'
-
+END;
+GO
 IF @@ERROR <> 0 SET NOEXEC ON
-
+GO
 PRINT N'Creating [dbo].[Host_New]'
-
-IF OBJECT_ID(N'[dbo].[Host_New]', 'P') IS NULL
-EXEC sp_executesql N'/*
+GO
+/*
 Description:
 Procedure for adding a new host
 
@@ -205,7 +235,7 @@ AS
 BEGIN
 
 	-- Set session options to make sure transactions are aborted correctly
-	-- and the procedure doesn''t return the count
+	-- and the procedure doesn't return the count
 	SET XACT_ABORT, NOCOUNT ON;
 
 	-- Declare variables
@@ -213,7 +243,7 @@ BEGIN
 	DECLARE @Params NVARCHAR(MAX);
 
 	SET @SqlCmd
-		= N''INSERT INTO dbo.Host
+		= N'INSERT INTO dbo.Host
 			(
 				HostName,
 				IPAddress,
@@ -226,15 +256,15 @@ BEGIN
 				);
 
 			SELECT @HostID = SCOPE_IDENTITY();
-		'';
+		';
 
 	-- Set the parameters
-	SET @Params = N''
+	SET @Params = N'
 			@HostID INT OUTPUT,
 			@HostName  VARCHAR(100),
 			@IPAddress VARCHAR(20),
 			@FQDN	   VARCHAR(255)
-		'';
+		';
 
 	-- Execute the SQL command
 	EXECUTE sp_executesql @stmnt = @SqlCmd,
@@ -245,14 +275,13 @@ BEGIN
 						  @FQDN = @FQDN;
 
 
-END;'
-
+END;
+GO
 IF @@ERROR <> 0 SET NOEXEC ON
-
+GO
 PRINT N'Creating [dbo].[Image_New]'
-
-IF OBJECT_ID(N'[dbo].[Image_New]', 'P') IS NULL
-EXEC sp_executesql N'/*
+GO
+/*
 Description:
 Procedure for adding a new image
 
@@ -263,6 +292,7 @@ Date		Who						Notes
 */
 CREATE PROCEDURE [dbo].[Image_New]
 	@ImageID		   INT OUTPUT,
+	@ImageName		   VARCHAR(100),
 	@ImageLocation	   VARCHAR(255),
 	@SizeMB			   INT,
 	@DatabaseName	   VARCHAR(100),
@@ -271,7 +301,7 @@ AS
 BEGIN
 
 	-- Set session options to make sure transactions are aborted correctly
-	-- and the procedure doesn''t return the count
+	-- and the procedure doesn't return the count
 	SET XACT_ABORT, NOCOUNT ON;
 
 	-- Declare variables
@@ -279,8 +309,9 @@ BEGIN
 	DECLARE @Params NVARCHAR(MAX);
 
 	SET @SqlCmd
-		= N''INSERT INTO dbo.Image
+		= N'INSERT INTO dbo.Image
 			(
+				ImageName,
 				ImageLocation,
 				SizeMB,
 				DatabaseName,
@@ -288,7 +319,8 @@ BEGIN
 				CreatedOn
 			)
 			VALUES
-			(	@ImageLocation,		-- ImageLocation - varchar(255)
+			(	@ImageName,			-- ImageName - varchar(100)
+				@ImageLocation,		-- ImageLocation - varchar(255)
 				@SizeMB,			-- SizeMB - int
 				@DatabaseName,		-- DatabaseName - varchar(100)
 				@DatabaseTimestamp, -- DatabaseTimestamp - datetime
@@ -296,22 +328,24 @@ BEGIN
 				);
 
 			SELECT @ImageID = SCOPE_IDENTITY();
-		'';
+		';
 
 	-- Set the parameters
 	SET @Params
-		= N''
+		= N'
 			@ImageID		   INT OUTPUT,
+			@ImageName		   VARCHAR(100),
 			@ImageLocation	   VARCHAR(255),
 			@SizeMB			   INT,
 			@DatabaseName	   VARCHAR(100),
 			@DatabaseTimestamp DATETIME
-		'';
+		';
 
 	-- Execute the SQL command
 	EXECUTE sp_executesql @stmnt = @SqlCmd,
 						  @params = @Params,
 						  @ImageID = @ImageID OUTPUT,
+						  @ImageName = @ImageName,
 						  @ImageLocation = @ImageLocation,
 						  @SizeMB = @SizeMB,
 						  @DatabaseName = @DatabaseName,
@@ -319,24 +353,22 @@ BEGIN
 
 
 
-END;'
-
+END;
+GO
 IF @@ERROR <> 0 SET NOEXEC ON
-
+GO
 PRINT N'Adding foreign keys to [dbo].[Clone]'
-
-IF NOT EXISTS (SELECT 1 FROM sys.foreign_keys WHERE object_id = OBJECT_ID(N'[dbo].[FK_Clone_Image]', 'F') AND parent_object_id = OBJECT_ID(N'[dbo].[Clone]', 'U'))
+GO
 ALTER TABLE [dbo].[Clone] ADD CONSTRAINT [FK_Clone_Image] FOREIGN KEY ([ImageID]) REFERENCES [dbo].[Image] ([ImageID])
-
-IF NOT EXISTS (SELECT 1 FROM sys.foreign_keys WHERE object_id = OBJECT_ID(N'[dbo].[FK_Clone_Host]', 'F') AND parent_object_id = OBJECT_ID(N'[dbo].[Clone]', 'U'))
+GO
 ALTER TABLE [dbo].[Clone] ADD CONSTRAINT [FK_Clone_Host] FOREIGN KEY ([HostID]) REFERENCES [dbo].[Host] ([HostID])
-
+GO
 IF @@ERROR <> 0 SET NOEXEC ON
-
+GO
 COMMIT TRANSACTION
-
+GO
 IF @@ERROR <> 0 SET NOEXEC ON
-
+GO
 DECLARE @Success AS BIT
 SET @Success = 1
 SET NOEXEC OFF
@@ -345,4 +377,4 @@ ELSE BEGIN
 	IF @@TRANCOUNT > 0 ROLLBACK TRANSACTION
 	PRINT 'The database update failed'
 END
-
+GO
