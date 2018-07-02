@@ -17,7 +17,7 @@ $supportedVersions = @(
 $osDetails = Get-CimInstance Win32_OperatingSystem | Select-Object Caption, Description, Name, OSType, Version
 
 # Check which version of windows we're dealing with
-if ($osDetails.Caption -in $supportedVersions ) {
+if ($osDetails.Caption -notin $supportedVersions ) {
     if ($osDetails.Caption -like '*Windows 10*') {
         Stop-PSFFunction -Message "Module can only work on Windows 10 Pro, Enterprise or Education" -Target $OSDetails -FunctionName 'Pre Import'
     }
