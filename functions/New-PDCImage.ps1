@@ -374,6 +374,7 @@ function New-PDCImage {
                 $query = "
                     DECLARE @ImageID INT;
                     EXECUTE dbo.Image_New @ImageID = @ImageID OUTPUT,				  -- int
+                                        @ImageName = '$imageName'                     -- varchar(100)
                                         @ImageLocation = '$imageLocation',			  -- varchar(255)
                                         @SizeMB = $sizeMB,							  -- int
                                         @DatabaseName = '$databaseName',			  -- varchar(100)
@@ -393,6 +394,7 @@ function New-PDCImage {
 
             # Add the results to the custom object
             [PSCustomObject]@{
+                Name      = $imageName
                 Location  = $imageLocation
                 Size      = $sizeMB
                 Database  = $databaseName
