@@ -1,10 +1,10 @@
-function New-PdcVhdDisk {
+function New-PDCVhdDisk {
 <#
 .SYNOPSIS
-    New-PdcVhdDisk creates a new VHD
+    New-PDCVhdDisk creates a new VHD
 
 .DESCRIPTION
-    New-PdcVhdDisk will create a new VHD.
+    New-PDCVhdDisk will create a new VHD.
 
 .PARAMETER Destination
     The destination path of the VHD
@@ -39,7 +39,7 @@ function New-PdcVhdDisk {
     https://psdatabaseclone.io/
 
 .EXAMPLE
-    New-PdcVhdDisk -Destination C:\temp -Name Database1 -Size 1GB
+    New-PDCVhdDisk -Destination C:\temp -Name Database1 -Size 1GB
 
     Creates a dynamic VHD in C:\Temp named Database1.vhdx with a size of 1GB
 

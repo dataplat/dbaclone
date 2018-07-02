@@ -1,7 +1,7 @@
-function Set-PdcConfiguration {
+function Set-PDCConfiguration {
 <#
 .SYNOPSIS
-    Set-PdcConfiguration sets up the module
+    Set-PDCConfiguration sets up the module
 
 .DESCRIPTION
     For the module to work properly the module needs a couple of settings.
@@ -39,7 +39,7 @@ function Set-PdcConfiguration {
     https://psdatabaseclone.io/
 
 .EXAMPLE
-    Set-PdcConfiguration -SqlInstance SQLDB1 -Database PSDatabaseClone
+    Set-PDCConfiguration -SqlInstance SQLDB1 -Database PSDatabaseClone
 
     Set up the module to use SQLDB1 as the database servers and PSDatabaseClone to save the values in
 #>

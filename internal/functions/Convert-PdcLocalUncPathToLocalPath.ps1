@@ -1,4 +1,4 @@
-function Convert-PdcLocalUncPathToLocalPath {
+function Convert-PDCLocalUncPathToLocalPath {
 <#
 .SYNOPSIS
     Convert a UNC path on a computer to a local path.
@@ -21,7 +21,7 @@ function Convert-PdcLocalUncPathToLocalPath {
     https://psdatabaseclone.io/
 
 .EXAMPLE
-    Convert-PdcLocalUncPathToLocalPath -UncPath "\\server\share"
+    Convert-PDCLocalUncPathToLocalPath -UncPath "\\server\share"
 
 #>
 

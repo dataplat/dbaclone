@@ -1,10 +1,10 @@
-function Initialize-PdcVhdDisk {
+function Initialize-PDCVhdDisk {
 <#
 .SYNOPSIS
-    Initialize-PdcVhdDisk initialized the VHD
+    Initialize-PDCVhdDisk initialized the VHD
 
 .DESCRIPTION
-    Initialize-PdcVhdDisk will initialize the VHD.
+    Initialize-PDCVhdDisk will initialize the VHD.
     It mounts the disk, creates a volume, creates the partition and sets it to active
 
 .PARAMETER Path
@@ -26,12 +26,12 @@ function Initialize-PdcVhdDisk {
     https://psdatabaseclone.io/
 
 .EXAMPLE
-    Initialize-PdcVhdDisk -Path $path
+    Initialize-PDCVhdDisk -Path $path
 
     Initialize the disk pointing to the path with all default settings
 
 .EXAMPLE
-    Initialize-PdcVhdDisk -Path $path -AllocationUnitSize 4KB
+    Initialize-PDCVhdDisk -Path $path -AllocationUnitSize 4KB
 
     Initialize the disk and format the partition with a 4Kb allocation unit size
 

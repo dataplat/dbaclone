@@ -1,4 +1,4 @@
-function Test-PdcConfiguration {
+function Test-PDCConfiguration {
 <#
 .SYNOPSIS
     Test the configuration of the module
@@ -72,14 +72,14 @@ function Test-PdcConfiguration {
     if ($SqlInstance -eq 'NotConfigured') {
         $errorOccured = $true
         $result.Check = $false
-        $result.Message = "The PSDatabaseClone database server is not yet configured. Please run Set-PdcConfiguration"
+        $result.Message = "The PSDatabaseClone database server is not yet configured. Please run Set-PDCConfiguration"
 
     }
 
     if ($Database -eq 'NotConfigured') {
         $errorOccured = $true
         $result.Check = $false
-        $result.Message = "The PSDatabaseClone database is not yet configured. Please run Set-PdcConfiguration"
+        $result.Message = "The PSDatabaseClone database is not yet configured. Please run Set-PDCConfiguration"
 
     }
 

@@ -1,10 +1,10 @@
-function Invoke-PdcRepairClone {
+function Invoke-PDCRepairClone {
 <#
 .SYNOPSIS
-    Invoke-PdcRepairClone repairs the clones
+    Invoke-PDCRepairClone repairs the clones
 
 .DESCRIPTION
-    Invoke-PdcRepairClone has the ability to repair the clones when they have gotten disconnected from the image.
+    Invoke-PDCRepairClone has the ability to repair the clones when they have gotten disconnected from the image.
     In such a case the clone is no longer available for the database server and the database will either not show
     any information or the database will have the status (Recovery Pending).
 
@@ -32,7 +32,7 @@ function Invoke-PdcRepairClone {
     https://psdatabaseclone.io/
 
 .EXAMPLE
-    Invoke-PdcRepairClone -Hostname Host1
+    Invoke-PDCRepairClone -Hostname Host1
 
     Repair the clones for Host1
 
@@ -49,7 +49,7 @@ function Invoke-PdcRepairClone {
 
     begin {
         # Test the module database setup
-        $result = Test-PdcConfiguration
+        $result = Test-PDCConfiguration
 
         if(-not $result.Check){
             Stop-PSFFunction -Message $result.Message -Target $result -Continue
