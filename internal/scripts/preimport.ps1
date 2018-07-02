@@ -13,6 +13,8 @@ $supportedVersions = @(
     'Microsoft Windows Server 2012 R2 Standard',
     'Microsoft Windows Server 2012 R2 Enterprise'
 )
+
+# Get the OS details
 $osDetails = Get-CimInstance Win32_OperatingSystem | Select-Object Caption, Description, Name, OSType, Version
 
 # Check which version of windows we're dealing with
