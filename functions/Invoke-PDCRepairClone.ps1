@@ -21,6 +21,17 @@ function Invoke-PDCRepairClone {
     Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
     To connect as a different Windows user, run PowerShell as that user.
 
+.PARAMETER EnableException
+    By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+    This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+    Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+
+.PARAMETER WhatIf
+    If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
+
+.PARAMETER Confirm
+    If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
+
 .NOTES
     Author: Sander Stad (@sqlstad, sqlstad.nl)
 
@@ -42,9 +53,9 @@ function Invoke-PDCRepairClone {
     param(
         [Parameter(Mandatory = $true)]
         [string[]]$HostName,
-
         [System.Management.Automation.PSCredential]
-        $SqlCredential
+        $SqlCredential,
+        [switch]$EnableException
     )
 
     begin {
@@ -87,10 +98,10 @@ function Invoke-PDCRepairClone {
             # Get the clones registered for the host
             try {
                 Write-PSFMessage -Message "Get the clones for host $hst" -Level Verbose
-                $results = Invoke-DbaSqlQuery -SqlInstance $ecDatabaseServer -Database $ecDatabaseName -Query $query
+                $results = Invoke-DbaSqlQuery -SqlInstance $pdcSqlInstance -Database $pdcDatabase -Query $query
             }
             catch {
-                Stop-PSFFunction -Message "Couldn't get the clones for $hst" -Target $ecDatabaseServer -ErrorRecord $_ -Continue
+                Stop-PSFFunction -Message "Couldn't get the clones for $hst" -Target $pdcSqlInstance -ErrorRecord $_ -Continue
             }
 
             # Loop through the results

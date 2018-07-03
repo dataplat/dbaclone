@@ -34,6 +34,17 @@ function Remove-PDCClone {
 .PARAMETER ExcludeDatabase
     Allows to filter to exclude specific databases
 
+.PARAMETER EnableException
+    By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+    This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+    Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+
+.PARAMETER WhatIf
+    If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
+
+.PARAMETER Confirm
+    If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
+
 .NOTES
     Author: Sander Stad (@sqlstad, sqlstad.nl)
 
@@ -66,19 +77,14 @@ function Remove-PDCClone {
         [parameter(Mandatory = $true)]
         [ValidateNotNullOrEmpty()]
         [string[]]$HostName,
-
         [System.Management.Automation.PSCredential]
         $SqlCredential,
-
         [System.Management.Automation.PSCredential]
         $Credential,
-
         [string[]]$Database,
-
         [string[]]$ExcludeDatabase,
-
-        [switch]$All
-
+        [switch]$All,
+        [switch]$EnableException
     )
 
     begin {

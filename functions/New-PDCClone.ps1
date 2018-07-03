@@ -83,30 +83,20 @@ function New-PDCClone {
         [parameter(Mandatory = $true)]
         [ValidateNotNullOrEmpty()]
         [object[]]$SqlInstance,
-
         [System.Management.Automation.PSCredential]
         $SqlCredential,
-
         [System.Management.Automation.PSCredential]
         $Credential,
-
         [parameter(Mandatory = $true, ParameterSetName = "ByParent")]
         [string]$ParentVhd,
-
         [string]$Destination,
-
         [string]$CloneName,
-
         [parameter(Mandatory = $true, ParameterSetName = "ByLatest")]
         [string[]]$Database,
-
         [parameter(Mandatory = $true, ParameterSetName = "ByLatest")]
         [switch]$LatestImage,
-
         [switch]$Disabled,
-
         [switch]$Force,
-
         [switch]$EnableException
     )
 

@@ -47,12 +47,9 @@ function Test-PDCConfiguration {
 
     param(
         [object]$SqlInstance,
-
         [System.Management.Automation.PSCredential]
         $SqlCredential,
-
         [string]$Database,
-
         [switch]$EnableException
     )
 

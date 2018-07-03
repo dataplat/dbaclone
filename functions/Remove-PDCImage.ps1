@@ -35,11 +35,10 @@ function Remove-PDCImage {
         [parameter(Mandatory = $true)]
         [ValidateNotNullOrEmpty()]
         [string[]]$ImageLocation,
-
         [System.Management.Automation.PSCredential]
         $Credential,
-
-        [switch]$Force
+        [switch]$Force,
+        [switch]$EnableException
     )
 
     begin {
