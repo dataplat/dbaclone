@@ -147,7 +147,7 @@ function New-PDCImage {
         # Make up the data from the network path
         try {
             [uri]$uri = New-Object System.Uri($ImageNetworkPath)
-            $networkHost = $uri.Host
+            $uriHost = $uri.Host
         }
         catch {
             Stop-PSFFunction -Message "The image network path $ImageNetworkPath is not valid" -ErrorRecord $_ -Target $ImageNetworkPath
@@ -155,7 +155,7 @@ function New-PDCImage {
         }
 
         # Setup the computer object
-        $computer = [PsfComputer]$networkHost
+        $computer = [PsfComputer]$uriHost
 
         if (-not $computer.IsLocalhost) {
             $command = "Convert-PDCLocalUncPathToLocalPath -UncPath '$ImageNetworkPath'"

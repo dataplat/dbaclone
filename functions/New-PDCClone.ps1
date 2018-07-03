@@ -128,7 +128,7 @@ function New-PDCClone {
         # Make up the data from the network path
         try {
             [uri]$uri = New-Object System.Uri($Destination)
-            $networkHost = $uri.Host
+            $uriHost = $uri.Host
         }
         catch {
             Stop-PSFFunction -Message "The destination path $Destination is not valid" -ErrorRecord $_ -Target $Destination
@@ -136,7 +136,7 @@ function New-PDCClone {
         }
 
         # Setup the computer object
-        $computer = [PsfComputer]$networkHost
+        $computer = [PsfComputer]$uriHost
 
         if (-not $computer.IsLocalhost) {
             $command = "Convert-PDCLocalUncPathToLocalPath -UncPath '$ImageNetworkPath'"
