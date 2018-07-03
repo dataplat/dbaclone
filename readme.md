@@ -15,3 +15,24 @@ There are multiple scenarios where you could use the module with
 * Create multiple local copies of a database
 * Make sure there tests are
 
+
+## Prerequisites
+
+As with every piece of software we need to set some prerequisites to make this module work.
+
+* PowerShell 5 or above
+* Hyper-V
+* SQL Server instance meant
+
+## How does it work
+
+The process consists of the following steps:
+
+1. Create an image of the database
+2. Create a clone based on an image
+
+
+
+
+
+
