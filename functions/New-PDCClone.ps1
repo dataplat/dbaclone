@@ -126,13 +126,15 @@ function New-PDCClone {
         Write-PSFMessage -Message "Started image creation" -Level Verbose
 
         # Make up the data from the network path
-        try {
-            [uri]$uri = New-Object System.Uri($Destination)
-            $uriHost = $uri.Host
-        }
-        catch {
-            Stop-PSFFunction -Message "The destination path $Destination is not valid" -ErrorRecord $_ -Target $Destination
-            return
+        if ($Destination.StartsWith("\\")) {
+            try {
+                [uri]$uri = New-Object System.Uri($Destination)
+                $uriHost = $uri.Host
+            }
+            catch {
+                Stop-PSFFunction -Message "The destination path $Destination is not valid" -ErrorRecord $_ -Target $Destination
+                return
+            }
         }
 
         # Setup the computer object
@@ -310,10 +312,9 @@ function New-PDCClone {
                 try {
                     # Get the partition based on the disk
                     $partition = Get-Partition -Disk $disk
-                    $partition
+
                     # Create an access path for the disk
-                    #$null = Add-PartitionAccessPath -DiskNumber $disk.Number -PartitionNumber $partition[1].PartitionNumber -AccessPath $accessPath -ErrorAction Ignore
-                    $null = Add-PartitionAccessPath -DiskNumber $disk.Number -PartitionNumber 2 -AccessPath $accessPath -ErrorAction Ignore
+                    $null = Add-PartitionAccessPath -DiskNumber $disk.Number -PartitionNumber $partition[1].PartitionNumber -AccessPath $accessPath -ErrorAction Ignore
                 }
                 catch {
                     Stop-PSFFunction -Message "Couldn't create access path for partition" -ErrorRecord $_ -Target $partition -Continue
@@ -327,7 +328,7 @@ function New-PDCClone {
 
                 # Loop through each of the database files and add them to the file structure
                 foreach ($dbFile in $databaseFiles) {
-                    $dbFileStructure.Add($dbFile.FullName)
+                    $null = $dbFileStructure.Add($dbFile.FullName)
                 }
 
                 # Mount the database
@@ -447,8 +448,6 @@ function New-PDCClone {
                 else {
                     Stop-PSFFunction -Message "Image couldn't be found" -Target $imageName -Continue
                 }
-
-
 
                 # Add the results to the custom object
                 [PSCustomObject]@{
