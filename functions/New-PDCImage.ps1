@@ -225,11 +225,18 @@ function New-PDCImage {
             Write-PSFMessage -Message "Creating image for database $db from $SourceSqlInstance" -Level Verbose
 
             # Check the database size to the available disk space
-            $availableMB = (Get-PSDrive -Name $ImageLocalPath.Substring(0, 1)).Free / 1MB
+            if ($computer.IsLocalhost) {
+                $availableMB = (Get-PSDrive -Name $ImageLocalPath.Substring(0, 1)).Free / 1MB
+            }
+            else {
+                $command = [ScriptBlock]::Create("(Get-PSDrive -Name $($ImageLocalPath).Substring(0, 1)).Free / 1MB")
+                $ImageLocalPath = Invoke-PSFCommand -ComputerName $computer -ScriptBlock $commandGetLocalPath -Credential $DestinationCredential
+            }
+
             $dbSizeMB = $db.Size
 
             if ($availableMB -lt $dbSizeMB) {
-                Stop-PSFFunction -Message "Size of database $($db.Name) does not find within the image local path" -Target $db -Continue
+                Stop-PSFFunction -Message "Size of database $($db.Name) does not fit within the image local path" -Target $db -Continue
             }
 
             # Setup the image variables
@@ -354,8 +361,11 @@ function New-PDCImage {
             # Dismount the vhd
             try {
                 Write-PSFMessage -Message "Dismounting vhd" -Level Verbose
+
+                # Dismount the VHD
                 $null = Dismount-VHD -Path $vhdPath
 
+                # Remove the access path
                 $null = Remove-Item -Path $accessPath -Force
             }
             catch {
@@ -363,7 +373,6 @@ function New-PDCImage {
             }
 
             # Write the data to the database
-
             $imageLocation = "$($uri.LocalPath)\$imageName.vhdx"
             $sizeMB = $dbSizeMB
             $databaseName = $db.Name
@@ -389,7 +398,6 @@ function New-PDCImage {
                 $result += Invoke-DbaSqlQuery -SqlInstance $pdcSqlInstance -Database $pdcDatabase -Query $query -EnableException
             }
             catch {
-
                 Stop-PSFFunction -Message "Couldn't add image to database" -Target $imageName -ErrorRecord $_
             }
 
