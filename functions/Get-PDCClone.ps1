@@ -1,54 +1,52 @@
 function Get-PDCClone {
+<#
+.SYNOPSIS
+    Get-PDCClone get on or more clones
 
-    <#
-    .SYNOPSIS
-        Get-PDCClone get on or more clones
+.DESCRIPTION
+    Get-PDCClone will retrieve the clones and apply filters if needed.
+    By default all the clones are returned
 
-    .DESCRIPTION
-        Get-PDCClone will retrieve the clones and apply filters if needed.
-        By default all the clones are returned
+.PARAMETER HostName
+    Filter based on the hostname
 
-    .PARAMETER HostName
-        Filter based on the hostname
+.PARAMETER Database
+    Filter based on the database
 
-    .PARAMETER Database
-        Filter based on the database
+.PARAMETER ImageID
+    Filter based on the image id
 
-    .PARAMETER ImageID
-        Filter based on the image id
+.PARAMETER ImageName
+    Filter based on the image name
 
-    .PARAMETER ImageName
-        Filter based on the image name
+.PARAMETER ImageLocation
+    Filter based on the image location
 
-    .PARAMETER ImageLocation
-        Filter based on the image location
+.NOTES
+    Author: Sander Stad (@sqlstad, sqlstad.nl)
 
-    .NOTES
-        Author: Sander Stad (@sqlstad, sqlstad.nl)
+    Website: https://psdatabaseclone.io
+    Copyright: (C) Sander Stad, sander@sqlstad.nl
+    License: MIT https://opensource.org/licenses/MIT
 
-        Website: https://psdatabaseclone.io
-        Copyright: (C) Sander Stad, sander@sqlstad.nl
-        License: MIT https://opensource.org/licenses/MIT
+.LINK
+    https://psdatabaseclone.io/
 
-    .LINK
-        https://psdatabaseclone.io/
+.EXAMPLE
+    Get-PDCClone -HostName host1, host2
 
-    .EXAMPLE
-        Get-PDCClone -HostName host1, host2
+    Retrieve the clones for host1 and host2
 
-        Retrieve the clones for host1 and host2
+.EXAMPLE
+    Get-PDCClone -Database DB1
 
-    .EXAMPLE
-        Get-PDCClone -Database DB1
+    Get all the clones that have the name DB1
 
-        Get all the clones that have the name DB1
+.EXAMPLE
+    Get-PDCClone -ImageName DB1_20180703085917
 
-    .EXAMPLE
-        Get-PDCClone -ImageName DB1_20180703085917
-
-        Get all the clones that were made with image "DB1_20180703085917"
-
-    #>
+    Get all the clones that were made with image "DB1_20180703085917"
+#>
 
     [CmdLetBinding()]
 

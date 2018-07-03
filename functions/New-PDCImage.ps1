@@ -1,5 +1,5 @@
 function New-PDCImage {
-    <#
+<#
 .SYNOPSIS
     New-PDCImage creates a new image
 
@@ -118,10 +118,10 @@ function New-PDCImage {
     begin {
 
         # Test the module database setup
-        try{
+        try {
             Test-PDCConfiguration -EnableException
         }
-        catch{
+        catch {
             Stop-PSFFunction -Message "Something is wrong in the module configuration" -ErrorRecord $_ -Continue
         }
 
