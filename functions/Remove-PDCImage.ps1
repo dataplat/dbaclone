@@ -43,19 +43,20 @@ function Remove-PDCImage {
     )
 
     begin {
-        Write-PSFMessage -Message "Started removing database images" -Level Verbose
 
         # Test the module database setup
-        $result = Test-PDCConfiguration
-
-        if (-not $result.Check) {
-            Stop-PSFFunction -Message $result.Message -Target $result -Continue
-            return
+        try {
+            Test-PDCConfiguration -EnableException
+        }
+        catch {
+            Stop-PSFFunction -Message "Something is wrong in the module configuration" -ErrorRecord $_ -Continue
         }
 
         # Get the database values
-        $pdcDatabaseServer = $result.SqlInstance
-        $pdcDatabaseName = $result.Database
+        $pdcSqlInstance = Get-PSFConfigValue -FullName psdatabaseclone.database.server
+        $pdcDatabase = Get-PSFConfigValue -FullName psdatabaseclone.database.name
+
+        Write-PSFMessage -Message "Started removing database images" -Level Verbose
     }
 
     process {
@@ -86,7 +87,7 @@ function Remove-PDCImage {
             # Try to get the neccesary info from the EasyClone database
             try {
                 Write-PSFMessage -Message "Retrieving data for image '$image'" -Level Verbose
-                $results = Invoke-DbaSqlQuery -SqlInstance $ecDatabaseServer -Database $ecDatabaseName -Query $query
+                $results = Invoke-DbaSqlQuery -SqlInstance $pdcSqlInstance -Database $pdcDatabase -Query $query
             }
             catch {
                 Stop-PSFFunction -Message "Couldn't retrieve clone records for host $hst" -Target $hst -Continue
@@ -121,7 +122,7 @@ function Remove-PDCImage {
                     Write-PSFMessage -Message "Removing image '$image' from file system" -Level Verbose
                     $null = Remove-Item -Path $image -Credential $Credential -Force:$Force
                 }
-                else{
+                else {
                     Write-PSFMessage -Message "Couldn't find image $image" -Level Verbose
                 }
             }

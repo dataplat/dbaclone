@@ -49,12 +49,15 @@ function Invoke-PDCRepairClone {
 
     begin {
         # Test the module database setup
-        $result = Test-PDCConfiguration
-
-        if(-not $result.Check){
-            Stop-PSFFunction -Message $result.Message -Target $result -Continue
-            return
+        try {
+            Test-PDCConfiguration -EnableException
         }
+        catch {
+            Stop-PSFFunction -Message "Something is wrong in the module configuration" -ErrorRecord $_ -Continue
+        }
+
+        $pdcSqlInstance = Get-PSFConfigValue -FullName psdatabaseclone.database.server
+        $pdcDatabase = Get-PSFConfigValue -FullName psdatabaseclone.database.name
 
     }
 

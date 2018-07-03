@@ -1,5 +1,5 @@
 function Remove-PDCClone {
-<#
+    <#
 .SYNOPSIS
     Remove-PDCClone removes one or more clones from a host
 
@@ -82,15 +82,19 @@ function Remove-PDCClone {
     )
 
     begin {
-        Write-PSFMessage -Message "Started removing database clones" -Level Verbose
 
         # Test the module database setup
-        $result = Test-PDCConfiguration
-
-        if(-not $result.Check){
-            Stop-PSFFunction -Message $result.Message -Target $result -Continue
-            return
+        try {
+            Test-PDCConfiguration -EnableException
         }
+        catch {
+            Stop-PSFFunction -Message "Something is wrong in the module configuration" -ErrorRecord $_ -Continue
+        }
+
+        $pdcSqlInstance = Get-PSFConfigValue -FullName psdatabaseclone.database.server
+        $pdcDatabase = Get-PSFConfigValue -FullName psdatabaseclone.database.name
+
+        Write-PSFMessage -Message "Started removing database clones" -Level Verbose
     }
 
     process {
@@ -123,7 +127,7 @@ function Remove-PDCClone {
                 WHERE h.HostName LIKE ( '%$($computer.ComputerName)%' ) "
 
             try {
-                $results += Invoke-DbaSqlQuery -SqlInstance $ecDatabaseServer -Database $ecDatabaseName -Query $query
+                $results += Invoke-DbaSqlQuery -SqlInstance $pdcSqlInstance -Database $pdcDatabase -Query $query
             }
             catch {
                 Stop-PSFFunction -Message "Couldn't retrieve clone records for host $hst" -Target $hst -Continue
@@ -197,7 +201,7 @@ function Remove-PDCClone {
                         AND c.CloneLocation = '$($result.CloneLocation)';
                 "
 
-                Invoke-DbaSqlQuery -SqlInstance $ecDatabaseServer -Database $ecDatabaseName -Query $query
+                Invoke-DbaSqlQuery -SqlInstance $pdcSqlInstance -Database $pdcDatabase -Query $query
             }
             catch {
                 Stop-PSFFunction -Message "Could not remove clone record from database" -ErrorRecord $_ -Target $result -Continue
