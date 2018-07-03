@@ -82,7 +82,6 @@ function New-PDCImage {
     param(
         [parameter(Mandatory = $true)]
         [ValidateNotNullOrEmpty()]
-        [Alias("SourceServerInstance", "SourceSqlServerSqlServer")]
         [object]$SourceSqlInstance,
 
         [System.Management.Automation.PSCredential]
@@ -90,7 +89,6 @@ function New-PDCImage {
 
         [Parameter(Mandatory = $true)]
         [ValidateNotNullOrEmpty()]
-        [Alias("DestinationServerInstance", "DestinationSqlServerSqlServer")]
         [object]$DestinationSqlInstance,
 
         [System.Management.Automation.PSCredential]
@@ -112,23 +110,23 @@ function New-PDCImage {
 
         [switch]$UseLastFullBackup,
 
-        [switch]$Force
+        [switch]$Force,
 
+        [switch]$EnableException
     )
 
     begin {
 
         # Test the module database setup
-        $result = Test-PDCConfiguration
-
-        if (-not $result.Check) {
-            Stop-PSFFunction -Message $result.Message -Target $result -Continue
-            return
+        try{
+            Test-PDCConfiguration -EnableException
+        }
+        catch{
+            Stop-PSFFunction -Message "Something is wrong in the module configuration" -ErrorRecord $_ -Continue
         }
 
         $pdcSqlInstance = Get-PSFConfigValue -FullName psdatabaseclone.database.Server
         $pdcDatabase = Get-PSFConfigValue -FullName psdatabaseclone.database.name
-
 
         Write-PSFMessage -Message "Started image creation" -Level Output
 
@@ -169,11 +167,11 @@ function New-PDCImage {
             try {
                 if ($computer.IsLocalhost) {
                     $ImageLocalPath = Convert-PDCLocalUncPathToLocalPath -UncPath $ImageNetworkPath
-                    Write-PSFMessage -Message "Converted '$ImageNetworkPath' to '$ImageLocalPath'" -Level Verbose
                 }
                 else {
                     $ImageLocalPath = Invoke-PSFCommand -ComputerName $computer -ScriptBlock $commandGetLocalPath -Credential $DestinationCredential
                 }
+                Write-PSFMessage -Message "Converted '$ImageNetworkPath' to '$ImageLocalPath'" -Level Verbose
             }
             catch {
                 Stop-PSFFunction -Message "Something went wrong getting the local image path" -Target $ImageNetworkPath
@@ -214,6 +212,8 @@ function New-PDCImage {
         # Set time stamp
         $timestamp = Get-Date -format "yyyyMMddHHmmss"
 
+        # Create the item list array
+        $list = @()
     }
 
     process {
@@ -244,7 +244,7 @@ function New-PDCImage {
             if ($CreateFullBackup) {
                 # Create the backup
                 Write-PSFMessage -Message "Creating new full backup for database $db" -Level Verbose
-                Backup-DbaDatabase -SqlInstance $SourceSqlInstance -Database $db.Name
+                $null = Backup-DbaDatabase -SqlInstance $SourceSqlInstance -Database $db.Name
 
                 # Get the last full backup
                 Write-PSFMessage -Message "Trying to retrieve the last full backup for $db" -Level Verbose
@@ -260,7 +260,7 @@ function New-PDCImage {
             # try to create the new VHD
             try {
                 Write-PSFMessage -Message "Create the vhd $imageName.vhdx" -Level Verbose
-                $vhdDisk = New-PDCVhdDisk -Destination $imagePath -FileName "$imageName.vhdx"
+                $null = New-PDCVhdDisk -Destination $imagePath -FileName "$imageName.vhdx"
             }
             catch {
                 Stop-PSFFunction -Message "Couldn't create vhd $imageName" -Target "$imageName.vhd" -ErrorRecord $_ -Continue
@@ -282,19 +282,19 @@ function New-PDCImage {
                 # Check if access path is already present
                 if (-not (Test-Path -Path $accessPath)) {
                     try {
-                        New-Item -Path $accessPath -ItemType Directory -Force | Out-Null
+                        $null = New-Item -Path $accessPath -ItemType Directory -Force:$Force
                     }
                     catch {
                         Stop-PSFFunction -Message "Couldn't create access path directory" -ErrorRecord $_ -Target $accessPath -Continue
                     }
                 }
 
-                # Create an access path for the disk
+                # Get the properties of the disk and partition
                 $disk = $diskResult.Disk
                 $partition = $diskResult.Partition
 
                 # Add the access path to the mounted disk
-                Add-PartitionAccessPath -DiskNumber $disk.DiskNumber -PartitionNumber $partition.PartitionNumber -AccessPath $accessPath -ErrorAction Ignore
+                $null = Add-PartitionAccessPath -DiskNumber $disk.Number -PartitionNumber $partition[1].PartitionNumber -AccessPath $accessPath -ErrorAction SilentlyContinue
             }
             catch {
                 Stop-PSFFunction -Message "Couldn't create access path for partition" -ErrorRecord $_ -Target $diskResult.partition
@@ -345,52 +345,77 @@ function New-PDCImage {
             try {
                 Write-PSFMessage -Message "Detaching database $tempDbName on $DestinationSqlInstance" -Level Verbose
 
-                $query = "EXEC master.dbo.sp_detach_db @dbname = N'$tempDbName'"
-
-                Invoke-DbaSqlQuery -SqlInstance $DestinationSqlInstance -SqlCredential $DestinationSqlCredential -Query $query
+                $null = Dismount-DbaDatabase -SqlInstance $DestinationSqlInstance -Database $tempDbName -SqlCredential $DestinationSqlCredential
             }
             catch {
-                Stop-PSFFunction -Message "Couldn't detach database $db as $tempDbName on $DestinationSqlInstance" -Target $imageName -ErrorRecord $_ -Continue
+                Stop-PSFFunction -Message "Couldn't detach database $db as $tempDbName on $DestinationSqlInstance" -Target $db -ErrorRecord $_ -Continue
             }
 
             # Dismount the vhd
             try {
                 Write-PSFMessage -Message "Dismounting vhd" -Level Verbose
-                Dismount-VHD -Path $vhdPath
+                $null = Dismount-VHD -Path $vhdPath
 
-                Remove-Item -Path $accessPath -Force
+                $null = Remove-Item -Path $accessPath -Force
             }
             catch {
                 Stop-PSFFunction -Message "Couldn't dismount vhd" -Target $imageName -ErrorRecord $_ -Continue
             }
 
             # Write the data to the database
-            try {
-                $imageLocation = "$($uri.LocalPath)\$imageName.vhdx"
-                $sizeMB = $dbSizeMB
-                $databaseName = $db.Name
-                $databaseTS = $lastFullBackup.Start
 
-                $query = "
+            $imageLocation = "$($uri.LocalPath)\$imageName.vhdx"
+            $sizeMB = $dbSizeMB
+            $databaseName = $db.Name
+            $databaseTS = $lastFullBackup.Start
+
+            $query = "
                     DECLARE @ImageID INT;
                     EXECUTE dbo.Image_New @ImageID = @ImageID OUTPUT,				  -- int
-                                        @ImageName = '$imageName'                     -- varchar(100)
+                                        @ImageName = '$imageName',                    -- varchar(100)
                                         @ImageLocation = '$imageLocation',			  -- varchar(255)
                                         @SizeMB = $sizeMB,							  -- int
                                         @DatabaseName = '$databaseName',			  -- varchar(100)
                                         @DatabaseTimestamp = '$databaseTS'           -- datetime
+
+                    SELECT @ImageID as ImageID
                 "
 
-                Write-PSFMessage -Message "Query New Image`n$query" -Level Debug
+            Write-PSFMessage -Message "Query New Image`n$query" -Level Debug
 
+            try {
                 Write-PSFMessage -Message "Saving image information in database" -Level Verbose
-
-                Invoke-DbaSqlQuery -SqlInstance $pdcSqlInstance -Database $pdcDatabase -Query $query
-
+                $result = @()
+                $result += Invoke-DbaSqlQuery -SqlInstance $pdcSqlInstance -Database $pdcDatabase -Query $query -EnableException
             }
             catch {
-                Stop-PSFFunction -Message "Couldn't add image to database" -Target $imageName -ErrorRecord $_ -Continue
+
+                Stop-PSFFunction -Message "Couldn't add image to database" -Target $imageName -ErrorRecord $_
             }
+
+            <# if (Test-PSFFunctionInterrupt) {
+                Write-PSFMessage -Message "Cleaning up image after failure" -Level Verbose
+
+                # Clean up in case of failure
+                try {
+                    # Check if the image was written to database
+                    if ($result.Count -ge 1) {
+
+                        $query = "DELETE FROM Image WHERE ImageID = $($Result.ImageID)"
+
+                        $null = Invoke-DbaSqlQuery -SqlInstance $pdcSqlInstance -Database $pdcDatabase -Query $query -EnableException
+                    }
+
+                    # Remove file
+                    $null = Remove-Item -Path $imageLocation -Credential $DestinationCredential -Force:$Force
+                }
+                catch {
+                    Stop-PSFFunction -Message "Couldn't remove created image $imageLocation after failure" -Target $imageLocation -ErrorRecord $_ -Continue
+                }
+            }
+            else {
+
+            } #>
 
             # Add the results to the custom object
             [PSCustomObject]@{
