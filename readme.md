@@ -15,11 +15,11 @@ There are multiple scenarios where you could use the module with
 * Create multiple local copies of a database
 * Make sure there tests are
 
-
 ## Prerequisites
 
 As with every piece of software we need to set some prerequisites to make this module work.
 
+* Windows 10 (Professional, Enterprise or Education) or Windows Server 2012 R2 (Standard, Enterprise or Datacenter) and up
 * PowerShell 5 or above
 * Hyper-V
 * SQL Server instance meant
