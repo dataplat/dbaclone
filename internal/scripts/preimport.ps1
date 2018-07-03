@@ -30,7 +30,7 @@ if ($osDetails.Caption -notin $supportedVersions ) {
 if ($osDetails.Caption -like '*Windows 10*') {
     $feature = Get-WindowsOptionalFeature -FeatureName 'Microsoft-Hyper-V-All' -Online
     if ($feature.State -ne "Enabled") {
-        Write-PSFMessage -Message 'Please enable the Hyper-V feature with "Enable-WindowsOptionalFeature -Online -FeatureName Microsoft-Hyper-V–All"' -Level Warning  -FunctionName 'Pre Import'
+        Write-PSFMessage -Message 'Please enable the Hyper-V feature with "Enable-WindowsOptionalFeature -Online -FeatureName Microsoft-Hyper-V -All"' -Level Warning  -FunctionName 'Pre Import'
     }
 }
 elseif ($osDetails.Caption -like '*Windows Server*') {
