@@ -106,7 +106,6 @@ function Initialize-PDCVhdDisk {
 
         # Add the results to the custom object
         [PSCustomObject]@{
-            DiskNumber = $disk.DiskNumber
             Disk       = $disk
             Partition  = (Get-Partition -Disk $disk)
             Volume     = $volume
