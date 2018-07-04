@@ -1,4 +1,4 @@
-## PSDatabaseClone
+﻿## PSDatabaseClone
 <img src="https://www.sqlstad.nl/wp-content/uploads/2018/07/PSDatabaseClone_Logo_128.png" align="left" with="128px" height="131px"/> PSDatabaseClone is a PowerShell module for creating SQL Server database images and clones.
 It enables administrator to supply environments with database copies that are a fraction of the original size.
 

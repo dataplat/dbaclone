@@ -1,4 +1,4 @@
-$moduleRoot = (Resolve-Path "$PSScriptRoot\..\..").Path
+﻿$moduleRoot = (Resolve-Path "$PSScriptRoot\..\..").Path
 
 . "$PSScriptRoot\FileIntegrity.Exceptions.ps1"
 
@@ -24,8 +24,8 @@ function Get-FileEncoding
 
 	[byte[]]$byte = get-content -Encoding byte -ReadCount 4 -TotalCount 4 -Path $Path
 
-	if ($byte[0] -eq 0xef -and $byte[1] -eq 0xbb -and $byte[2] -eq 0xbf) { 'UTF8 with BOM' }
-	elseif ($byte[0] -eq 0x73 -and $byte[1] -eq 0x64 -and $byte[2] -eq 0x6C) { 'UTF-8' }
+	if ($byte[0] -eq 0xef -and $byte[1] -eq 0xbb -and $byte[2] -eq 0xbf) { 'UTF8' }
+	elseif ($byte[0] -eq 0x73 -and $byte[1] -eq 0x64 -and $byte[2] -eq 0x6C) { 'UTF8' }
 	elseif ($byte[0] -eq 0xfe -and $byte[1] -eq 0xff) { 'Unicode' }
 	elseif ($byte[0] -eq 0 -and $byte[1] -eq 0 -and $byte[2] -eq 0xfe -and $byte[3] -eq 0xff) { 'UTF32' }
 	elseif ($byte[0] -eq 0x2b -and $byte[1] -eq 0x2f -and $byte[2] -eq 0x76) { 'UTF7' }

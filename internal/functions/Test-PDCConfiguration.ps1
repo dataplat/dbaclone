@@ -1,4 +1,4 @@
-function Test-PDCConfiguration {
+﻿function Test-PDCConfiguration {
 <#
 .SYNOPSIS
     Test the configuration of the module

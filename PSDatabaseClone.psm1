@@ -1,4 +1,4 @@
-$script:ModuleRoot = $PSScriptRoot
+﻿$script:ModuleRoot = $PSScriptRoot
 $script:ModuleVersion = "0.1.0.0"
 
 function Import-ModuleFile

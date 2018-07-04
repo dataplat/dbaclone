@@ -1,4 +1,4 @@
-function Remove-PDCImage {
+﻿function Remove-PDCImage {
     <#
 .SYNOPSIS
     Remove-PDCImage removes one or more images

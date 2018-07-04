@@ -1,4 +1,4 @@
-function New-PDCClone {
+﻿function New-PDCClone {
 <#
 .SYNOPSIS
     New-PDCClone creates a new clone

@@ -1,4 +1,4 @@
-$commandname = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
+﻿$commandname = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 $rootPath = Split-Path (Split-Path $PSScriptRoot -Parent) -Parent
 
 Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan

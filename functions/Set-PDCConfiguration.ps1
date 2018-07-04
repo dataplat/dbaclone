@@ -1,4 +1,4 @@
-function Set-PDCConfiguration {
+﻿function Set-PDCConfiguration {
 <#
 .SYNOPSIS
     Set-PDCConfiguration sets up the module
