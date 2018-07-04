@@ -4,7 +4,8 @@ It enables administrator to supply environments with database copies that are a 
 
 Do you have any ideas for new commands? Please propose them as <a href="https://psdatabaseclone.io/issues" target="_blank">issues</a> and let us know what you'd like to see. Bug reports should also be filed under this repository's issues section.
 
-
+<br/>
+<br/>
 
 
 ## Usage scenarios
