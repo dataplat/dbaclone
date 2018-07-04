@@ -231,8 +231,7 @@ function New-PDCClone {
                     $parentVhdFile = $parentVhdFileName.Split(".")[0]
                 }
                 else {
-                    Stop-PSFFunction -Message "Parent vhd could not be found" -Target $SqlInstance
-                    return
+                    Stop-PSFFunction -Message "Parent vhd could not be found" -Target $SqlInstance -Continue
                 }
 
                 # Check clone name parameter
