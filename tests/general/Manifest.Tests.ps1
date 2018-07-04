@@ -1,7 +1,8 @@
 Describe "Validating the module manifest" {
 	$moduleRoot = (Resolve-Path "$PSScriptRoot\..\..").Path
 	$manifest = ((Get-Content "$moduleRoot\PSDatabaseClone.psd1") -join "`n") | Invoke-Expression
-	[version]$moduleVersion = Get-Item "$moduleRoot\PSDatabaseClone.psm1" | Select-String -Pattern '\$script:PSModuleVersion = "(.*?)"' | ForEach-Object { $_.Matches[0].Groups[1].Value }
+	#[version]$moduleVersion = Get-Item "$moduleRoot\PSDatabaseClone.psm1" | Select-String -Pattern '\$script:PSModuleVersion = "(.*?)"' | ForEach-Object { $_.Matches[0].Groups[1].Value }
+	[version]$moduleVersion = Get-Item "$moduleRoot\PSDatabaseClone.psm1" | Select-String -Pattern '\$script:ModuleVersion = "(.*?)"' | ForEach-Object { $_.Matches[0].Groups[1].Value }
 	Context "Basic resources validation" {
 		It "Exports all functions in the public folder" {
 			$files = Get-ChildItem "$moduleRoot\functions" -Recurse -File -Filter "*.ps1"
