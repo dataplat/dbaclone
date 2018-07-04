@@ -63,7 +63,7 @@ Get-PDCClone -HostName HOST1
 Remove the clones
 
 ```powershell
-Remove-PDCClone -Database DB1_Clone1, DB2_Clone1
+Remove-PDCClone -HostName HOST1 -Database DB1_Clone1, DB2_Clone1
 ```
 
 Remove the clones using the Get-PDCClone
