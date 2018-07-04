@@ -1,4 +1,4 @@
-﻿function Initialize-PDCVhdDisk {
+function Initialize-PDCVhdDisk {
 <#
 .SYNOPSIS
     Initialize-PDCVhdDisk initialized the VHD

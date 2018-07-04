@@ -1,4 +1,4 @@
-﻿function Invoke-PDCRepairClone {
+function Invoke-PDCRepairClone {
 <#
 .SYNOPSIS
     Invoke-PDCRepairClone repairs the clones

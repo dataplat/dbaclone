@@ -1,4 +1,4 @@
-﻿function New-PDCImage {
+function New-PDCImage {
 <#
 .SYNOPSIS
     New-PDCImage creates a new image

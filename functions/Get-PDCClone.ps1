@@ -1,4 +1,4 @@
-﻿function Get-PDCClone {
+function Get-PDCClone {
 <#
 .SYNOPSIS
     Get-PDCClone get on or more clones

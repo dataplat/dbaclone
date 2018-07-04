@@ -1,4 +1,4 @@
-﻿# Check if window is in elevated mode
+# Check if window is in elevated mode
 $elevated = ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
 if ( -not $elevated ) {
     Stop-PSFFunction -Message "Module requires elevation" -Target $elevated  -FunctionName 'Pre Import'

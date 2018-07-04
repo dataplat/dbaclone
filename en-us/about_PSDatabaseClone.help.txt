@@ -1,4 +1,4 @@
-﻿TOPIC
+TOPIC
 	about_PSDatabaseClone
 
 SHORT DESCRIPTION

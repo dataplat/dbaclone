@@ -1,4 +1,4 @@
-﻿# Tab Expansion
+# Tab Expansion
 
 ## Description
 

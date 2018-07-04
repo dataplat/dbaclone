@@ -1,4 +1,4 @@
-﻿function New-PDCVhdDisk {
+function New-PDCVhdDisk {
 <#
 .SYNOPSIS
     New-PDCVhdDisk creates a new VHD

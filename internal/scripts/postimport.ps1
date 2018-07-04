@@ -1,4 +1,4 @@
-﻿# Add all things you want to run after importing the main code
+# Add all things you want to run after importing the main code
 
 # Load Configurations
 foreach ($file in (Get-ChildItem "$ModuleRoot\internal\configurations\*.ps1" -ErrorAction Ignore)) {
