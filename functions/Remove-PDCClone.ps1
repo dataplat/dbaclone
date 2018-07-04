@@ -1,5 +1,5 @@
 function Remove-PDCClone {
-<#
+    <#
 .SYNOPSIS
     Remove-PDCClone removes one or more clones from a host
 
@@ -71,10 +71,10 @@ function Remove-PDCClone {
     Removes all clones from Host1
 
 #>
-    [CmdLetBinding()]
+    [CmdLetBinding(, DefaultParameterSetName = "HostName")]
 
     param(
-        [parameter(Mandatory = $true)]
+        [parameter(Mandatory = $true, ParameterSetName = "HostName")]
         [ValidateNotNullOrEmpty()]
         [string[]]$HostName,
         [System.Management.Automation.PSCredential]
@@ -84,6 +84,8 @@ function Remove-PDCClone {
         [string[]]$Database,
         [string[]]$ExcludeDatabase,
         [switch]$All,
+        [parameter(ValueFromPipeline = $true, ParameterSetName = "Clone")]
+        [object[]]$InputObject,
         [switch]$EnableException
     )
 
@@ -101,118 +103,104 @@ function Remove-PDCClone {
         $pdcDatabase = Get-PSFConfigValue -FullName psdatabaseclone.database.name
 
         Write-PSFMessage -Message "Started removing database clones" -Level Verbose
+
+        # Get all the items
+        $items = Get-PDCClone
+
+        if (-not $All) {
+            if ($HostName) {
+                Write-PSFMessage -Message "Filtering hostnames" -Level Verbose
+                $items = $items | Where-Object {$_.HostName -in $HostName}
+            }
+
+            if ($Database) {
+                Write-PSFMessage -Message "Filtering included databases" -Level Verbose
+                $items = $items | Where-Object {$_.DatabaseName -in $Database}
+            }
+
+            if ($ExcludeDatabase) {
+                Write-PSFMessage -Message "Filtering excluded databases" -Level Verbose
+                $items = $items | Where-Object {$_.DatabaseName -notin $Database}
+            }
+        }
+
+        # Append the items
+        $InputObject += $items
+
     }
 
     process {
         # Test if there are any errors
         if (Test-PSFFunctionInterrupt) { return }
 
-        # initialize the result variable
-        $result = $null
+        # Group the objects to make it easier to go through
+        $clones = $InputObject | Group-Object SqlInstance
 
         # Loop through each of the host names
-        foreach ($hst in $HostName) {
-
-            # Check the host parameter
-            if (-not $hst) {
-                Stop-PSFFunction -Message "The input '$hst' for the parameter HostName was not valid" -Target $hst -Continue
-            }
-
-            # Set the computer variable
-            $computer = [psfcomputer]$hst
-
-            $query = "
-                SELECT h.HostName,
-                    c.CloneLocation,
-                    c.AccessPath,
-                    c.SqlInstance,
-                    c.DatabaseName,
-                    c.IsEnabled
-                FROM dbo.Clone AS c
-                INNER JOIN dbo.Host AS h ON h.HostID = c.HostID
-                WHERE h.HostName LIKE ( '%$($computer.ComputerName)%' ) "
-
-            try {
-                $results += Invoke-DbaSqlQuery -SqlInstance $pdcSqlInstance -Database $pdcDatabase -Query $query
-            }
-            catch {
-                Stop-PSFFunction -Message "Couldn't retrieve clone records for host $hst" -Target $hst -Continue
-            }
-
-        } # End loop host name
-
-        # Check the database parameters
-        if ($Database) {
-            Write-PSFMessage -Message "Filtering included databases for host $($computer.ComputerName)" -Level Verbose
-            $results = $results | Where-Object {$_.DatabaseName -match $Database}
-        }
-
-        if ($ExcludeDatabase) {
-            Write-PSFMessage -Message "Filtering excluded databases for host $($computer.ComputerName)" -Level Verbose
-            $results = $results | Where-Object {$_.DatabaseName -notmatch $ExcludeDatabase}
-        }
-
-
-        # Loop through each of the results
-        foreach ($result in $results) {
+        foreach ($clone in $clones) {
 
             # Connect to the instance
-            Write-PSFMessage -Message "Attempting to connect to clone database server $($result.SqlInstance).." -Level Verbose
+            Write-PSFMessage -Message "Attempting to connect to clone database server $($clone.Name).." -Level Verbose
             try {
-                $server = Connect-DbaInstance -SqlInstance $result.SqlInstance -SqlCredential $SqlCredential
+                $server = Connect-DbaInstance -SqlInstance $clone.Name -SqlCredential $SqlCredential -SqlConnectionOnly
             }
             catch {
-                Stop-PSFFunction -Message "Could not connect to clone Sql Server instance $server" -ErrorRecord $_ -Target $server -Continue
+                Stop-PSFFunction -Message "Could not connect to Sql Server instance $($clone.Name)" -ErrorRecord $_ -Target $clone.Name -Continue
             }
 
-            # Remove the database
-            try {
-                Write-PSFMessage -Message "Removing database $($result.DatabaseName) from $($result.SqlInstance)" -Level Verbose
+            # Loop through each of the results
+            foreach ($item in $clone.Group) {
 
-                $null = Remove-DbaDatabase -SqlInstance $result.SqlInstance -SqlCredential $SqlCredential -Database $result.DatabaseName -Confirm:$false
-            }
-            catch {
-                Stop-PSFFunction -Message "Could not remove database $($result.DatabaseName) from $server" -ErrorRecord $_ -Target $server -Continue
-            }
+                # Remove the database
+                try {
+                    Write-PSFMessage -Message "Removing database $($item.DatabaseName) from $($item.SqlInstance)" -Level Verbose
 
-            # Dismounting the vhd
-            try {
-                Write-PSFMessage -Message "Dismounting disk $($result.DatabaseName) from $($result.SqlInstance)" -Level Verbose
-                Dismount-VHD -Path $result.CloneLocation
-            }
-            catch {
-                Stop-PSFFunction -Message "Could not dismount vhd $($result.CloneLocation)" -ErrorRecord $_ -Target $result -Continue
-            }
+                    $null = Remove-DbaDatabase -SqlInstance $item.SqlInstance -SqlCredential $SqlCredential -Database $item.DatabaseName -Confirm:$false -EnableException
+                }
+                catch {
+                    Stop-PSFFunction -Message "Could not remove database $($item.DatabaseName) from $server" -ErrorRecord $_ -Target $server -Continue
+                }
 
-            # Remove clone file and related access path
-            try {
-                Write-PSFMessage -Message "Removing vhd access path" -Level Verbose
-                Remove-Item -Path $result.AccessPath -Credential $Credential -Force | Out-Null
+                # Dismounting the vhd
+                try {
+                    Write-PSFMessage -Message "Dismounting disk $($item.DatabaseName) from $($item.SqlInstance)" -Level Verbose
+                    $null = Dismount-VHD -Path $item.CloneLocation
+                }
+                catch {
+                    Stop-PSFFunction -Message "Could not dismount vhd $($item.CloneLocation)" -ErrorRecord $_ -Target $result -Continue
+                }
 
-                Write-PSFMessage -Message "Removing vhd" -Level Verbose
-                Remove-Item -Path $result.CloneLocation -Credential $Credential -Force | Out-Null
-            }
-            catch {
-                Stop-PSFFunction -Message "Could not remove clone files" -ErrorRecord $_ -Target $result -Continue
-            }
+                # Remove clone file and related access path
+                try {
+                    Write-PSFMessage -Message "Removing vhd access path" -Level Verbose
+                    $null = Remove-Item -Path $item.AccessPath -Credential $Credential -Force
 
-            # Removing records from database
-            try {
-                $query = "
-                    DELETE c
-                    FROM dbo.Clone AS c
-                        INNER JOIN dbo.Host AS h
-                            ON h.HostID = h.HostID
-                    WHERE h.HostName = '$($result.HostName)'
-                        AND c.CloneLocation = '$($result.CloneLocation)';
-                "
+                    Write-PSFMessage -Message "Removing vhd" -Level Verbose
+                    $null = Remove-Item -Path $item.CloneLocation -Credential $Credential -Force
+                }
+                catch {
+                    Stop-PSFFunction -Message "Could not remove clone files" -ErrorRecord $_ -Target $result -Continue
+                }
 
-                Invoke-DbaSqlQuery -SqlInstance $pdcSqlInstance -Database $pdcDatabase -Query $query
-            }
-            catch {
-                Stop-PSFFunction -Message "Could not remove clone record from database" -ErrorRecord $_ -Target $result -Continue
-            }
-        }
+                # Removing records from database
+                try {
+                    $query = "
+                        DELETE c
+                        FROM dbo.Clone AS c
+                            INNER JOIN dbo.Host AS h
+                                ON h.HostID = h.HostID
+                        WHERE h.HostName = '$($item.HostName)'
+                            AND c.CloneLocation = '$($item.CloneLocation)';
+                    "
+
+                    Invoke-DbaSqlQuery -SqlInstance $pdcSqlInstance -Database $pdcDatabase -Query $query -EnableException
+                }
+                catch {
+                    Stop-PSFFunction -Message "Could not remove clone record from database" -ErrorRecord $_ -Target $query -Continue
+                }
+            } # end for each group item
+
+        } # End for each clone
 
     } # End process
 
