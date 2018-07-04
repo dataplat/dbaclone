@@ -6,19 +6,19 @@ Do you have any ideas for new commands? Please propose them as <a href="https://
 
 <br/>
 
+## Why use PSDatabaseClone
+
+* Save lots of space provisioning data to other locations
+* Spend less time provisioning databases
+* Create multiple local copies of a database from the same image
+* Make sure there tests are accurate with up-to-date data
+
 ## Usage scenarios
 
 There are multiple scenarios where you could use the module with
 * Supply developers with a local copy of the database
 * Provision non-production servers with production data
 * Implement a CI/CD pipeline with production like copies
-
-## Why use PSDatabaseClone
-
-* Save lots of space supplying data to other locations
-* Spend less time provisioning databases
-* Create multiple local copies of a database
-* Make sure there tests are accurate with up-to-date data
 
 ## Prerequisites
 
