@@ -27,7 +27,7 @@ As with every piece of software we need to set some prerequisites to make this m
 * Windows 10 (Professional, Enterprise or Education) or Windows Server 2012 R2 (Standard, Enterprise or Datacenter) and up
 * PowerShell 5 or above
 * Hyper-V
-* SQL Server instance for saving image and clone information
+* SQL Server instance for saving image and clone information (PSDatabaseClone database)
 * SQL Server instance to create the images (can be the same as for saving the information)
 * Enough space to save to save one copy of the database (size of the image is the size of the database)
 
