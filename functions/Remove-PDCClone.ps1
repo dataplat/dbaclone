@@ -71,11 +71,11 @@ function Remove-PDCClone {
     Removes all clones from Host1
 
 #>
-    [CmdLetBinding(, DefaultParameterSetName = "HostName")]
+    [CmdLetBinding(DefaultParameterSetName = "HostName", SupportsShouldProcess = $true,
+        ConfirmImpact = 'High')]
 
     param(
-        [parameter(Mandatory = $true, ParameterSetName = "HostName")]
-        [ValidateNotNullOrEmpty()]
+        [parameter(ParameterSetName = "HostName")]
         [string[]]$HostName,
         [System.Management.Automation.PSCredential]
         $SqlCredential,
@@ -101,6 +101,14 @@ function Remove-PDCClone {
 
         $pdcSqlInstance = Get-PSFConfigValue -FullName psdatabaseclone.database.server
         $pdcDatabase = Get-PSFConfigValue -FullName psdatabaseclone.database.name
+
+        if (-not $HostName -and -not $InputObject) {
+
+            if(-not $PSCmdlet.ShouldProcess("All hosts" , "Delete all clones on all hosts?`nIf not please say no and use -HostName and/or -Database")){
+                return
+            }
+
+        }
 
         Write-PSFMessage -Message "Started removing database clones" -Level Verbose
 
