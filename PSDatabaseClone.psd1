@@ -71,7 +71,8 @@
     'Remove-PDCClone',
 	'Remove-PDCImage',
     'Set-PDCConfiguration',
-    'Get-PDCClone'
+    'Get-PDCClone',
+    'Get-PDCImage'
 
     # Cmdlets to export from this module
     CmdletsToExport   = ''
