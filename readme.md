@@ -72,4 +72,8 @@ Remove the clones using the Get-PDCClone
 Get-PDCClone -Database DB1_Clone1, DB2_Clone1 | Remove-PDCClone
 ```
 
+Remove the image
 
+```powershell
+Remove-PDCImage -ImageLocation \\fileserver\psdatabaseclone\images\DB1_20180703085917.vhdx
+```
