@@ -37,12 +37,12 @@ The process consists of the following steps:
 2. Create a clone based on an image
 
 Create an image creating a full backup
-``` powershell
+```powershell
 New-PDCImage -SourceSqlInstance SQLDB1 -DestinationSqlInstance SQLDB2 -ImageNetworkPath \\fileserver\psdatabaseclone\images -Database DB1 -CreateFullBackup
 ```
 
 Create an image for multiple databases using the latest full backup
-``` powershell
+```powershell
 New-PDCImage -SourceSqlInstance SQLDB1 -DestinationSqlInstance SQLDB2 -ImageNetworkPath \\fileserver\psdatabaseclone\images -Database DB1, DB2 -UseLastFullBackup
 ```
 
