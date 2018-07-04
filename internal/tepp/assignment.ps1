@@ -1,4 +1,4 @@
-<#
+﻿<#
 # Example:
-Register-PSFTeppArgumentCompleter -Command Get-Alcohol -Parameter Type -Name PSDatabasClone.alcohol
+Register-PSFTeppArgumentCompleter -Command Get-Alcohol -Parameter Type -Name PSDatabaseClone.alcohol
 #>
