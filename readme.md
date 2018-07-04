@@ -48,3 +48,28 @@ Create an image for multiple databases using the latest full backup
 New-PDCImage -SourceSqlInstance SQLDB1 -DestinationSqlInstance SQLDB2 -ImageNetworkPath \\fileserver\psdatabaseclone\images -Database DB1, DB2 -UseLastFullBackup
 ```
 
+Create a clone based on the latest image of database DB1
+
+```powershell
+New-PDCClone -SqlInstance SQLDB1 -Destination C:\PSDatabaseClone\clones -CloneName DB1_Clone1 -Database DB1 -LatestImage
+```
+
+Get the clones for host HOST1
+
+```powershell
+Get-PDCClone -HostName HOST1
+```
+
+Remove the clones
+
+```powershell
+Remove-PDCClone -Database DB1_Clone1, DB2_Clone1
+```
+
+Remove the clones using the Get-PDCClone
+
+```powershell
+Get-PDCClone -Database DB1_Clone1, DB2_Clone1 | Remove-PDCClone
+```
+
+
