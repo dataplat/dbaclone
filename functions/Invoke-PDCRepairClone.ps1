@@ -107,17 +107,12 @@ function Invoke-PDCRepairClone {
             # Loop through the results
             foreach ($result in $results) {
 
-                $disk = $null
-
                 # Get the databases
                 Write-PSFMessage -Message "Retrieve the databases for $($result.SqlInstance)" -Level Verbose
                 $databases = Get-DbaDatabase -SqlInstance $result.SqlInstance -SqlCredential $SqlCredential
 
                 # Check if the parent of the clone can be reached
                 if (Test-Path -Path $result.ImageLocation) {
-
-                    # Get the disk
-                    $disk = Get-VHD -Path $result.CloneLocation
 
                     # Mount the clone
                     try {

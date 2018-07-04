@@ -39,7 +39,7 @@ function New-PDCImage {
 
     $scred = Get-Credential, then pass $scred object to the -DestinationCredential parameter.
 
-.PARAMETER ImageLocalPath
+.PARAMETER ImageNetworkPath
     Network path where to save the image. This has to be a UNC path
 
 .PARAMETER ImageLocalPath
@@ -89,7 +89,7 @@ function New-PDCImage {
     Create an image from the database DB1 on SQLDB1 using the last full backup and use SQLDB2 as the temporary database server.
     The image is written to c:\Temp\images
 #>
-    [CmdLetBinding()]
+    [CmdLetBinding(SupportsShouldProcess = $true)]
     param(
         [parameter(Mandatory = $true)]
         [ValidateNotNullOrEmpty()]
@@ -212,8 +212,6 @@ function New-PDCImage {
         # Set time stamp
         $timestamp = Get-Date -format "yyyyMMddHHmmss"
 
-        # Create the item list array
-        $list = @()
     }
 
     process {
@@ -400,30 +398,6 @@ function New-PDCImage {
             catch {
                 Stop-PSFFunction -Message "Couldn't add image to database" -Target $imageName -ErrorRecord $_
             }
-
-            <# if (Test-PSFFunctionInterrupt) {
-                Write-PSFMessage -Message "Cleaning up image after failure" -Level Verbose
-
-                # Clean up in case of failure
-                try {
-                    # Check if the image was written to database
-                    if ($result.Count -ge 1) {
-
-                        $query = "DELETE FROM Image WHERE ImageID = $($Result.ImageID)"
-
-                        $null = Invoke-DbaSqlQuery -SqlInstance $pdcSqlInstance -Database $pdcDatabase -Query $query -EnableException
-                    }
-
-                    # Remove file
-                    $null = Remove-Item -Path $imageLocation -Credential $DestinationCredential -Force:$Force
-                }
-                catch {
-                    Stop-PSFFunction -Message "Couldn't remove created image $imageLocation after failure" -Target $imageLocation -ErrorRecord $_ -Continue
-                }
-            }
-            else {
-
-            } #>
 
             # Add the results to the custom object
             [PSCustomObject]@{

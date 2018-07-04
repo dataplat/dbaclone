@@ -13,9 +13,9 @@ if ($env:BUILD_BUILDURI -like "vstfs*")
 
 Write-PSFMessage -Level Important -Message "Importing Module"
 
-Remove-Module PSDatabasClone -ErrorAction Ignore
-Import-Module "$PSScriptRoot\..\PSDatabasClone.psd1"
-Import-Module "$PSScriptRoot\..\PSDatabasClone.psm1" -Force
+Remove-Module PSDatabaseClone -ErrorAction Ignore
+Import-Module "$PSScriptRoot\..\PSDatabaseClone.psd1"
+Import-Module "$PSScriptRoot\..\PSDatabaseClone.psm1" -Force
 
 $totalFailed = 0
 $totalRun = 0

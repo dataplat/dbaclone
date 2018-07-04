@@ -35,6 +35,9 @@ function New-PDCClone {
 .PARAMETER Database
     Database name for the clone
 
+.PARAMETER LatestImage
+    Automatically get the last image ever created for an specific database
+
 .PARAMETER Disabled
     Registers the clone in the configuration as disabled.
     If this setting is used the clone will not be recovered when the repair command is run
@@ -78,7 +81,7 @@ function New-PDCClone {
 
     Create a new clone on SQLDB1 and SQLDB2 for the databases DB1 with the latest image
 #>
-    [CmdLetBinding(DefaultParameterSetName = 'ByLatest')]
+    [CmdLetBinding(DefaultParameterSetName = 'ByLatest', SupportsShouldProcess = $true)]
     param(
         [parameter(Mandatory = $true)]
         [ValidateNotNullOrEmpty()]
@@ -213,7 +216,7 @@ function New-PDCClone {
                         $result = Invoke-DbaSqlQuery -SqlInstance $pdcSqlInstance -Database $pdcDatabase -Query $query -EnableException
 
                         # Check the results
-                        if ($result -eq $null) {
+                        if ($null -eq $result) {
                             Stop-PSFFunction -Message "No image could be found for database $db" -Target $pdcSqlInstance -Continue
                         }
                         else {
@@ -405,7 +408,7 @@ function New-PDCClone {
                 }
 
 
-                if ($imageId -ne $null) {
+                if ($null -ne $imageId) {
 
                     $cloneLocation = "$Destination\$CloneName.vhdx"
 

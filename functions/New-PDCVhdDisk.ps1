@@ -56,7 +56,7 @@ function New-PDCVhdDisk {
 
 #>
 
-    [CmdLetBinding()]
+    [CmdLetBinding(SupportsShouldProcess = $true)]
 
     param(
         [parameter(Mandatory = $true)]

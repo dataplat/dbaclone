@@ -34,6 +34,12 @@ function Remove-PDCClone {
 .PARAMETER ExcludeDatabase
     Allows to filter to exclude specific databases
 
+.PARAMETER All
+    Remove all the clones
+
+.PARAMETER InputObject
+    The input object that is used for pipeline use
+
 .PARAMETER EnableException
     By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
     This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.

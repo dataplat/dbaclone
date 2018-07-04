@@ -53,7 +53,7 @@ function Set-PDCConfiguration {
 
     Set up the module to use SQLDB1 as the database servers and PSDatabaseClone to save the values in
 #>
-    [CmdLetBinding()]
+    [CmdLetBinding(SupportsShouldProcess = $true)]
     param(
         [parameter(Mandatory = $true)]
         [ValidateNotNullOrEmpty()]

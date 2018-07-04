@@ -41,6 +41,17 @@ function Test-PDCConfiguration {
 
 .LINK
     https://psdatabaseclone.io/
+
+.EXAMPLE
+    Test-PDCConfiguration
+
+    Test the configuration of the module retrieving the set configurations
+
+.EXAMPLE
+    Test-PDCConfiguration -SqlInstance SQLDB1 -Database PSDatabaseClone
+
+    Test the configuration with the instance and database set
+
 #>
 
     [CmdLetBinding()]
@@ -56,7 +67,7 @@ function Test-PDCConfiguration {
     Write-PSFMessage -Message "SqlInstance: $SqlInstance, Database: $Database" -Level Debug
 
     # Check if the values for the PSDatabaseClone database are set
-    if (($SqlInstance -eq $null) -or ($Database -eq $null)) {
+    if (($null -eq $SqlInstance) -or ($null -eq $Database)) {
         # Get the configurations for the program database
         $Database = Get-PSFConfigValue -FullName psdatabaseclone.database.name -Fallback "NotConfigured"
         $SqlInstance = Get-PSFConfigValue -FullName psdatabaseclone.database.Server -Fallback "NotConfigured"

@@ -15,6 +15,13 @@ function Initialize-PDCVhdDisk {
 
     $scred = Get-Credential, then pass $scred object to the -Credential parameter.
 
+.PARAMETER PartitionStyle
+    A partition can either be initialized as MBR or as GPT. GPT is the default.
+
+.PARAMETER AllocationUnitSize
+    Set the allocation unit size for the disk.
+    By default it's 64 KB because that's what SQL Server tends to write most of the time.
+
 .PARAMETER EnableException
     By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
     This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
