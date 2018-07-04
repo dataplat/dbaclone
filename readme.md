@@ -38,6 +38,10 @@ The process consists of the following steps:
 1. Create an image of the database
 2. Create a clone based on an image
 
+It's that easy.
+
+## Examples
+
 Create an image creating a full backup
 
 ```powershell
