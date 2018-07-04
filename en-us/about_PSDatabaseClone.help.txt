@@ -1,11 +1,12 @@
-TOPIC
-	about_PSDatabasClone
-	
+﻿TOPIC
+	about_PSDatabaseClone
+
 SHORT DESCRIPTION
-	Explains how to use the PSDatabasClone powershell module
-	
+	Module to create SQL Server database images and clones
+
 LONG DESCRIPTION
-	<Insert Content here>
+	PSDatabaseClone is a PowerShell module for creating SQL Server database images and clones.
+	It enables administrator to supply environments with database copies that are a fraction of the original size.
 
 KEYWORDS
-	PSDatabasClone
+	PSDatabaseClone

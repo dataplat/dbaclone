@@ -1,5 +1,5 @@
 $script:ModuleRoot = $PSScriptRoot
-$script:ModuleVersion = "1.0.0.0"
+$script:ModuleVersion = "0.1.0.0"
 
 function Import-ModuleFile
 {
@@ -32,8 +32,8 @@ function Import-ModuleFile
 }
 
 # Detect whether at some level dotsourcing was enforced
-$script:doDotSource = Get-PSFConfigValue -FullName PSDatabasClone.Import.DoDotSource -Fallback $false
-if ($PSDatabasClone_dotsourcemodule) { $script:doDotSource = $true }
+$script:doDotSource = Get-PSFConfigValue -FullName PSDatabaseClone.Import.DoDotSource -Fallback $false
+if ($PSDatabaseClone_dotsourcemodule) { $script:doDotSource = $true }
 
 # Execute Preimport actions
 . Import-ModuleFile -Path "$ModuleRoot\internal\scripts\preimport.ps1"

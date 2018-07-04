@@ -1,4 +1,4 @@
-function Convert-PDCLocalUncPathToLocalPath {
+﻿function Convert-PDCLocalUncPathToLocalPath {
 <#
 .SYNOPSIS
     Convert a UNC path on a computer to a local path.
