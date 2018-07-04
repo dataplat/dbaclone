@@ -1,7 +1,7 @@
-function Remove-PdcDatabaseImage {
-    <#
+function Remove-PDCImage {
+<#
 .SYNOPSIS
-    Remove-PdcDatabaseImage removes one or more images
+    Remove-PDCImage removes one or more images
 
 .DESCRIPTION
     The command will remove an image from PSDatabaseClone.
@@ -35,27 +35,27 @@ function Remove-PdcDatabaseImage {
         [parameter(Mandatory = $true)]
         [ValidateNotNullOrEmpty()]
         [string[]]$ImageLocation,
-
         [System.Management.Automation.PSCredential]
         $Credential,
-
-        [switch]$Force
+        [switch]$Force,
+        [switch]$EnableException
     )
 
     begin {
-        Write-PSFMessage -Message "Started removing database images" -Level Verbose
 
         # Test the module database setup
-        $result = Test-PdcConfiguration
-
-        if (-not $result.Check) {
-            Stop-PSFFunction -Message $result.Message -Target $result -Continue
-            return
+        try {
+            Test-PDCConfiguration -EnableException
+        }
+        catch {
+            Stop-PSFFunction -Message "Something is wrong in the module configuration" -ErrorRecord $_ -Continue
         }
 
         # Get the database values
-        $pdcDatabaseServer = $result.SqlInstance
-        $pdcDatabaseName = $result.Database
+        $pdcSqlInstance = Get-PSFConfigValue -FullName psdatabaseclone.database.server
+        $pdcDatabase = Get-PSFConfigValue -FullName psdatabaseclone.database.name
+
+        Write-PSFMessage -Message "Started removing database images" -Level Verbose
     }
 
     process {
@@ -86,7 +86,7 @@ function Remove-PdcDatabaseImage {
             # Try to get the neccesary info from the EasyClone database
             try {
                 Write-PSFMessage -Message "Retrieving data for image '$image'" -Level Verbose
-                $results = Invoke-DbaSqlQuery -SqlInstance $ecDatabaseServer -Database $ecDatabaseName -Query $query
+                $results = Invoke-DbaSqlQuery -SqlInstance $pdcSqlInstance -Database $pdcDatabase -Query $query
             }
             catch {
                 Stop-PSFFunction -Message "Couldn't retrieve clone records for host $hst" -Target $hst -Continue
@@ -102,7 +102,7 @@ function Remove-PdcDatabaseImage {
                     try {
                         if ($result.HostName -ne $null) {
                             Write-PSFMessage -Message "Removing clones for host $($result.HostName) and database $($result.DatabaseName)" -Level Verbose
-                            Remove-PdcDatabaseClone -HostName $result.HostName -Database $result.DatabaseName -Credential $Credential
+                            Remove-PDCClone -HostName $result.HostName -Database $result.DatabaseName -Credential $Credential
                         }
                     }
                     catch {
@@ -121,7 +121,7 @@ function Remove-PdcDatabaseImage {
                     Write-PSFMessage -Message "Removing image '$image' from file system" -Level Verbose
                     $null = Remove-Item -Path $image -Credential $Credential -Force:$Force
                 }
-                else{
+                else {
                     Write-PSFMessage -Message "Couldn't find image $image" -Level Verbose
                 }
             }

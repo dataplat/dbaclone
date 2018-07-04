@@ -1,6 +1,6 @@
 @{
     # Script module or binary module file associated with this manifest
-    ModuleToProcess   = 'PSDatabasClone.psm1'
+    ModuleToProcess   = 'PSDatabaseClone.psm1'
 
     # Version number of this module.
     ModuleVersion     = '1.0.0.0'
@@ -63,14 +63,15 @@
     # NestedModules = @()
 
     # Functions to export from this module
-    FunctionsToExport = 'Initialize-PdcVhdDisk',
-    'Invoke-PdcRepairClone',
-    'New-PdcDatabaseClone',
-    'New-PdcDatabaseImage',
-    'New-PdcVhdDisk',
-    'Remove-PdcDatabaseClone',
-	'Remove-PdcDatabaseImage',
-    'Set-PdcConfiguration'
+    FunctionsToExport = 'Initialize-PDCVhdDisk',
+    'Invoke-PDCRepairClone',
+    'New-PDCClone',
+    'New-PDCImage',
+    'New-PDCVhdDisk',
+    'Remove-PDCClone',
+	'Remove-PDCImage',
+    'Set-PDCConfiguration',
+    'Get-PDCClone'
 
     # Cmdlets to export from this module
     CmdletsToExport   = ''

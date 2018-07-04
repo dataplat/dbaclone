@@ -1,10 +1,10 @@
-function Invoke-PdcRepairClone {
+function Invoke-PDCRepairClone {
 <#
 .SYNOPSIS
-    Invoke-PdcRepairClone repairs the clones
+    Invoke-PDCRepairClone repairs the clones
 
 .DESCRIPTION
-    Invoke-PdcRepairClone has the ability to repair the clones when they have gotten disconnected from the image.
+    Invoke-PDCRepairClone has the ability to repair the clones when they have gotten disconnected from the image.
     In such a case the clone is no longer available for the database server and the database will either not show
     any information or the database will have the status (Recovery Pending).
 
@@ -21,6 +21,17 @@ function Invoke-PdcRepairClone {
     Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
     To connect as a different Windows user, run PowerShell as that user.
 
+.PARAMETER EnableException
+    By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+    This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+    Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+
+.PARAMETER WhatIf
+    If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
+
+.PARAMETER Confirm
+    If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
+
 .NOTES
     Author: Sander Stad (@sqlstad, sqlstad.nl)
 
@@ -32,7 +43,7 @@ function Invoke-PdcRepairClone {
     https://psdatabaseclone.io/
 
 .EXAMPLE
-    Invoke-PdcRepairClone -Hostname Host1
+    Invoke-PDCRepairClone -Hostname Host1
 
     Repair the clones for Host1
 
@@ -42,19 +53,22 @@ function Invoke-PdcRepairClone {
     param(
         [Parameter(Mandatory = $true)]
         [string[]]$HostName,
-
         [System.Management.Automation.PSCredential]
-        $SqlCredential
+        $SqlCredential,
+        [switch]$EnableException
     )
 
     begin {
         # Test the module database setup
-        $result = Test-PdcConfiguration
-
-        if(-not $result.Check){
-            Stop-PSFFunction -Message $result.Message -Target $result -Continue
-            return
+        try {
+            Test-PDCConfiguration -EnableException
         }
+        catch {
+            Stop-PSFFunction -Message "Something is wrong in the module configuration" -ErrorRecord $_ -Continue
+        }
+
+        $pdcSqlInstance = Get-PSFConfigValue -FullName psdatabaseclone.database.server
+        $pdcDatabase = Get-PSFConfigValue -FullName psdatabaseclone.database.name
 
     }
 
@@ -84,10 +98,10 @@ function Invoke-PdcRepairClone {
             # Get the clones registered for the host
             try {
                 Write-PSFMessage -Message "Get the clones for host $hst" -Level Verbose
-                $results = Invoke-DbaSqlQuery -SqlInstance $ecDatabaseServer -Database $ecDatabaseName -Query $query
+                $results = Invoke-DbaSqlQuery -SqlInstance $pdcSqlInstance -Database $pdcDatabase -Query $query
             }
             catch {
-                Stop-PSFFunction -Message "Couldn't get the clones for $hst" -Target $ecDatabaseServer -ErrorRecord $_ -Continue
+                Stop-PSFFunction -Message "Couldn't get the clones for $hst" -Target $pdcSqlInstance -ErrorRecord $_ -Continue
             }
 
             # Loop through the results

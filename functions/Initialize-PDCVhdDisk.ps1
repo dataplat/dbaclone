@@ -1,10 +1,10 @@
-function Initialize-PdcVhdDisk {
+function Initialize-PDCVhdDisk {
 <#
 .SYNOPSIS
-    Initialize-PdcVhdDisk initialized the VHD
+    Initialize-PDCVhdDisk initialized the VHD
 
 .DESCRIPTION
-    Initialize-PdcVhdDisk will initialize the VHD.
+    Initialize-PDCVhdDisk will initialize the VHD.
     It mounts the disk, creates a volume, creates the partition and sets it to active
 
 .PARAMETER Path
@@ -14,6 +14,17 @@ function Initialize-PdcVhdDisk {
     Allows you to use credentials for creating items in other locations To use:
 
     $scred = Get-Credential, then pass $scred object to the -Credential parameter.
+
+.PARAMETER EnableException
+    By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+    This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+    Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+
+.PARAMETER WhatIf
+    If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
+
+.PARAMETER Confirm
+    If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
 
 .NOTES
     Author: Sander Stad (@sqlstad, sqlstad.nl)
@@ -26,12 +37,12 @@ function Initialize-PdcVhdDisk {
     https://psdatabaseclone.io/
 
 .EXAMPLE
-    Initialize-PdcVhdDisk -Path $path
+    Initialize-PDCVhdDisk -Path $path
 
     Initialize the disk pointing to the path with all default settings
 
 .EXAMPLE
-    Initialize-PdcVhdDisk -Path $path -AllocationUnitSize 4KB
+    Initialize-PDCVhdDisk -Path $path -AllocationUnitSize 4KB
 
     Initialize the disk and format the partition with a 4Kb allocation unit size
 
@@ -46,7 +57,8 @@ function Initialize-PdcVhdDisk {
         $Credential,
         [ValidateSet('GPT', 'MBR')]
         [string]$PartitionStyle = 'GPT',
-        [int]$AllocationUnitSize = 64KB
+        [int]$AllocationUnitSize = 64KB,
+        [switch]$EnableException
     )
 
     begin {
@@ -106,7 +118,6 @@ function Initialize-PdcVhdDisk {
 
         # Add the results to the custom object
         [PSCustomObject]@{
-            DiskNumber = $disk.DiskNumber
             Disk       = $disk
             Partition  = (Get-Partition -Disk $disk)
             Volume     = $volume

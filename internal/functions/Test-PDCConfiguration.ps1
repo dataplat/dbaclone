@@ -1,4 +1,4 @@
-function Test-PdcConfiguration {
+function Test-PDCConfiguration {
 <#
 .SYNOPSIS
     Test the configuration of the module
@@ -21,6 +21,17 @@ function Test-PdcConfiguration {
 .PARAMETER Database
     The database that holds all the information for the PSDatabaseClone module
 
+.PARAMETER EnableException
+    By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+    This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+    Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+
+.PARAMETER WhatIf
+    If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
+
+.PARAMETER Confirm
+    If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
+
 .NOTES
     Author: Sander Stad (@sqlstad, sqlstad.nl)
 
@@ -30,30 +41,19 @@ function Test-PdcConfiguration {
 
 .LINK
     https://psdatabaseclone.io/
-
 #>
-    [CmdLetBinding()]
-    param(
-        [Alias("ServerInstance", "SqlServerSqlServer")]
-        [object]$SqlInstance,
 
+    [CmdLetBinding()]
+
+    param(
+        [object]$SqlInstance,
         [System.Management.Automation.PSCredential]
         $SqlCredential,
-
-        [string]$Database
+        [string]$Database,
+        [switch]$EnableException
     )
 
     Write-PSFMessage -Message "SqlInstance: $SqlInstance, Database: $Database" -Level Debug
-
-    # Create the info objects
-    $result = [PSCustomObject]@{
-        SqlInstance = $null
-        Database    = $null
-        Check       = $false
-        Message     = ""
-    }
-
-    $errorOccured = $false
 
     # Check if the values for the PSDatabaseClone database are set
     if (($SqlInstance -eq $null) -or ($Database -eq $null)) {
@@ -62,54 +62,30 @@ function Test-PdcConfiguration {
         $SqlInstance = Get-PSFConfigValue -FullName psdatabaseclone.database.Server -Fallback "NotConfigured"
     }
 
-    # Set the values in the info object
-    $result.SqlInstance = $SqlInstance
-    $result.Database = $Database
-
     Write-PSFMessage -Message "Checking configurations" -Level Verbose
 
     # Check the module database server and database name configurations
     if ($SqlInstance -eq 'NotConfigured') {
-        $errorOccured = $true
-        $result.Check = $false
-        $result.Message = "The PSDatabaseClone database server is not yet configured. Please run Set-PdcConfiguration"
-
+        Stop-PSFFunction -Message "The PSDatabaseClone database server is not yet configured. Please run Set-PDCConfiguration" -Target $SqlInstance -Continue
     }
 
     if ($Database -eq 'NotConfigured') {
-        $errorOccured = $true
-        $result.Check = $false
-        $result.Message = "The PSDatabaseClone database is not yet configured. Please run Set-PdcConfiguration"
-
+        Stop-PSFFunction -Message "The PSDatabaseClone database is not yet configured. Please run Set-PDCConfiguration" -Target $Database -Continue
     }
 
     Write-PSFMessage -Message "Attempting to connect to PSDatabaseClone database server $SqlInstance.." -Level Verbose
-    if (-not $errorOccured) {
-        try {
-            $ecServer = Connect-DbaInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
-        }
-        catch {
-            $errorOccured = $true
-            $result.Check = $false
-            $result.Message = "Could not connect to Sql Server instance $SqlInstance"
-        }
+    try {
+        $pdcServer = Connect-DbaInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
+    }
+    catch {
+        Stop-PSFFunction -Message "Could not connect to Sql Server instance $SqlInstance" -ErrorRecord $_ -Target $pdcServer -Continue
     }
 
     # Check if the PSDatabaseClone database is present
-    if ($ecServer.Databases.Name -notcontains $Database) {
-        $errorOccured = $true
-        $result.Check = $false
-        $result.Message = "PSDatabaseClone database $Database is not present on $SqlInstance"
-    }
-
-    # Check if an error occured
-    if (-not $errorOccured) {
-        $result.Message = "All OK"
-        $result.Check = $true
+    if ($pdcServer.Databases.Name -notcontains $Database) {
+        Stop-PSFFunction -Message "PSDatabaseClone database $Database is not present on $SqlInstance" -Target $pdcServer -Continue
     }
 
     Write-PSFMessage -Message "Finished checking configurations" -Level Verbose
-
-    return $result
 
 }

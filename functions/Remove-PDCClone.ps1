@@ -1,10 +1,10 @@
-function Remove-PdcDatabaseClone {
+function Remove-PDCClone {
 <#
 .SYNOPSIS
-    Remove-PdcDatabaseClone removes one or more clones from a host
+    Remove-PDCClone removes one or more clones from a host
 
 .DESCRIPTION
-    Remove-PdcDatabaseClone is able to remove one or more clones from a host.
+    Remove-PDCClone is able to remove one or more clones from a host.
     The command looks up all the records dor a particular hostname.
     It will remove the database from the database server and all related files.
 
@@ -34,6 +34,17 @@ function Remove-PdcDatabaseClone {
 .PARAMETER ExcludeDatabase
     Allows to filter to exclude specific databases
 
+.PARAMETER EnableException
+    By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+    This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+    Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+
+.PARAMETER WhatIf
+    If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
+
+.PARAMETER Confirm
+    If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
+
 .NOTES
     Author: Sander Stad (@sqlstad, sqlstad.nl)
 
@@ -45,17 +56,17 @@ function Remove-PdcDatabaseClone {
     https://psdatabaseclone.io/
 
 .EXAMPLE
-    Remove-PdcDatabaseClone -HostName Host1 -Database Clone1
+    Remove-PDCClone -HostName Host1 -Database Clone1
 
     Removes the clones that are registered at Host1 and have the text "Clone1"
 
 .EXAMPLE
-    Remove-PdcDatabaseClone -HostName Host1, Host2, Host3 -Database Clone
+    Remove-PDCClone -HostName Host1, Host2, Host3 -Database Clone
 
     Removes the clones that are registered at multiple hosts and have the text "Clone"
 
 .EXAMPLE
-    Remove-PdcDatabaseClone -HostName Host1
+    Remove-PDCClone -HostName Host1
 
     Removes all clones from Host1
 
@@ -66,31 +77,30 @@ function Remove-PdcDatabaseClone {
         [parameter(Mandatory = $true)]
         [ValidateNotNullOrEmpty()]
         [string[]]$HostName,
-
         [System.Management.Automation.PSCredential]
         $SqlCredential,
-
         [System.Management.Automation.PSCredential]
         $Credential,
-
         [string[]]$Database,
-
         [string[]]$ExcludeDatabase,
-
-        [switch]$All
-
+        [switch]$All,
+        [switch]$EnableException
     )
 
     begin {
-        Write-PSFMessage -Message "Started removing database clones" -Level Verbose
 
         # Test the module database setup
-        $result = Test-PdcConfiguration
-
-        if(-not $result.Check){
-            Stop-PSFFunction -Message $result.Message -Target $result -Continue
-            return
+        try {
+            Test-PDCConfiguration -EnableException
         }
+        catch {
+            Stop-PSFFunction -Message "Something is wrong in the module configuration" -ErrorRecord $_ -Continue
+        }
+
+        $pdcSqlInstance = Get-PSFConfigValue -FullName psdatabaseclone.database.server
+        $pdcDatabase = Get-PSFConfigValue -FullName psdatabaseclone.database.name
+
+        Write-PSFMessage -Message "Started removing database clones" -Level Verbose
     }
 
     process {
@@ -123,7 +133,7 @@ function Remove-PdcDatabaseClone {
                 WHERE h.HostName LIKE ( '%$($computer.ComputerName)%' ) "
 
             try {
-                $results += Invoke-DbaSqlQuery -SqlInstance $ecDatabaseServer -Database $ecDatabaseName -Query $query
+                $results += Invoke-DbaSqlQuery -SqlInstance $pdcSqlInstance -Database $pdcDatabase -Query $query
             }
             catch {
                 Stop-PSFFunction -Message "Couldn't retrieve clone records for host $hst" -Target $hst -Continue
@@ -197,7 +207,7 @@ function Remove-PdcDatabaseClone {
                         AND c.CloneLocation = '$($result.CloneLocation)';
                 "
 
-                Invoke-DbaSqlQuery -SqlInstance $ecDatabaseServer -Database $ecDatabaseName -Query $query
+                Invoke-DbaSqlQuery -SqlInstance $pdcSqlInstance -Database $pdcDatabase -Query $query
             }
             catch {
                 Stop-PSFFunction -Message "Could not remove clone record from database" -ErrorRecord $_ -Target $result -Continue
