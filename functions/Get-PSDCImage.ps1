@@ -1,10 +1,10 @@
-﻿function Get-PDCImage {
+﻿function Get-PSDCImage {
     <#
 .SYNOPSIS
-    Get-PDCImage get on or more clones
+    Get-PSDCImage get on or more clones
 
 .DESCRIPTION
-    Get-PDCImage will retrieve the clones and apply filters if needed.
+    Get-PSDCImage will retrieve the clones and apply filters if needed.
     By default all the clones are returned
 
 .PARAMETER ImageID
@@ -30,17 +30,17 @@
     https://psdatabaseclone.io/
 
 .EXAMPLE
-    Get-PDCImage -ImageName DB1_20180704220944, DB2_20180704221144
+    Get-PSDCImage -ImageName DB1_20180704220944, DB2_20180704221144
 
     Retrieve the images for DB1_20180704220944, DB2_20180704221144
 
 .EXAMPLE
-    Get-PDCImage -ImageLocation "\\fileserver1\psdatabaseclone\images\DB1_20180704220944.vhdx"
+    Get-PSDCImage -ImageLocation "\\fileserver1\psdatabaseclone\images\DB1_20180704220944.vhdx"
 
     Get all the images that are the same as the image location
 
 .EXAMPLE
-    Get-PDCImage -Database DB1, DB2
+    Get-PSDCImage -Database DB1, DB2
 
     Get all the images that were made for databases DB1 and DB2
 #>
@@ -57,7 +57,7 @@
     begin {
         # Test the module database setup
         try {
-            Test-PDCConfiguration -EnableException
+            Test-PSDCConfiguration -EnableException
         }
         catch {
             Stop-PSFFunction -Message "Something is wrong in the module configuration" -ErrorRecord $_ -Continue

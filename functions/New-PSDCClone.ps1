@@ -1,10 +1,10 @@
-﻿function New-PDCClone {
+﻿function New-PSDCClone {
 <#
 .SYNOPSIS
-    New-PDCClone creates a new clone
+    New-PSDCClone creates a new clone
 
 .DESCRIPTION
-    New-PDCClone willcreate a new clone based on an image.
+    New-PSDCClone willcreate a new clone based on an image.
     The clone will be created in a certain directory, mounted and attached to a database server.
 
 .PARAMETER SqlInstance
@@ -67,17 +67,17 @@
     https://psdatabaseclone.io/
 
 .EXAMPLE
-    New-PDCClone -SqlInstance SQLDB1 -ParentVhd C:\Temp\images\DB1_20180623203204.vhdx -Destination C:\Temp\clones\ -CloneName DB1_Clone1
+    New-PSDCClone -SqlInstance SQLDB1 -ParentVhd C:\Temp\images\DB1_20180623203204.vhdx -Destination C:\Temp\clones\ -CloneName DB1_Clone1
 
     Create a new clone based on the image DB1_20180623203204.vhdx and attach the database to SQLDB1 as DB1_Clone1
 
 .EXAMPLE
-    New-PDCClone -SqlInstance SQLDB1 -Database DB1, DB2 -LatestImage
+    New-PSDCClone -SqlInstance SQLDB1 -Database DB1, DB2 -LatestImage
 
     Create a new clone on SQLDB1 for the databases DB1 and DB2 with the latest image for those databases
 
 .EXAMPLE
-    New-PDCClone -SqlInstance SQLDB1, SQLDB2 -Database DB1 -LatestImage
+    New-PSDCClone -SqlInstance SQLDB1, SQLDB2 -Database DB1 -LatestImage
 
     Create a new clone on SQLDB1 and SQLDB2 for the databases DB1 with the latest image
 #>
@@ -107,7 +107,7 @@
 
         # Test the module database setup
         try {
-            Test-PDCConfiguration -EnableException
+            Test-PSDCConfiguration -EnableException
         }
         catch {
             Stop-PSFFunction -Message "Something is wrong in the module configuration" -ErrorRecord $_ -Continue
@@ -134,7 +134,7 @@
         $computer = [PsfComputer]$uriHost
 
         if (-not $computer.IsLocalhost) {
-            $command = "Convert-PDCLocalUncPathToLocalPath -UncPath '$ImageNetworkPath'"
+            $command = "Convert-PSDCLocalUncPathToLocalPath -UncPath '$ImageNetworkPath'"
             $commandGetLocalPath = [ScriptBlock]::Create($command)
         }
 
@@ -142,7 +142,7 @@
             Write-PSFMessage -Message "The destination cannot be an UNC path. Converting to local path" -Level Verbose
             try {
                 if ($computer.IsLocalhost) {
-                    $Destination = Convert-PDCLocalUncPathToLocalPath -UncPath $Destination
+                    $Destination = Convert-PSDCLocalUncPathToLocalPath -UncPath $Destination
                 }
                 else {
                     $Destination = Invoke-PSFCommand -ComputerName $computer -ScriptBlock $commandGetLocalPath -Credential $DestinationCredential

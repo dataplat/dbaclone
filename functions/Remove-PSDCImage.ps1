@@ -1,7 +1,7 @@
-﻿function Remove-PDCImage {
+﻿function Remove-PSDCImage {
     <#
 .SYNOPSIS
-    Remove-PDCImage removes one or more images
+    Remove-PSDCImage removes one or more images
 
 .DESCRIPTION
     The command will remove an image from PSDatabaseClone.
@@ -55,12 +55,12 @@
     https://psdatabaseclone.io/
 
 .EXAMPLE
-    Remove-PDCImage -ImageLocation "\\server1\images\DB1_20180703193345.vhdx"
+    Remove-PSDCImage -ImageLocation "\\server1\images\DB1_20180703193345.vhdx"
 
     Remove an image
 
 .EXAMPLE
-    Get-PDCImage -Database DB1 | Remove-PDCImage
+    Get-PSDCImage -Database DB1 | Remove-PSDCImage
 
     Remove all images and clones based on database DB1
 #>
@@ -86,7 +86,7 @@
 
         # Test the module database setup
         try {
-            Test-PDCConfiguration -EnableException
+            Test-PSDCConfiguration -EnableException
         }
         catch {
             Stop-PSFFunction -Message "Something is wrong in the module configuration" -ErrorRecord $_ -Continue
@@ -99,7 +99,7 @@
         Write-PSFMessage -Message "Started removing database images" -Level Verbose
 
         # Get all the items
-        $items = Get-PDCImage
+        $items = Get-PSDCImage
 
         if ($ImageID) {
             Write-PSFMessage -Message "Filtering image ids" -Level Verbose
@@ -175,7 +175,7 @@
                             # Remove the clones for the host
                             try {
                                 Write-PSFMessage -Message "Removing clones for host $($result.HostName) and database $($result.DatabaseName)" -Level Verbose
-                                Remove-PDCClone -HostName $result.HostName -Database $result.DatabaseName -Credential $Credential -Confirm:$false
+                                Remove-PSDCClone -HostName $result.HostName -Database $result.DatabaseName -Credential $Credential -Confirm:$false
                             }
                             catch {
                                 Stop-PSFFunction -Message "Couldn't remove clones from host $($result.HostName)" -ErrorRecord $_ -Target $result -Continue

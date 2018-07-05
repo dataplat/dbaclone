@@ -1,10 +1,10 @@
-﻿function Remove-PDCClone {
+﻿function Remove-PSDCClone {
     <#
 .SYNOPSIS
-    Remove-PDCClone removes one or more clones from a host
+    Remove-PSDCClone removes one or more clones from a host
 
 .DESCRIPTION
-    Remove-PDCClone is able to remove one or more clones from a host.
+    Remove-PSDCClone is able to remove one or more clones from a host.
     The command looks up all the records dor a particular hostname.
     It will remove the database from the database server and all related files.
 
@@ -62,17 +62,17 @@
     https://psdatabaseclone.io/
 
 .EXAMPLE
-    Remove-PDCClone -HostName Host1 -Database Clone1
+    Remove-PSDCClone -HostName Host1 -Database Clone1
 
     Removes the clones that are registered at Host1 and have the text "Clone1"
 
 .EXAMPLE
-    Remove-PDCClone -HostName Host1, Host2, Host3 -Database Clone
+    Remove-PSDCClone -HostName Host1, Host2, Host3 -Database Clone
 
     Removes the clones that are registered at multiple hosts and have the text "Clone"
 
 .EXAMPLE
-    Remove-PDCClone -HostName Host1
+    Remove-PSDCClone -HostName Host1
 
     Removes all clones from Host1
 
@@ -99,7 +99,7 @@
 
         # Test the module database setup
         try {
-            Test-PDCConfiguration -EnableException
+            Test-PSDCConfiguration -EnableException
         }
         catch {
             Stop-PSFFunction -Message "Something is wrong in the module configuration" -ErrorRecord $_ -Continue
@@ -119,7 +119,7 @@
         Write-PSFMessage -Message "Started removing database clones" -Level Verbose
 
         # Get all the items
-        $items = Get-PDCClone
+        $items = Get-PSDCClone
 
         if (-not $All) {
             if ($HostName) {

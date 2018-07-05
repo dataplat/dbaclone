@@ -1,10 +1,10 @@
-﻿function New-PDCImage {
+﻿function New-PSDCImage {
 <#
 .SYNOPSIS
-    New-PDCImage creates a new image
+    New-PSDCImage creates a new image
 
 .DESCRIPTION
-    New-PDCImage will create a new image based on a SQL Server database
+    New-PSDCImage will create a new image based on a SQL Server database
 
     The command will either create a full backup or use the last full backup to create the image.
 
@@ -79,12 +79,12 @@
     https://psdatabaseclone.io/
 
 .EXAMPLE
-    New-PDCImage -SourceSqlInstance SQLDB1 -DestinationSqlInstance SQLDB2 -ImageLocalPath C:\Temp\images\ -Database DB1 -CreateFullBackup
+    New-PSDCImage -SourceSqlInstance SQLDB1 -DestinationSqlInstance SQLDB2 -ImageLocalPath C:\Temp\images\ -Database DB1 -CreateFullBackup
 
     Create an image for databas DB1 from SQL Server SQLDB1. The temporary destination will be SQLDB2.
     The image will be saved in C:\Temp\images.
 .EXAMPLE
-    New-PDCImage -SourceSqlInstance SQLDB1 -DestinationSqlInstance SQLDB2 -ImageLocalPath C:\Temp\images\ -Database DB1 -UseLastFullBackup
+    New-PSDCImage -SourceSqlInstance SQLDB1 -DestinationSqlInstance SQLDB2 -ImageLocalPath C:\Temp\images\ -Database DB1 -UseLastFullBackup
 
     Create an image from the database DB1 on SQLDB1 using the last full backup and use SQLDB2 as the temporary database server.
     The image is written to c:\Temp\images
@@ -119,7 +119,7 @@
 
         # Test the module database setup
         try {
-            Test-PDCConfiguration -EnableException
+            Test-PSDCConfiguration -EnableException
         }
         catch {
             Stop-PSFFunction -Message "Something is wrong in the module configuration" -ErrorRecord $_ -Continue
@@ -158,7 +158,7 @@
         $computer = [PsfComputer]$uriHost
 
         if (-not $computer.IsLocalhost) {
-            $command = "Convert-PDCLocalUncPathToLocalPath -UncPath '$ImageNetworkPath'"
+            $command = "Convert-PSDCLocalUncPathToLocalPath -UncPath '$ImageNetworkPath'"
             $commandGetLocalPath = [ScriptBlock]::Create($command)
         }
 
@@ -166,7 +166,7 @@
         if (-not $ImageLocalPath) {
             try {
                 if ($computer.IsLocalhost) {
-                    $ImageLocalPath = Convert-PDCLocalUncPathToLocalPath -UncPath $ImageNetworkPath
+                    $ImageLocalPath = Convert-PSDCLocalUncPathToLocalPath -UncPath $ImageNetworkPath
                 }
                 else {
                     $ImageLocalPath = Invoke-PSFCommand -ComputerName $computer -ScriptBlock $commandGetLocalPath -Credential $DestinationCredential
@@ -265,7 +265,7 @@
             # try to create the new VHD
             try {
                 Write-PSFMessage -Message "Create the vhd $imageName.vhdx" -Level Verbose
-                $null = New-PDCVhdDisk -Destination $imagePath -FileName "$imageName.vhdx"
+                $null = New-PSDCVhdDisk -Destination $imagePath -FileName "$imageName.vhdx"
             }
             catch {
                 Stop-PSFFunction -Message "Couldn't create vhd $imageName" -Target "$imageName.vhd" -ErrorRecord $_ -Continue
@@ -275,7 +275,7 @@
             try {
                 Write-PSFMessage -Message "Initializing the vhd $imageName.vhd" -Level Verbose
 
-                $diskResult = Initialize-PDCVhdDisk -Path $vhdPath -Credential $DestinationCredential
+                $diskResult = Initialize-PSDCVhdDisk -Path $vhdPath -Credential $DestinationCredential
             }
             catch {
                 Stop-PSFFunction -Message "Couldn't initialize vhd $vhdPath" -Target $imageName -ErrorRecord $_ -Continue

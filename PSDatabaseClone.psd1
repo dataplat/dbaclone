@@ -46,7 +46,7 @@
     )
 
     # Assemblies that must be loaded prior to importing this module
-    # RequiredAssemblies = @()
+    RequiredAssemblies = @("bin\PSDatabaseClone.dll")
 
     # Script files (.ps1) that are run in the caller's environment prior to
     # importing this module
@@ -63,16 +63,16 @@
     # NestedModules = @()
 
     # Functions to export from this module
-    FunctionsToExport = 'Initialize-PDCVhdDisk',
-    'Invoke-PDCRepairClone',
-    'New-PDCClone',
-    'New-PDCImage',
-    'New-PDCVhdDisk',
-    'Remove-PDCClone',
-	'Remove-PDCImage',
-    'Set-PDCConfiguration',
-    'Get-PDCClone',
-    'Get-PDCImage'
+    FunctionsToExport = 'Initialize-PSDCVhdDisk',
+    'Invoke-PSDCRepairClone',
+    'New-PSDCClone',
+    'New-PSDCImage',
+    'New-PSDCVhdDisk',
+    'Remove-PSDCClone',
+	'Remove-PSDCImage',
+    'Set-PSDCConfiguration',
+    'Get-PSDCClone',
+    'Get-PSDCImage'
 
     # Cmdlets to export from this module
     CmdletsToExport   = ''

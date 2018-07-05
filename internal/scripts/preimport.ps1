@@ -26,16 +26,4 @@ if ($osDetails.Caption -notin $supportedVersions ) {
     }
 }
 
-# Check if the Hyper-V feature is enabled
-if ($osDetails.Caption -like '*Windows 10*') {
-    $feature = Get-WindowsOptionalFeature -FeatureName 'Microsoft-Hyper-V-All' -Online
-    if ($feature.State -ne "Enabled") {
-        Write-PSFMessage -Message 'Please enable the Hyper-V feature with "Enable-WindowsOptionalFeature -Online -FeatureName Microsoft-Hyper-V -All"' -Level Warning  -FunctionName 'Pre Import'
-    }
-}
-elseif ($osDetails.Caption -like '*Windows Server*') {
-    $feature = Get-WindowsFeature -Name 'Hyper-V'
-    if (-not $feature.Installed) {
-        Write-PSFMessage -Message 'Please enable the Hyper-V feature with "Install-WindowsFeature -Name Hyper-V"' -Level Warning  -FunctionName 'Pre Import'
-    }
-}
+

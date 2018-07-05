@@ -1,10 +1,10 @@
-﻿function Get-PDCClone {
+﻿function Get-PSDCClone {
 <#
 .SYNOPSIS
-    Get-PDCClone get on or more clones
+    Get-PSDCClone get on or more clones
 
 .DESCRIPTION
-    Get-PDCClone will retrieve the clones and apply filters if needed.
+    Get-PSDCClone will retrieve the clones and apply filters if needed.
     By default all the clones are returned
 
 .PARAMETER HostName
@@ -33,17 +33,17 @@
     https://psdatabaseclone.io/
 
 .EXAMPLE
-    Get-PDCClone -HostName host1, host2
+    Get-PSDCClone -HostName host1, host2
 
     Retrieve the clones for host1 and host2
 
 .EXAMPLE
-    Get-PDCClone -Database DB1
+    Get-PSDCClone -Database DB1
 
     Get all the clones that have the name DB1
 
 .EXAMPLE
-    Get-PDCClone -ImageName DB1_20180703085917
+    Get-PSDCClone -ImageName DB1_20180703085917
 
     Get all the clones that were made with image "DB1_20180703085917"
 #>
@@ -62,7 +62,7 @@
 
         # Test the module database setup
         try {
-            Test-PDCConfiguration -EnableException
+            Test-PSDCConfiguration -EnableException
         }
         catch {
             Stop-PSFFunction -Message "Something is wrong in the module configuration" -ErrorRecord $_ -Continue
@@ -127,6 +127,8 @@
         if($ImageLocation){
             $results = $results | Where-Object {$_.ImageLocation -in $ImageLocation}
         }
+
+        $results.PSTypeN
 
         return $results
     }
