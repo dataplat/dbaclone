@@ -58,6 +58,11 @@
     Remove-PDCImage -ImageLocation "\\server1\images\DB1_20180703193345.vhdx"
 
     Remove an image
+
+.EXAMPLE
+    Get-PDCImage -Database DB1 | Remove-PDCImage
+
+    Remove all images and clones based on database DB1
 #>
     [CmdLetBinding(DefaultParameterSetName = "ImageLocation", SupportsShouldProcess = $true,
         ConfirmImpact = 'High')]
