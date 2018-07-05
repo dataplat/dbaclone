@@ -108,14 +108,6 @@
         $pdcSqlInstance = Get-PSFConfigValue -FullName psdatabaseclone.database.server
         $pdcDatabase = Get-PSFConfigValue -FullName psdatabaseclone.database.name
 
-        if (-not $HostName -and -not $InputObject) {
-
-            if(-not $PSCmdlet.ShouldProcess("All hosts" , "Delete all clones on all hosts?`nIf not please say no and use -HostName and/or -Database")){
-                return
-            }
-
-        }
-
         Write-PSFMessage -Message "Started removing database clones" -Level Verbose
 
         # Get all the items
@@ -164,7 +156,7 @@
 
             # Loop through each of the results
             foreach ($item in $clone.Group) {
-
+                $item
                 # Remove the database
                 try {
                     Write-PSFMessage -Message "Removing database $($item.DatabaseName) from $($item.SqlInstance)" -Level Verbose
@@ -177,8 +169,10 @@
 
                 # Dismounting the vhd
                 try {
-                    Write-PSFMessage -Message "Dismounting disk $($item.DatabaseName) from $($item.SqlInstance)" -Level Verbose
-                    $null = Dismount-VHD -Path $item.CloneLocation
+                    if (Test-Path -Path $item.CloneLocation) {
+                        Write-PSFMessage -Message "Dismounting disk $($item.CloneLocation) from $($item.HostName)" -Level Verbose
+                        $null = Dismount-VHD -Path $item.CloneLocation
+                    }
                 }
                 catch {
                     Stop-PSFFunction -Message "Could not dismount vhd $($item.CloneLocation)" -ErrorRecord $_ -Target $result -Continue
@@ -186,11 +180,15 @@
 
                 # Remove clone file and related access path
                 try {
-                    Write-PSFMessage -Message "Removing vhd access path" -Level Verbose
-                    $null = Remove-Item -Path $item.AccessPath -Credential $Credential -Force
+                    if (Test-Path -Path $item.AccessPath) {
+                        Write-PSFMessage -Message "Removing vhd access path" -Level Verbose
+                        $null = Remove-Item -Path $item.AccessPath -Credential $Credential -Force
+                    }
 
-                    Write-PSFMessage -Message "Removing vhd" -Level Verbose
-                    $null = Remove-Item -Path $item.CloneLocation -Credential $Credential -Force
+                    if (Test-Path -Path $item.CloneLocation) {
+                        Write-PSFMessage -Message "Removing vhd" -Level Verbose
+                        $null = Remove-Item -Path $item.CloneLocation -Credential $Credential -Force
+                    }
                 }
                 catch {
                     Stop-PSFFunction -Message "Could not remove clone files" -ErrorRecord $_ -Target $result -Continue
@@ -198,21 +196,15 @@
 
                 # Removing records from database
                 try {
-                    $query = "
-                        DELETE c
-                        FROM dbo.Clone AS c
-                            INNER JOIN dbo.Host AS h
-                                ON h.HostID = h.HostID
-                        WHERE h.HostName = '$($item.HostName)'
-                            AND c.CloneLocation = '$($item.CloneLocation)';
-                    "
-
+                    $query = "DELETE FROM dbo.Clone WHERE CloneID = $($item.CloneID);"
+                    Write-PSFMessage -Message $query -Level Verbose
                     Invoke-DbaSqlQuery -SqlInstance $pdcSqlInstance -Database $pdcDatabase -Query $query -EnableException
                 }
                 catch {
                     Stop-PSFFunction -Message "Could not remove clone record from database" -ErrorRecord $_ -Target $query -Continue
                 }
-            } # end for each group item
+
+            } # End for each group item
 
         } # End for each clone
 
