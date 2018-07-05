@@ -1,53 +1,53 @@
 ﻿function Invoke-PDCRepairClone {
-<#
-.SYNOPSIS
-    Invoke-PDCRepairClone repairs the clones
+    <#
+    .SYNOPSIS
+        Invoke-PDCRepairClone repairs the clones
 
-.DESCRIPTION
-    Invoke-PDCRepairClone has the ability to repair the clones when they have gotten disconnected from the image.
-    In such a case the clone is no longer available for the database server and the database will either not show
-    any information or the database will have the status (Recovery Pending).
+    .DESCRIPTION
+        Invoke-PDCRepairClone has the ability to repair the clones when they have gotten disconnected from the image.
+        In such a case the clone is no longer available for the database server and the database will either not show
+        any information or the database will have the status (Recovery Pending).
 
-    By running this command all the clones will be retrieved from the database for a certain host.
+        By running this command all the clones will be retrieved from the database for a certain host.
 
-.PARAMETER HostName
-    Set on or more hostnames to retrieve the configurations for
+    .PARAMETER HostName
+        Set on or more hostnames to retrieve the configurations for
 
-.PARAMETER SqlCredential
-    Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
+    .PARAMETER SqlCredential
+        Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
 
-    $scred = Get-Credential, then pass $scred object to the -SqlCredential parameter.
+        $scred = Get-Credential, then pass $scred object to the -SqlCredential parameter.
 
-    Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
-    To connect as a different Windows user, run PowerShell as that user.
+        Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
+        To connect as a different Windows user, run PowerShell as that user.
 
-.PARAMETER EnableException
-    By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-    This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-    Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-.PARAMETER WhatIf
-    If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
+    .PARAMETER WhatIf
+        If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
 
-.PARAMETER Confirm
-    If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
+    .PARAMETER Confirm
+        If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
 
-.NOTES
-    Author: Sander Stad (@sqlstad, sqlstad.nl)
+    .NOTES
+        Author: Sander Stad (@sqlstad, sqlstad.nl)
 
-    Website: https://psdatabaseclone.io
-    Copyright: (C) Sander Stad, sander@sqlstad.nl
-    License: MIT https://opensource.org/licenses/MIT
+        Website: https://psdatabaseclone.io
+        Copyright: (C) Sander Stad, sander@sqlstad.nl
+        License: MIT https://opensource.org/licenses/MIT
 
-.LINK
-    https://psdatabaseclone.io/
+    .LINK
+        https://psdatabaseclone.io/
 
-.EXAMPLE
-    Invoke-PDCRepairClone -Hostname Host1
+    .EXAMPLE
+        Invoke-PDCRepairClone -Hostname Host1
 
-    Repair the clones for Host1
+        Repair the clones for Host1
 
-#>
+    #>
     [CmdLetBinding()]
 
     param(
@@ -80,18 +80,18 @@
         foreach ($hst in $HostName) {
 
             $query = "
-                SELECT i.ImageLocation,
-                        c.CloneLocation,
-                        c.SqlInstance,
-                        c.DatabaseName,
-                        c.IsEnabled
-                FROM dbo.Clone AS c
-                    INNER JOIN dbo.Image AS i
-                        ON i.ImageID = c.ImageID
-                    INNER JOIN dbo.Host AS h
-                        ON h.HostID = c.HostID
-                WHERE h.HostName = '$hst';
-            "
+                    SELECT i.ImageLocation,
+                            c.CloneLocation,
+                            c.SqlInstance,
+                            c.DatabaseName,
+                            c.IsEnabled
+                    FROM dbo.Clone AS c
+                        INNER JOIN dbo.Image AS i
+                            ON i.ImageID = c.ImageID
+                        INNER JOIN dbo.Host AS h
+                            ON h.HostID = c.HostID
+                    WHERE h.HostName = '$hst';
+                "
 
             Write-PSFMessage -Message "Query Host Clones`n$query" -Level Debug
 
