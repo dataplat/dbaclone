@@ -97,7 +97,8 @@
             "
 
         try {
-            $results = Invoke-DbaSqlQuery -SqlInstance $pdcSqlInstance -Database $pdcDatabase -Query $query -As PSObject
+            $results = @()
+            $results = Invoke-DbaSqlQuery -SqlInstance $pdcSqlInstance -Database $pdcDatabase -Query $query #-As PSObject
         }
         catch {
             Stop-PSFFunction -Message "Could not execute query" -ErrorRecord $_ -Target $query
@@ -127,10 +128,26 @@
         if($ImageLocation){
             $results = $results | Where-Object {$_.ImageLocation -in $ImageLocation}
         }
+        $results
+        # Convert the results to the PSDCClone data type
+        foreach($result in $results){
 
-        $results.PSTypeN
+            [PSDCClone]$clone = New-Object PSDCClone
+            $clone.CloneID = $result.CloneID
+            $clone.CloneLocation = $result.CloneLocation
+            $clone.AccessPath = $result.AccessPath
+            $clone.SqlInstance = $result.SqlInstance
+            $clone.DatabaseName = $result.DatabaseName
+            $clone.IsEnabled = $result.IsEnabled
+            $clone.ImageID = $result.ImageID
+            $clone.ImageName = $result.ImageName
+            $clone.ImageLocation = $result.ImageLocation
+            $clone.HostName = $result.HostName
 
-        return $results
+            return $clone
+
+        }
+
     }
 
     end {
