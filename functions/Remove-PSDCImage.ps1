@@ -1,69 +1,69 @@
 ﻿function Remove-PSDCImage {
     <#
-.SYNOPSIS
-    Remove-PSDCImage removes one or more images
+    .SYNOPSIS
+        Remove-PSDCImage removes one or more images
 
-.DESCRIPTION
-    The command will remove an image from PSDatabaseClone.
-    It will also remove all the clones associated with it on the hosts.
+    .DESCRIPTION
+        The command will remove an image from PSDatabaseClone.
+        It will also remove all the clones associated with it on the hosts.
 
-.PARAMETER ImageID
-    Remove images based on the image id
+    .PARAMETER ImageID
+        Remove images based on the image id
 
-.PARAMETER ImageName
-    Remove images based on the image name
+    .PARAMETER ImageName
+        Remove images based on the image name
 
-.PARAMETER ImageLocation
-    Location of the image as it's saved in the database or can be seen on the file system.
+    .PARAMETER ImageLocation
+        Location of the image as it's saved in the database or can be seen on the file system.
 
-.PARAMETER Database
-    Remove images based on the database
+    .PARAMETER Database
+        Remove images based on the database
 
-.PARAMETER ExcludeDatabase
-    Filter the images based on the excluded database
+    .PARAMETER ExcludeDatabase
+        Filter the images based on the excluded database
 
-.PARAMETER Credential
-    Allows you to login to servers using  Windows Auth/Integrated/Trusted. To use:
+    .PARAMETER Credential
+        Allows you to login to servers using  Windows Auth/Integrated/Trusted. To use:
 
-    $scred = Get-Credential, then pass $scred object to the -Credential parameter.
+        $scred = Get-Credential, then pass $scred object to the -Credential parameter.
 
-.PARAMETER Force
-    Forcefully remove the items.
+    .PARAMETER Force
+        Forcefully remove the items.
 
-.PARAMETER InputObject
-    The input object that is used for pipeline use
+    .PARAMETER InputObject
+        The input object that is used for pipeline use
 
-.PARAMETER EnableException
-    By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-    This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-    Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-.PARAMETER WhatIf
-    If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
+    .PARAMETER WhatIf
+        If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
 
-.PARAMETER Confirm
-    If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
+    .PARAMETER Confirm
+        If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
 
-.NOTES
-    Author: Sander Stad (@sqlstad, sqlstad.nl)
+    .NOTES
+        Author: Sander Stad (@sqlstad, sqlstad.nl)
 
-    Website: https://psdatabaseclone.io
-    Copyright: (C) Sander Stad, sander@sqlstad.nl
-    License: MIT https://opensource.org/licenses/MIT
+        Website: https://psdatabaseclone.io
+        Copyright: (C) Sander Stad, sander@sqlstad.nl
+        License: MIT https://opensource.org/licenses/MIT
 
-.LINK
-    https://psdatabaseclone.io/
+    .LINK
+        https://psdatabaseclone.io/
 
-.EXAMPLE
-    Remove-PSDCImage -ImageLocation "\\server1\images\DB1_20180703193345.vhdx"
+    .EXAMPLE
+        Remove-PSDCImage -ImageLocation "\\server1\images\DB1_20180703193345.vhdx"
 
-    Remove an image
+        Remove an image
 
-.EXAMPLE
-    Get-PSDCImage -Database DB1 | Remove-PSDCImage
+    .EXAMPLE
+        Get-PSDCImage -Database DB1 | Remove-PSDCImage
 
-    Remove all images and clones based on database DB1
-#>
+        Remove all images and clones based on database DB1
+    #>
     [CmdLetBinding(DefaultParameterSetName = "ImageLocation", SupportsShouldProcess = $true,
         ConfirmImpact = 'High')]
 

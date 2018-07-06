@@ -1,57 +1,57 @@
 ﻿function Get-PSDCImage {
-<#
-.SYNOPSIS
-    Get-PSDCImage get on or more clones
+    <#
+    .SYNOPSIS
+        Get-PSDCImage get on or more clones
 
-.DESCRIPTION
-    Get-PSDCImage will retrieve the clones and apply filters if needed.
-    By default all the clones are returned
+    .DESCRIPTION
+        Get-PSDCImage will retrieve the clones and apply filters if needed.
+        By default all the clones are returned
 
-.PARAMETER SqlCredential
-    Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
+    .PARAMETER SqlCredential
+        Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
 
-    $scred = Get-Credential, then pass $scred object to the -SqlCredential parameter.
+        $scred = Get-Credential, then pass $scred object to the -SqlCredential parameter.
 
-    Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
-    To connect as a different Windows user, run PowerShell as that user.
+        Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
+        To connect as a different Windows user, run PowerShell as that user.
 
-.PARAMETER ImageID
-    Filter based on the image id
+    .PARAMETER ImageID
+        Filter based on the image id
 
-.PARAMETER ImageName
-    Filter based on the image name
+    .PARAMETER ImageName
+        Filter based on the image name
 
-.PARAMETER ImageLocation
-    Filter based on the image location
+    .PARAMETER ImageLocation
+        Filter based on the image location
 
-.PARAMETER Database
-    Filter based on the database
+    .PARAMETER Database
+        Filter based on the database
 
-.NOTES
-    Author: Sander Stad (@sqlstad, sqlstad.nl)
+    .NOTES
+        Author: Sander Stad (@sqlstad, sqlstad.nl)
 
-    Website: https://psdatabaseclone.io
-    Copyright: (C) Sander Stad, sander@sqlstad.nl
-    License: MIT https://opensource.org/licenses/MIT
+        Website: https://psdatabaseclone.io
+        Copyright: (C) Sander Stad, sander@sqlstad.nl
+        License: MIT https://opensource.org/licenses/MIT
 
-.LINK
-    https://psdatabaseclone.io/
+    .LINK
+        https://psdatabaseclone.io/
 
-.EXAMPLE
-    Get-PSDCImage -ImageName DB1_20180704220944, DB2_20180704221144
+    .EXAMPLE
+        Get-PSDCImage -ImageName DB1_20180704220944, DB2_20180704221144
 
-    Retrieve the images for DB1_20180704220944, DB2_20180704221144
+        Retrieve the images for DB1_20180704220944, DB2_20180704221144
 
-.EXAMPLE
-    Get-PSDCImage -ImageLocation "\\fileserver1\psdatabaseclone\images\DB1_20180704220944.vhdx"
+    .EXAMPLE
+        Get-PSDCImage -ImageLocation "\\fileserver1\psdatabaseclone\images\DB1_20180704220944.vhdx"
 
-    Get all the images that are the same as the image location
+        Get all the images that are the same as the image location
 
-.EXAMPLE
-    Get-PSDCImage -Database DB1, DB2
+    .EXAMPLE
+        Get-PSDCImage -Database DB1, DB2
 
-    Get all the images that were made for databases DB1 and DB2
-#>
+        Get all the images that were made for databases DB1 and DB2
+    #>
 
     [CmdLetBinding()]
 

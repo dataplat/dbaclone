@@ -1,86 +1,86 @@
 ﻿function New-PSDCClone {
     <#
-.SYNOPSIS
-    New-PSDCClone creates a new clone
+    .SYNOPSIS
+        New-PSDCClone creates a new clone
 
-.DESCRIPTION
-    New-PSDCClone willcreate a new clone based on an image.
-    The clone will be created in a certain directory, mounted and attached to a database server.
+    .DESCRIPTION
+        New-PSDCClone willcreate a new clone based on an image.
+        The clone will be created in a certain directory, mounted and attached to a database server.
 
-.PARAMETER SqlInstance
-    SQL Server name or SMO object representing the SQL Server to connect to
+    .PARAMETER SqlInstance
+        SQL Server name or SMO object representing the SQL Server to connect to
 
-.PARAMETER SqlCredential
-    Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
+    .PARAMETER SqlCredential
+        Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
 
-    $scred = Get-Credential, then pass $scred object to the -SqlCredential parameter.
+        $scred = Get-Credential, then pass $scred object to the -SqlCredential parameter.
 
-    Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
-    To connect as a different Windows user, run PowerShell as that user.
+        Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
+        To connect as a different Windows user, run PowerShell as that user.
 
-.PARAMETER Credential
-    Allows you to login to servers using Windows Auth/Integrated/Trusted. To use:
+    .PARAMETER Credential
+        Allows you to login to servers using Windows Auth/Integrated/Trusted. To use:
 
-    $scred = Get-Credential, then pass $scred object to the -Credential parameter.
+        $scred = Get-Credential, then pass $scred object to the -Credential parameter.
 
-.PARAMETER ParentVhd
-    Points to the parent VHD to create the clone from
+    .PARAMETER ParentVhd
+        Points to the parent VHD to create the clone from
 
-.PARAMETER Destination
-    Destination directory to save the clone to
+    .PARAMETER Destination
+        Destination directory to save the clone to
 
-.PARAMETER CloneName
-    Name of the clone
+    .PARAMETER CloneName
+        Name of the clone
 
-.PARAMETER Database
-    Database name for the clone
+    .PARAMETER Database
+        Database name for the clone
 
-.PARAMETER LatestImage
-    Automatically get the last image ever created for an specific database
+    .PARAMETER LatestImage
+        Automatically get the last image ever created for an specific database
 
-.PARAMETER Disabled
-    Registers the clone in the configuration as disabled.
-    If this setting is used the clone will not be recovered when the repair command is run
+    .PARAMETER Disabled
+        Registers the clone in the configuration as disabled.
+        If this setting is used the clone will not be recovered when the repair command is run
 
-.PARAMETER Force
-    Forcefully create items when needed
+    .PARAMETER Force
+        Forcefully create items when needed
 
-.PARAMETER EnableException
-    By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-    This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-    Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-.PARAMETER WhatIf
-    If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
+    .PARAMETER WhatIf
+        If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
 
-.PARAMETER Confirm
-    If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
+    .PARAMETER Confirm
+        If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
 
-.NOTES
-    Author: Sander Stad (@sqlstad, sqlstad.nl)
+    .NOTES
+        Author: Sander Stad (@sqlstad, sqlstad.nl)
 
-    Website: https://psdatabaseclone.io
-    Copyright: (C) Sander Stad, sander@sqlstad.nl
-    License: MIT https://opensource.org/licenses/MIT
+        Website: https://psdatabaseclone.io
+        Copyright: (C) Sander Stad, sander@sqlstad.nl
+        License: MIT https://opensource.org/licenses/MIT
 
-.LINK
-    https://psdatabaseclone.io/
+    .LINK
+        https://psdatabaseclone.io/
 
-.EXAMPLE
-    New-PSDCClone -SqlInstance SQLDB1 -ParentVhd C:\Temp\images\DB1_20180623203204.vhdx -Destination C:\Temp\clones\ -CloneName DB1_Clone1
+    .EXAMPLE
+        New-PSDCClone -SqlInstance SQLDB1 -ParentVhd C:\Temp\images\DB1_20180623203204.vhdx -Destination C:\Temp\clones\ -CloneName DB1_Clone1
 
-    Create a new clone based on the image DB1_20180623203204.vhdx and attach the database to SQLDB1 as DB1_Clone1
+        Create a new clone based on the image DB1_20180623203204.vhdx and attach the database to SQLDB1 as DB1_Clone1
 
-.EXAMPLE
-    New-PSDCClone -SqlInstance SQLDB1 -Database DB1, DB2 -LatestImage
+    .EXAMPLE
+        New-PSDCClone -SqlInstance SQLDB1 -Database DB1, DB2 -LatestImage
 
-    Create a new clone on SQLDB1 for the databases DB1 and DB2 with the latest image for those databases
+        Create a new clone on SQLDB1 for the databases DB1 and DB2 with the latest image for those databases
 
-.EXAMPLE
-    New-PSDCClone -SqlInstance SQLDB1, SQLDB2 -Database DB1 -LatestImage
+    .EXAMPLE
+        New-PSDCClone -SqlInstance SQLDB1, SQLDB2 -Database DB1 -LatestImage
 
-    Create a new clone on SQLDB1 and SQLDB2 for the databases DB1 with the latest image
-#>
+        Create a new clone on SQLDB1 and SQLDB2 for the databases DB1 with the latest image
+    #>
     [CmdLetBinding(DefaultParameterSetName = 'ByLatest', SupportsShouldProcess = $true)]
     param(
         [parameter(Mandatory = $true)]

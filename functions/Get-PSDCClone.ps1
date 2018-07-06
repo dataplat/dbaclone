@@ -1,60 +1,60 @@
 ﻿function Get-PSDCClone {
     <#
-.SYNOPSIS
-    Get-PSDCClone get on or more clones
+    .SYNOPSIS
+        Get-PSDCClone get on or more clones
 
-.DESCRIPTION
-    Get-PSDCClone will retrieve the clones and apply filters if needed.
-    By default all the clones are returned
+    .DESCRIPTION
+        Get-PSDCClone will retrieve the clones and apply filters if needed.
+        By default all the clones are returned
 
-.PARAMETER SqlCredential
-    Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
+    .PARAMETER SqlCredential
+        Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
 
-    $scred = Get-Credential, then pass $scred object to the -SqlCredential parameter.
+        $scred = Get-Credential, then pass $scred object to the -SqlCredential parameter.
 
-    Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
-    To connect as a different Windows user, run PowerShell as that user.
+        Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
+        To connect as a different Windows user, run PowerShell as that user.
 
-.PARAMETER HostName
-    Filter based on the hostname
+    .PARAMETER HostName
+        Filter based on the hostname
 
-.PARAMETER Database
-    Filter based on the database
+    .PARAMETER Database
+        Filter based on the database
 
-.PARAMETER ImageID
-    Filter based on the image id
+    .PARAMETER ImageID
+        Filter based on the image id
 
-.PARAMETER ImageName
-    Filter based on the image name
+    .PARAMETER ImageName
+        Filter based on the image name
 
-.PARAMETER ImageLocation
-    Filter based on the image location
+    .PARAMETER ImageLocation
+        Filter based on the image location
 
-.NOTES
-    Author: Sander Stad (@sqlstad, sqlstad.nl)
+    .NOTES
+        Author: Sander Stad (@sqlstad, sqlstad.nl)
 
-    Website: https://psdatabaseclone.io
-    Copyright: (C) Sander Stad, sander@sqlstad.nl
-    License: MIT https://opensource.org/licenses/MIT
+        Website: https://psdatabaseclone.io
+        Copyright: (C) Sander Stad, sander@sqlstad.nl
+        License: MIT https://opensource.org/licenses/MIT
 
-.LINK
-    https://psdatabaseclone.io/
+    .LINK
+        https://psdatabaseclone.io/
 
-.EXAMPLE
-    Get-PSDCClone -HostName host1, host2
+    .EXAMPLE
+        Get-PSDCClone -HostName host1, host2
 
-    Retrieve the clones for host1 and host2
+        Retrieve the clones for host1 and host2
 
-.EXAMPLE
-    Get-PSDCClone -Database DB1
+    .EXAMPLE
+        Get-PSDCClone -Database DB1
 
-    Get all the clones that have the name DB1
+        Get all the clones that have the name DB1
 
-.EXAMPLE
-    Get-PSDCClone -ImageName DB1_20180703085917
+    .EXAMPLE
+        Get-PSDCClone -ImageName DB1_20180703085917
 
-    Get all the clones that were made with image "DB1_20180703085917"
-#>
+        Get all the clones that were made with image "DB1_20180703085917"
+    #>
 
     [CmdLetBinding()]
 

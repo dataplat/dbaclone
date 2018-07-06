@@ -1,94 +1,94 @@
 ﻿function New-PSDCImage {
     <#
-.SYNOPSIS
-    New-PSDCImage creates a new image
+    .SYNOPSIS
+        New-PSDCImage creates a new image
 
-.DESCRIPTION
-    New-PSDCImage will create a new image based on a SQL Server database
+    .DESCRIPTION
+        New-PSDCImage will create a new image based on a SQL Server database
 
-    The command will either create a full backup or use the last full backup to create the image.
+        The command will either create a full backup or use the last full backup to create the image.
 
-    Every image is created with the name of the database and a time stamp yyyyMMddHHmmss i.e "DB1_20180622171819.vhdx"
+        Every image is created with the name of the database and a time stamp yyyyMMddHHmmss i.e "DB1_20180622171819.vhdx"
 
-.PARAMETER SourceSqlInstance
-    Source SQL Server name or SMO object representing the SQL Server to connect to.
-    This will be where the database is currently located
+    .PARAMETER SourceSqlInstance
+        Source SQL Server name or SMO object representing the SQL Server to connect to.
+        This will be where the database is currently located
 
-.PARAMETER SourceSqlCredential
-    Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
+    .PARAMETER SourceSqlCredential
+        Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
 
-    $scred = Get-Credential, then pass $scred object to the -SourceSqlCredential parameter.
+        $scred = Get-Credential, then pass $scred object to the -SourceSqlCredential parameter.
 
-    Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
-    To connect as a different Windows user, run PowerShell as that user.
+        Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
+        To connect as a different Windows user, run PowerShell as that user.
 
-.PARAMETER DestinationSqlInstance
-    SQL Server name or SMO object representing the SQL Server to connect to.
-    This is the server to use to temporarily restore the database to create the image.
+    .PARAMETER DestinationSqlInstance
+        SQL Server name or SMO object representing the SQL Server to connect to.
+        This is the server to use to temporarily restore the database to create the image.
 
-.PARAMETER DestinationSqlCredential
-    Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
+    .PARAMETER DestinationSqlCredential
+        Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
 
-    $scred = Get-Credential, then pass $scred object to the -DestinationSqlCredential parameter.
+        $scred = Get-Credential, then pass $scred object to the -DestinationSqlCredential parameter.
 
-    Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
-    To connect as a different Windows user, run PowerShell as that user.
+        Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
+        To connect as a different Windows user, run PowerShell as that user.
 
-.PARAMETER DestinationCredential
-    Allows you to login to other parts of a system like folders. To use:
+    .PARAMETER DestinationCredential
+        Allows you to login to other parts of a system like folders. To use:
 
-    $scred = Get-Credential, then pass $scred object to the -DestinationCredential parameter.
+        $scred = Get-Credential, then pass $scred object to the -DestinationCredential parameter.
 
-.PARAMETER ImageNetworkPath
-    Network path where to save the image. This has to be a UNC path
+    .PARAMETER ImageNetworkPath
+        Network path where to save the image. This has to be a UNC path
 
-.PARAMETER ImageLocalPath
-    Local path where to save the image
+    .PARAMETER ImageLocalPath
+        Local path where to save the image
 
-.PARAMETER Database
-    Databases to create an image of
+    .PARAMETER Database
+        Databases to create an image of
 
-.PARAMETER CreateFullBackup
-    Create a new full backup of the database. The backup will be saved in the default backup directory
+    .PARAMETER CreateFullBackup
+        Create a new full backup of the database. The backup will be saved in the default backup directory
 
-.PARAMETER UseLastFullBackup
-    Use the last full backup created for the database
+    .PARAMETER UseLastFullBackup
+        Use the last full backup created for the database
 
-.PARAMETER Force
-    Forcefully execute commands when needed
+    .PARAMETER Force
+        Forcefully execute commands when needed
 
-.PARAMETER EnableException
-    By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-    This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-    Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-.PARAMETER WhatIf
-    If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
+    .PARAMETER WhatIf
+        If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
 
-.PARAMETER Confirm
-    If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
+    .PARAMETER Confirm
+        If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
 
-.NOTES
-    Author: Sander Stad (@sqlstad, sqlstad.nl)
+    .NOTES
+        Author: Sander Stad (@sqlstad, sqlstad.nl)
 
-    Website: https://psdatabaseclone.io
-    Copyright: (C) Sander Stad, sander@sqlstad.nl
-    License: MIT https://opensource.org/licenses/MIT
+        Website: https://psdatabaseclone.io
+        Copyright: (C) Sander Stad, sander@sqlstad.nl
+        License: MIT https://opensource.org/licenses/MIT
 
-.LINK
-    https://psdatabaseclone.io/
+    .LINK
+        https://psdatabaseclone.io/
 
-.EXAMPLE
-    New-PSDCImage -SourceSqlInstance SQLDB1 -DestinationSqlInstance SQLDB2 -ImageLocalPath C:\Temp\images\ -Database DB1 -CreateFullBackup
+    .EXAMPLE
+        New-PSDCImage -SourceSqlInstance SQLDB1 -DestinationSqlInstance SQLDB2 -ImageLocalPath C:\Temp\images\ -Database DB1 -CreateFullBackup
 
-    Create an image for databas DB1 from SQL Server SQLDB1. The temporary destination will be SQLDB2.
-    The image will be saved in C:\Temp\images.
-.EXAMPLE
-    New-PSDCImage -SourceSqlInstance SQLDB1 -DestinationSqlInstance SQLDB2 -ImageLocalPath C:\Temp\images\ -Database DB1 -UseLastFullBackup
+        Create an image for databas DB1 from SQL Server SQLDB1. The temporary destination will be SQLDB2.
+        The image will be saved in C:\Temp\images.
+    .EXAMPLE
+        New-PSDCImage -SourceSqlInstance SQLDB1 -DestinationSqlInstance SQLDB2 -ImageLocalPath C:\Temp\images\ -Database DB1 -UseLastFullBackup
 
-    Create an image from the database DB1 on SQLDB1 using the last full backup and use SQLDB2 as the temporary database server.
-    The image is written to c:\Temp\images
-#>
+        Create an image from the database DB1 on SQLDB1 using the last full backup and use SQLDB2 as the temporary database server.
+        The image is written to c:\Temp\images
+    #>
     [CmdLetBinding(SupportsShouldProcess = $true)]
     param(
         [parameter(Mandatory = $true)]
