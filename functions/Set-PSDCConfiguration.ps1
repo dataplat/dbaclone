@@ -57,7 +57,6 @@ function Set-PSDCConfiguration {
     param(
         [parameter(Mandatory = $true)]
         [ValidateNotNullOrEmpty()]
-        [Alias("ServerInstance", "SqlServerSqlServer")]
         [object]$SqlInstance,
         [System.Management.Automation.PSCredential]
         $SqlCredential,
