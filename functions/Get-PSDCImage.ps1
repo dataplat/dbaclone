@@ -83,6 +83,7 @@
         "
 
         try {
+            $result = @()
             $results = Invoke-DbaSqlQuery -SqlInstance $pdcSqlInstance -Database $pdcDatabase -Query $query -As PSObject
         }
         catch {
