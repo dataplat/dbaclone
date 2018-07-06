@@ -1,10 +1,10 @@
-function Initialize-PDCVhdDisk {
+﻿function Initialize-PSDCVhdDisk {
 <#
 .SYNOPSIS
-    Initialize-PDCVhdDisk initialized the VHD
+    Initialize-PSDCVhdDisk initialized the VHD
 
 .DESCRIPTION
-    Initialize-PDCVhdDisk will initialize the VHD.
+    Initialize-PSDCVhdDisk will initialize the VHD.
     It mounts the disk, creates a volume, creates the partition and sets it to active
 
 .PARAMETER Path
@@ -14,6 +14,13 @@ function Initialize-PDCVhdDisk {
     Allows you to use credentials for creating items in other locations To use:
 
     $scred = Get-Credential, then pass $scred object to the -Credential parameter.
+
+.PARAMETER PartitionStyle
+    A partition can either be initialized as MBR or as GPT. GPT is the default.
+
+.PARAMETER AllocationUnitSize
+    Set the allocation unit size for the disk.
+    By default it's 64 KB because that's what SQL Server tends to write most of the time.
 
 .PARAMETER EnableException
     By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -37,12 +44,12 @@ function Initialize-PDCVhdDisk {
     https://psdatabaseclone.io/
 
 .EXAMPLE
-    Initialize-PDCVhdDisk -Path $path
+    Initialize-PSDCVhdDisk -Path $path
 
     Initialize the disk pointing to the path with all default settings
 
 .EXAMPLE
-    Initialize-PDCVhdDisk -Path $path -AllocationUnitSize 4KB
+    Initialize-PSDCVhdDisk -Path $path -AllocationUnitSize 4KB
 
     Initialize the disk and format the partition with a 4Kb allocation unit size
 

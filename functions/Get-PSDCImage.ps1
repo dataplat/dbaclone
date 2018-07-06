@@ -1,17 +1,11 @@
-function Get-PDCClone {
-<#
+﻿function Get-PSDCImage {
+    <#
 .SYNOPSIS
-    Get-PDCClone get on or more clones
+    Get-PSDCImage get on or more clones
 
 .DESCRIPTION
-    Get-PDCClone will retrieve the clones and apply filters if needed.
+    Get-PSDCImage will retrieve the clones and apply filters if needed.
     By default all the clones are returned
-
-.PARAMETER HostName
-    Filter based on the hostname
-
-.PARAMETER Database
-    Filter based on the database
 
 .PARAMETER ImageID
     Filter based on the image id
@@ -21,6 +15,9 @@ function Get-PDCClone {
 
 .PARAMETER ImageLocation
     Filter based on the image location
+
+.PARAMETER Database
+    Filter based on the database
 
 .NOTES
     Author: Sander Stad (@sqlstad, sqlstad.nl)
@@ -33,36 +30,34 @@ function Get-PDCClone {
     https://psdatabaseclone.io/
 
 .EXAMPLE
-    Get-PDCClone -HostName host1, host2
+    Get-PSDCImage -ImageName DB1_20180704220944, DB2_20180704221144
 
-    Retrieve the clones for host1 and host2
-
-.EXAMPLE
-    Get-PDCClone -Database DB1
-
-    Get all the clones that have the name DB1
+    Retrieve the images for DB1_20180704220944, DB2_20180704221144
 
 .EXAMPLE
-    Get-PDCClone -ImageName DB1_20180703085917
+    Get-PSDCImage -ImageLocation "\\fileserver1\psdatabaseclone\images\DB1_20180704220944.vhdx"
 
-    Get all the clones that were made with image "DB1_20180703085917"
+    Get all the images that are the same as the image location
+
+.EXAMPLE
+    Get-PSDCImage -Database DB1, DB2
+
+    Get all the images that were made for databases DB1 and DB2
 #>
 
     [CmdLetBinding()]
 
     param(
-        [string[]]$HostName,
-        [string[]]$Database,
         [int[]]$ImageID,
         [string[]]$ImageName,
-        [string[]]$ImageLocation
+        [string[]]$ImageLocation,
+        [string[]]$Database
     )
 
     begin {
-
         # Test the module database setup
         try {
-            Test-PDCConfiguration -EnableException
+            Test-PSDCConfiguration -EnableException
         }
         catch {
             Stop-PSFFunction -Message "Something is wrong in the module configuration" -ErrorRecord $_ -Continue
@@ -70,74 +65,72 @@ function Get-PDCClone {
 
         $pdcSqlInstance = Get-PSFConfigValue -FullName psdatabaseclone.database.server
         $pdcDatabase = Get-PSFConfigValue -FullName psdatabaseclone.database.name
-
     }
 
     process {
-
         # Test if there are any errors
         if (Test-PSFFunctionInterrupt) { return }
 
         $query = "
-            SELECT c.CloneID,
-                c.CloneLocation,
-                c.AccessPath,
-                c.SqlInstance,
-                c.DatabaseName,
-                c.IsEnabled,
-                i.ImageID,
-                i.ImageName,
-                i.ImageLocation,
-                h.HostName
-            FROM dbo.Clone AS c
-                INNER JOIN dbo.Host AS h
-                    ON h.HostID = c.HostID
-                INNER JOIN dbo.Image AS i
-                    ON i.ImageID = c.ImageID;
-            "
+            SELECT ImageID,
+                ImageName,
+                ImageLocation,
+                SizeMB,
+                DatabaseName,
+                DatabaseTimestamp,
+                CreatedOn
+            FROM dbo.Image;
+        "
 
         try {
+            $result = @()
             $results = Invoke-DbaSqlQuery -SqlInstance $pdcSqlInstance -Database $pdcDatabase -Query $query -As PSObject
         }
         catch {
             Stop-PSFFunction -Message "Could not execute query" -ErrorRecord $_ -Target $query
         }
 
-        # Filter host name
-        if($HostName){
-            $results = $results | Where-Object {$_.HostName -in $HostName}
-        }
-
         # Filter image id
-        if($Database){
-            $results = $results | Where-Object {$_.DatabaseName -in $Database}
-        }
-
-        # Filter image id
-        if($ImageID){
+        if ($ImageID) {
             $results = $results | Where-Object {$_.ImageID -in $ImageID}
         }
 
         # Filter image name
-        if($ImageName){
+        if ($ImageName) {
             $results = $results | Where-Object {$_.ImageName -in $ImageName}
         }
 
         # Filter image location
-        if($ImageLocation){
+        if ($ImageLocation) {
             $results = $results | Where-Object {$_.ImageLocation -in $ImageLocation}
         }
 
-        return $results
+        # Filter database
+        if ($Database) {
+            $results = $results | Where-Object {$_.DatabaseName -in $Database}
+        }
+
+
+        # Convert the results to the PSDCClone data type
+        foreach($result in $results){
+
+            [PSDCImage]$image = New-Object PSDCImage
+            $image.ImageID = $result.ImageID
+            $image.ImageName = $result.ImageName
+            $image.ImageLocation = $result.ImageLocation
+            $image.SizeMB = $result.SizeMB
+            $image.DatabaseName = $result.DatabaseName
+            $image.DatabaseTimestamp = $result.DatabaseTimestamp
+            $image.CreatedOn = $result.CreatedOn
+
+            return $image
+        }
     }
 
     end {
-
         # Test if there are any errors
         if (Test-PSFFunctionInterrupt) { return }
 
-        Write-PSFMessage -Message "Finished retrieving clone(s)" -Level Verbose
-
+        Write-PSFMessage -Message "Finished retrieving image(s)" -Level Verbose
     }
-
 }

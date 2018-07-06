@@ -1,10 +1,10 @@
-function New-PDCClone {
+﻿function New-PSDCClone {
 <#
 .SYNOPSIS
-    New-PDCClone creates a new clone
+    New-PSDCClone creates a new clone
 
 .DESCRIPTION
-    New-PDCClone willcreate a new clone based on an image.
+    New-PSDCClone willcreate a new clone based on an image.
     The clone will be created in a certain directory, mounted and attached to a database server.
 
 .PARAMETER SqlInstance
@@ -35,6 +35,9 @@ function New-PDCClone {
 .PARAMETER Database
     Database name for the clone
 
+.PARAMETER LatestImage
+    Automatically get the last image ever created for an specific database
+
 .PARAMETER Disabled
     Registers the clone in the configuration as disabled.
     If this setting is used the clone will not be recovered when the repair command is run
@@ -64,21 +67,21 @@ function New-PDCClone {
     https://psdatabaseclone.io/
 
 .EXAMPLE
-    New-PDCClone -SqlInstance SQLDB1 -ParentVhd C:\Temp\images\DB1_20180623203204.vhdx -Destination C:\Temp\clones\ -CloneName DB1_Clone1
+    New-PSDCClone -SqlInstance SQLDB1 -ParentVhd C:\Temp\images\DB1_20180623203204.vhdx -Destination C:\Temp\clones\ -CloneName DB1_Clone1
 
     Create a new clone based on the image DB1_20180623203204.vhdx and attach the database to SQLDB1 as DB1_Clone1
 
 .EXAMPLE
-    New-PDCClone -SqlInstance SQLDB1 -Database DB1, DB2 -LatestImage
+    New-PSDCClone -SqlInstance SQLDB1 -Database DB1, DB2 -LatestImage
 
     Create a new clone on SQLDB1 for the databases DB1 and DB2 with the latest image for those databases
 
 .EXAMPLE
-    New-PDCClone -SqlInstance SQLDB1, SQLDB2 -Database DB1 -LatestImage
+    New-PSDCClone -SqlInstance SQLDB1, SQLDB2 -Database DB1 -LatestImage
 
     Create a new clone on SQLDB1 and SQLDB2 for the databases DB1 with the latest image
 #>
-    [CmdLetBinding(DefaultParameterSetName = 'ByLatest')]
+    [CmdLetBinding(DefaultParameterSetName = 'ByLatest', SupportsShouldProcess = $true)]
     param(
         [parameter(Mandatory = $true)]
         [ValidateNotNullOrEmpty()]
@@ -104,7 +107,7 @@ function New-PDCClone {
 
         # Test the module database setup
         try {
-            Test-PDCConfiguration -EnableException
+            Test-PSDCConfiguration -EnableException
         }
         catch {
             Stop-PSFFunction -Message "Something is wrong in the module configuration" -ErrorRecord $_ -Continue
@@ -131,7 +134,7 @@ function New-PDCClone {
         $computer = [PsfComputer]$uriHost
 
         if (-not $computer.IsLocalhost) {
-            $command = "Convert-PDCLocalUncPathToLocalPath -UncPath '$ImageNetworkPath'"
+            $command = "Convert-PSDCLocalUncPathToLocalPath -UncPath '$ImageNetworkPath'"
             $commandGetLocalPath = [ScriptBlock]::Create($command)
         }
 
@@ -139,7 +142,7 @@ function New-PDCClone {
             Write-PSFMessage -Message "The destination cannot be an UNC path. Converting to local path" -Level Verbose
             try {
                 if ($computer.IsLocalhost) {
-                    $Destination = Convert-PDCLocalUncPathToLocalPath -UncPath $Destination
+                    $Destination = Convert-PSDCLocalUncPathToLocalPath -UncPath $Destination
                 }
                 else {
                     $Destination = Invoke-PSFCommand -ComputerName $computer -ScriptBlock $commandGetLocalPath -Credential $DestinationCredential
@@ -213,7 +216,7 @@ function New-PDCClone {
                         $result = Invoke-DbaSqlQuery -SqlInstance $pdcSqlInstance -Database $pdcDatabase -Query $query -EnableException
 
                         # Check the results
-                        if ($result -eq $null) {
+                        if ($null -eq $result) {
                             Stop-PSFFunction -Message "No image could be found for database $db" -Target $pdcSqlInstance -Continue
                         }
                         else {
@@ -231,8 +234,7 @@ function New-PDCClone {
                     $parentVhdFile = $parentVhdFileName.Split(".")[0]
                 }
                 else {
-                    Stop-PSFFunction -Message "Parent vhd could not be found" -Target $SqlInstance
-                    return
+                    Stop-PSFFunction -Message "Parent vhd could not be found" -Target $SqlInstance -Continue
                 }
 
                 # Check clone name parameter
@@ -406,7 +408,7 @@ function New-PDCClone {
                 }
 
 
-                if ($imageId -ne $null) {
+                if ($null -ne $imageId) {
 
                     $cloneLocation = "$Destination\$CloneName.vhdx"
 

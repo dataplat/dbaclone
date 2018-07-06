@@ -1,5 +1,5 @@
-New-PSFLicense -Product 'PSDatabasClone' -Manufacturer 'sander' -ProductVersion $PSModuleVersion -ProductType Module -Name MIT -Version "1.0.0.0" -Date (Get-Date "2018-06-29") -Text @"
-Copyright (c) 2018 sander
+﻿New-PSFLicense -Product 'PSDatabaseClone' -Manufacturer 'Sander Stad' -ProductVersion $PSModuleVersion -ProductType Module -Name MIT -Version "1.0.0.0" -Date (Get-Date "2018-06-29") -Text @"
+Copyright (c) 2018 Sander Stad
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal

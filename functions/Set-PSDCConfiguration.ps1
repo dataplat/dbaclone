@@ -1,7 +1,7 @@
-function Set-PDCConfiguration {
+function Set-PSDCConfiguration {
 <#
 .SYNOPSIS
-    Set-PDCConfiguration sets up the module
+    Set-PSDCConfiguration sets up the module
 
 .DESCRIPTION
     For the module to work properly the module needs a couple of settings.
@@ -49,11 +49,11 @@ function Set-PDCConfiguration {
     https://psdatabaseclone.io/
 
 .EXAMPLE
-    Set-PDCConfiguration -SqlInstance SQLDB1 -Database PSDatabaseClone
+    Set-PSDCConfiguration -SqlInstance SQLDB1 -Database PSDatabaseClone
 
     Set up the module to use SQLDB1 as the database servers and PSDatabaseClone to save the values in
 #>
-    [CmdLetBinding()]
+    [CmdLetBinding(SupportsShouldProcess = $true)]
     param(
         [parameter(Mandatory = $true)]
         [ValidateNotNullOrEmpty()]
@@ -149,8 +149,17 @@ function Set-PDCConfiguration {
         Set-PSFConfig -Module PSDatabaseClone -Name database.server -Value $SqlInstance -Initialize -Validation string
         Set-PSFConfig -Module PSDatabaseClone -Name database.name -Value $Database -Initialize -Validation string
 
+        if(Test-PSDCHyperVEnabled){
+            Set-PSFConfig -Module PSDatabaseClone -Name hyperv.enabled -Value $true -Initialize -Validation bool
+        }
+        else{
+            Set-PSFConfig -Module PSDatabaseClone -Name hyperv.enabled -Value $false -Initialize -Validation bool
+        }
+
+
         Get-PSFConfig -FullName psdatabaseclone.database.server | Register-PSFConfig -Scope SystemDefault
         Get-PSFConfig -FullName psdatabaseclone.database.name | Register-PSFConfig -Scope SystemDefault
+        Get-PSFConfig -FullName psdatabaseclone.hyperv.enabled | Register-PSFConfig -Scope SystemDefault
     }
 
     end {

@@ -1,21 +1,21 @@
-@{
+﻿@{
     # Script module or binary module file associated with this manifest
     ModuleToProcess   = 'PSDatabaseClone.psm1'
 
     # Version number of this module.
-    ModuleVersion     = '1.0.0.0'
+    ModuleVersion     = '0.1.0.0'
 
     # ID used to uniquely identify this module
     GUID              = '747980ca-0d3d-4529-b4fd-e6cdd059c62a'
 
     # Author of this module
-    Author            = 'sander'
+    Author            = 'Sander Stad'
 
     # Company or vendor of this module
-    CompanyName       = 'MyCompany'
+    CompanyName       = ''
 
     # Copyright statement for this module
-    Copyright         = 'Copyright (c) 2018 sander'
+    Copyright         = 'Copyright (c) 2018 Sander Stad'
 
     # Description of the functionality provided by this module
     Description       = 'Cloning module for SQL Server databases'
@@ -46,32 +46,33 @@
     )
 
     # Assemblies that must be loaded prior to importing this module
-    # RequiredAssemblies = @()
+    RequiredAssemblies = @("bin\PSDatabaseClone.dll")
 
     # Script files (.ps1) that are run in the caller's environment prior to
     # importing this module
     # ScriptsToProcess = @()
 
     # Type files (.ps1xml) to be loaded when importing this module
-    # TypesToProcess = @('xml\PSDatabasClone.Types.ps1xml')
+    # TypesToProcess = @('xml\PSDatabaseClone.Types.ps1xml')
 
     # Format files (.ps1xml) to be loaded when importing this module
-    # FormatsToProcess = @('xml\PSDatabasClone.Format.ps1xml')
+    # FormatsToProcess = @('xml\PSDatabaseClone.Format.ps1xml')
 
     # Modules to import as nested modules of the module specified in
     # ModuleToProcess
     # NestedModules = @()
 
     # Functions to export from this module
-    FunctionsToExport = 'Initialize-PDCVhdDisk',
-    'Invoke-PDCRepairClone',
-    'New-PDCClone',
-    'New-PDCImage',
-    'New-PDCVhdDisk',
-    'Remove-PDCClone',
-	'Remove-PDCImage',
-    'Set-PDCConfiguration',
-    'Get-PDCClone'
+    FunctionsToExport = 'Initialize-PSDCVhdDisk',
+    'Invoke-PSDCRepairClone',
+    'New-PSDCClone',
+    'New-PSDCImage',
+    'New-PSDCVhdDisk',
+    'Remove-PSDCClone',
+	'Remove-PSDCImage',
+    'Set-PSDCConfiguration',
+    'Get-PSDCClone',
+    'Get-PSDCImage'
 
     # Cmdlets to export from this module
     CmdletsToExport   = ''
@@ -104,7 +105,7 @@
             # ProjectUri = ''
 
             # A URL to an icon representing this module.
-            # IconUri = ''
+            IconUri = 'https://www.sqlstad.nl/wp-content/uploads/2018/07/PSDatabaseClone_Logo_128.png'
 
             # ReleaseNotes of this module
             # ReleaseNotes = ''

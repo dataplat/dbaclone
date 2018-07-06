@@ -1,10 +1,10 @@
-function New-PDCImage {
+﻿function New-PSDCImage {
 <#
 .SYNOPSIS
-    New-PDCImage creates a new image
+    New-PSDCImage creates a new image
 
 .DESCRIPTION
-    New-PDCImage will create a new image based on a SQL Server database
+    New-PSDCImage will create a new image based on a SQL Server database
 
     The command will either create a full backup or use the last full backup to create the image.
 
@@ -39,7 +39,7 @@ function New-PDCImage {
 
     $scred = Get-Credential, then pass $scred object to the -DestinationCredential parameter.
 
-.PARAMETER ImageLocalPath
+.PARAMETER ImageNetworkPath
     Network path where to save the image. This has to be a UNC path
 
 .PARAMETER ImageLocalPath
@@ -79,17 +79,17 @@ function New-PDCImage {
     https://psdatabaseclone.io/
 
 .EXAMPLE
-    New-PDCImage -SourceSqlInstance SQLDB1 -DestinationSqlInstance SQLDB2 -ImageLocalPath C:\Temp\images\ -Database DB1 -CreateFullBackup
+    New-PSDCImage -SourceSqlInstance SQLDB1 -DestinationSqlInstance SQLDB2 -ImageLocalPath C:\Temp\images\ -Database DB1 -CreateFullBackup
 
     Create an image for databas DB1 from SQL Server SQLDB1. The temporary destination will be SQLDB2.
     The image will be saved in C:\Temp\images.
 .EXAMPLE
-    New-PDCImage -SourceSqlInstance SQLDB1 -DestinationSqlInstance SQLDB2 -ImageLocalPath C:\Temp\images\ -Database DB1 -UseLastFullBackup
+    New-PSDCImage -SourceSqlInstance SQLDB1 -DestinationSqlInstance SQLDB2 -ImageLocalPath C:\Temp\images\ -Database DB1 -UseLastFullBackup
 
     Create an image from the database DB1 on SQLDB1 using the last full backup and use SQLDB2 as the temporary database server.
     The image is written to c:\Temp\images
 #>
-    [CmdLetBinding()]
+    [CmdLetBinding(SupportsShouldProcess = $true)]
     param(
         [parameter(Mandatory = $true)]
         [ValidateNotNullOrEmpty()]
@@ -119,7 +119,7 @@ function New-PDCImage {
 
         # Test the module database setup
         try {
-            Test-PDCConfiguration -EnableException
+            Test-PSDCConfiguration -EnableException
         }
         catch {
             Stop-PSFFunction -Message "Something is wrong in the module configuration" -ErrorRecord $_ -Continue
@@ -158,7 +158,7 @@ function New-PDCImage {
         $computer = [PsfComputer]$uriHost
 
         if (-not $computer.IsLocalhost) {
-            $command = "Convert-PDCLocalUncPathToLocalPath -UncPath '$ImageNetworkPath'"
+            $command = "Convert-PSDCLocalUncPathToLocalPath -UncPath '$ImageNetworkPath'"
             $commandGetLocalPath = [ScriptBlock]::Create($command)
         }
 
@@ -166,7 +166,7 @@ function New-PDCImage {
         if (-not $ImageLocalPath) {
             try {
                 if ($computer.IsLocalhost) {
-                    $ImageLocalPath = Convert-PDCLocalUncPathToLocalPath -UncPath $ImageNetworkPath
+                    $ImageLocalPath = Convert-PSDCLocalUncPathToLocalPath -UncPath $ImageNetworkPath
                 }
                 else {
                     $ImageLocalPath = Invoke-PSFCommand -ComputerName $computer -ScriptBlock $commandGetLocalPath -Credential $DestinationCredential
@@ -212,8 +212,6 @@ function New-PDCImage {
         # Set time stamp
         $timestamp = Get-Date -format "yyyyMMddHHmmss"
 
-        # Create the item list array
-        $list = @()
     }
 
     process {
@@ -267,7 +265,7 @@ function New-PDCImage {
             # try to create the new VHD
             try {
                 Write-PSFMessage -Message "Create the vhd $imageName.vhdx" -Level Verbose
-                $null = New-PDCVhdDisk -Destination $imagePath -FileName "$imageName.vhdx"
+                $null = New-PSDCVhdDisk -Destination $imagePath -FileName "$imageName.vhdx"
             }
             catch {
                 Stop-PSFFunction -Message "Couldn't create vhd $imageName" -Target "$imageName.vhd" -ErrorRecord $_ -Continue
@@ -277,7 +275,7 @@ function New-PDCImage {
             try {
                 Write-PSFMessage -Message "Initializing the vhd $imageName.vhd" -Level Verbose
 
-                $diskResult = Initialize-PDCVhdDisk -Path $vhdPath -Credential $DestinationCredential
+                $diskResult = Initialize-PSDCVhdDisk -Path $vhdPath -Credential $DestinationCredential
             }
             catch {
                 Stop-PSFFunction -Message "Couldn't initialize vhd $vhdPath" -Target $imageName -ErrorRecord $_ -Continue
@@ -400,30 +398,6 @@ function New-PDCImage {
             catch {
                 Stop-PSFFunction -Message "Couldn't add image to database" -Target $imageName -ErrorRecord $_
             }
-
-            <# if (Test-PSFFunctionInterrupt) {
-                Write-PSFMessage -Message "Cleaning up image after failure" -Level Verbose
-
-                # Clean up in case of failure
-                try {
-                    # Check if the image was written to database
-                    if ($result.Count -ge 1) {
-
-                        $query = "DELETE FROM Image WHERE ImageID = $($Result.ImageID)"
-
-                        $null = Invoke-DbaSqlQuery -SqlInstance $pdcSqlInstance -Database $pdcDatabase -Query $query -EnableException
-                    }
-
-                    # Remove file
-                    $null = Remove-Item -Path $imageLocation -Credential $DestinationCredential -Force:$Force
-                }
-                catch {
-                    Stop-PSFFunction -Message "Couldn't remove created image $imageLocation after failure" -Target $imageLocation -ErrorRecord $_ -Continue
-                }
-            }
-            else {
-
-            } #>
 
             # Add the results to the custom object
             [PSCustomObject]@{

@@ -1,4 +1,4 @@
-## PSDatabaseClone
+﻿## PSDatabaseClone
 <img src="https://www.sqlstad.nl/wp-content/uploads/2018/07/PSDatabaseClone_Logo_128.png" align="left" with="128px" height="131px"/> PSDatabaseClone is a PowerShell module for creating SQL Server database images and clones.
 It enables administrator to supply environments with database copies that are a fraction of the original size.
 
@@ -26,8 +26,10 @@ As with every piece of software we need to set some prerequisites to make this m
 
 * Windows 10 (Professional, Enterprise or Education) or Windows Server 2012 R2 (Standard, Enterprise or Datacenter) and up
 * PowerShell 5 or above
-* Hyper-V
-* SQL Server instance meant
+* Hyper-V Optional Feature (Windows 10) or Hyper-V Feature (Windows Server)
+* SQL Server instance for saving image and clone information (PSDatabaseClone database)
+* SQL Server instance to create the images (can be the same as for saving the information)
+* Enough space to save to save one copy of the database (size of the image is the size of the database)
 
 ## How does it work
 
@@ -35,6 +37,10 @@ The process consists of the following steps:
 
 1. Create an image of the database
 2. Create a clone based on an image
+
+It's that easy.
+
+## Examples
 
 Create an image creating a full backup
 
@@ -48,3 +54,32 @@ Create an image for multiple databases using the latest full backup
 New-PDCImage -SourceSqlInstance SQLDB1 -DestinationSqlInstance SQLDB2 -ImageNetworkPath \\fileserver\psdatabaseclone\images -Database DB1, DB2 -UseLastFullBackup
 ```
 
+Create a clone based on the latest image of database DB1
+
+```powershell
+New-PDCClone -SqlInstance SQLDB1 -Destination C:\PSDatabaseClone\clones -CloneName DB1_Clone1 -Database DB1 -LatestImage
+```
+
+Get the clones for host HOST1
+
+```powershell
+Get-PDCClone -HostName HOST1
+```
+
+Remove the clones
+
+```powershell
+Remove-PDCClone -HostName HOST1 -Database DB1_Clone1, DB2_Clone1
+```
+
+Remove the clones using the Get-PDCClone
+
+```powershell
+Get-PDCClone -Database DB1_Clone1, DB2_Clone1 | Remove-PDCClone
+```
+
+Remove the image
+
+```powershell
+Remove-PDCImage -ImageLocation \\fileserver\psdatabaseclone\images\DB1_20180703085917.vhdx
+```
