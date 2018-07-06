@@ -111,7 +111,20 @@
         }
 
 
-        return $results
+        # Convert the results to the PSDCClone data type
+        foreach($result in $results){
+
+            [PSDCImage]$image = New-Object PSDCImage
+            $image.ImageID = $result.ImageID
+            $image.ImageName = $result.ImageName
+            $image.ImageLocation = $result.ImageLocation
+            $image.SizeMB = $result.SizeMB
+            $image.DatabaseName = $result.DatabaseName
+            $image.DatabaseTimestamp = $result.DatabaseTimestamp
+            $image.CreatedOn = $result.CreatedOn
+
+            return $image
+        }
     }
 
     end {
