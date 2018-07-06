@@ -457,13 +457,16 @@
             }
 
             # Add the results to the custom object
-            [PSCustomObject]@{
-                Name      = $imageName
-                Location  = $imageLocation
-                Size      = $sizeMB
-                Database  = $databaseName
-                Timestamp = $databaseTS
-            }
+            [PSDCImage]$image = New-Object PSDCImage
+
+            $image.ImageID = $result.ImageID
+            $image.ImageName = $imageName
+            $image.ImageLocation = $imageLocation
+            $image.SizeMB = $sizeMB
+            $image.DatabaseName = $databaseName
+            $image.DatabaseTimestamp = $databaseTS
+
+            return $image
 
         } # for each database
 
