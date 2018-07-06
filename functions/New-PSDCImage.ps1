@@ -449,7 +449,7 @@
 
             try {
                 Write-PSFMessage -Message "Saving image information in database" -Level Verbose
-                $result = @()
+
                 $result += Invoke-DbaSqlQuery -SqlInstance $pdcSqlInstance -Database $pdcDatabase -Query $query -EnableException
             }
             catch {
