@@ -14,7 +14,6 @@
     .PARAMETER HostName
         The hostname to filter on
 
-
     .PARAMETER SqlCredential
         Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
 
