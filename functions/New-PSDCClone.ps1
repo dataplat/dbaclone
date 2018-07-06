@@ -1,5 +1,5 @@
 ﻿function New-PSDCClone {
-<#
+    <#
 .SYNOPSIS
     New-PSDCClone creates a new clone
 
@@ -400,15 +400,15 @@
                 # Get the image id from the database
                 Write-PSFMessage -Message "Selecting image from database" -Level Verbose
                 try {
-                    $query = "SELECT ImageID FROM dbo.Image WHERE ImageLocation = '$ParentVhd'"
-                    $imageId = (Invoke-DbaSqlQuery -SqlInstance $pdcSqlInstance -Database $pdcDatabase -Query $query -EnableException).ImageID
+                    $query = "SELECT ImageID, ImageName FROM dbo.Image WHERE ImageLocation = '$ParentVhd'"
+                    $resultImage = Invoke-DbaSqlQuery -SqlInstance $pdcSqlInstance -Database $pdcDatabase -Query $query -EnableException
                 }
                 catch {
                     Stop-PSFFunction -Message "Couldnt execute query for retrieving image id" -Target $query -ErrorRecord $_ -Continue
                 }
 
 
-                if ($null -ne $imageId) {
+                if ($null -ne $resultImage.ImageID) {
 
                     $cloneLocation = "$Destination\$CloneName.vhdx"
 
@@ -417,20 +417,22 @@
                     $query = "
                                 DECLARE @CloneID INT;
                                 EXECUTE dbo.Clone_New @CloneID = @CloneID OUTPUT,                   -- int
-                                                    @ImageID = $imageId,		                    -- int
+                                                    @ImageID = $($resultImage.ImageID),		        -- int
                                                     @HostID = $hostId,			                    -- int
                                                     @CloneLocation = '$cloneLocation',	            -- varchar(255)
                                                     @AccessPath = '$accessPath',                    -- varchar(255)
                                                     @SqlInstance = '$($server.DomainInstanceName)', -- varchar(50)
-                                                    @DatabaseName = '$cloneDatabase',                    -- varchar(100)
+                                                    @DatabaseName = '$cloneDatabase',               -- varchar(100)
                                                     @IsEnabled = $active                            -- bit
+
+                                SELECT @CloneID AS CloneID
                             "
 
                     Write-PSFMessage -Message "Query New Clone`n$query" -Level Debug
 
                     # execute the query
                     try {
-                        $null = Invoke-DbaSqlQuery -SqlInstance $pdcSqlInstance -Database $pdcDatabase -Query $query -EnableException
+                        $result = Invoke-DbaSqlQuery -SqlInstance $pdcSqlInstance -Database $pdcDatabase -Query $query -EnableException
                     }
                     catch {
                         Stop-PSFFunction -Message "Couldnt execute query for adding clone" -Target $query -ErrorRecord $_ -Continue
@@ -442,15 +444,20 @@
                 }
 
                 # Add the results to the custom object
-                [PSCustomObject]@{
-                    ImageID       = $imageId
-                    HostID        = $hostId
-                    CloneLocation = $cloneLocation
-                    AccessPath    = $accessPath
-                    SqlInstance   = $server.DomainInstanceName
-                    DatabaseName  = $cloneDatabase
-                    IsEnabled     = $active
-                }
+                [PSDCClone]$clone = New-Object PSDCClone
+
+                $clone.CloneID = $result.CloneID
+                $clone.CloneLocation = $cloneLocation
+                $clone.AccessPath = $accessPath
+                $clone.SqlInstance = $server.DomainInstanceName
+                $clone.DatabaseName = $cloneDatabase
+                $clone.IsEnabled = $active
+                $clone.ImageID = $resultImage.ImageID
+                $clone.ImageName = $resultImage.ImageName
+                $clone.ImageLocation = $ParentVhd
+                $clone.HostName = $hostname
+
+                return $clone
 
             } # End for each database
 
