@@ -1,11 +1,19 @@
 ﻿function Get-PSDCImage {
-    <#
+<#
 .SYNOPSIS
     Get-PSDCImage get on or more clones
 
 .DESCRIPTION
     Get-PSDCImage will retrieve the clones and apply filters if needed.
     By default all the clones are returned
+
+.PARAMETER SqlCredential
+    Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
+
+    $scred = Get-Credential, then pass $scred object to the -SqlCredential parameter.
+
+    Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
+    To connect as a different Windows user, run PowerShell as that user.
 
 .PARAMETER ImageID
     Filter based on the image id
@@ -48,6 +56,7 @@
     [CmdLetBinding()]
 
     param(
+        [System.Management.Automation.PSCredential]$SqlCredential,
         [int[]]$ImageID,
         [string[]]$ImageName,
         [string[]]$ImageLocation,
@@ -65,11 +74,6 @@
 
         $pdcSqlInstance = Get-PSFConfigValue -FullName psdatabaseclone.database.server
         $pdcDatabase = Get-PSFConfigValue -FullName psdatabaseclone.database.name
-    }
-
-    process {
-        # Test if there are any errors
-        if (Test-PSFFunctionInterrupt) { return }
 
         $query = "
             SELECT ImageID,
@@ -83,11 +87,11 @@
         "
 
         try {
-            $result = @()
-            $results = Invoke-DbaSqlQuery -SqlInstance $pdcSqlInstance -Database $pdcDatabase -Query $query -As PSObject
+            $results = @()
+            $results += Invoke-DbaSqlQuery -SqlInstance $pdcSqlInstance -SqlCredential $SqlCredential -Database $pdcDatabase -Query $query -As PSObject
         }
         catch {
-            Stop-PSFFunction -Message "Could not execute query" -ErrorRecord $_ -Target $query
+            Stop-PSFFunction -Message "Could retrieve images from database $pdcDatabase" -ErrorRecord $_ -Target $query
         }
 
         # Filter image id
@@ -109,22 +113,27 @@
         if ($Database) {
             $results = $results | Where-Object {$_.DatabaseName -in $Database}
         }
+    }
 
+    process {
+        # Test if there are any errors
+        if (Test-PSFFunctionInterrupt) { return }
 
         # Convert the results to the PSDCClone data type
-        foreach($result in $results){
+        foreach ($result in $results) {
 
-            [PSDCImage]$image = New-Object PSDCImage
-            $image.ImageID = $result.ImageID
-            $image.ImageName = $result.ImageName
-            $image.ImageLocation = $result.ImageLocation
-            $image.SizeMB = $result.SizeMB
-            $image.DatabaseName = $result.DatabaseName
-            $image.DatabaseTimestamp = $result.DatabaseTimestamp
-            $image.CreatedOn = $result.CreatedOn
+            [pscustomobject]@{
+                ImageID           = $result.ImageID
+                ImageName         = $result.ImageName
+                ImageLocation     = $result.ImageLocation
+                SizeMB            = $result.SizeMB
+                DatabaseName      = $result.DatabaseName
+                DatabaseTimestamp = $result.DatabaseTimestamp
+                CreatedOn         = $result.CreatedOn
+            }
 
-            return $image
         }
+
     }
 
     end {
