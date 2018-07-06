@@ -128,7 +128,7 @@
         if($ImageLocation){
             $results = $results | Where-Object {$_.ImageLocation -in $ImageLocation}
         }
-        $results
+
         # Convert the results to the PSDCClone data type
         foreach($result in $results){
 
