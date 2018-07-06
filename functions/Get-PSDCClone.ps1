@@ -145,7 +145,6 @@
             $clone.HostName = $result.HostName
 
             return $clone
-
         }
 
     }
