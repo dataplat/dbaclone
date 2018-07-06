@@ -15,6 +15,10 @@
         Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
         To connect as a different Windows user, run PowerShell as that user.
 
+    .PARAMETER PSDCSqlCredential
+        Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted.
+        This works similar as SqlCredential but is only meant for authentication to the PSDatabaseClone database server and database.
+
     .PARAMETER ImageID
         Filter based on the image id
 
@@ -57,6 +61,8 @@
 
     param(
         [System.Management.Automation.PSCredential]$SqlCredential,
+        [System.Management.Automation.PSCredential]
+        $PSDCSqlCredential,
         [int[]]$ImageID,
         [string[]]$ImageName,
         [string[]]$ImageLocation,
@@ -88,7 +94,7 @@
 
         try {
             $results = @()
-            $results += Invoke-DbaSqlQuery -SqlInstance $pdcSqlInstance -SqlCredential $SqlCredential -Database $pdcDatabase -Query $query -As PSObject
+            $results += Invoke-DbaSqlQuery -SqlInstance $pdcSqlInstance -SqlCredential $PSDCSqlCredential -Database $pdcDatabase -Query $query -As PSObject
         }
         catch {
             Stop-PSFFunction -Message "Could retrieve images from database $pdcDatabase" -ErrorRecord $_ -Target $query

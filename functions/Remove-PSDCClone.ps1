@@ -22,6 +22,10 @@
         Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
         To connect as a different Windows user, run PowerShell as that user.
 
+    .PARAMETER PSDCSqlCredential
+        Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted.
+        This works similar as SqlCredential but is only meant for authentication to the PSDatabaseClone database server and database.
+
     .PARAMETER Credential
         Allows you to login to systems using a credential. To use:
 
@@ -85,6 +89,8 @@
         [string[]]$HostName,
         [System.Management.Automation.PSCredential]
         $SqlCredential,
+        [System.Management.Automation.PSCredential]
+        $PSDCSqlCredential,
         [System.Management.Automation.PSCredential]
         $Credential,
         [string[]]$Database,
@@ -197,8 +203,8 @@
                 # Removing records from database
                 try {
                     $query = "DELETE FROM dbo.Clone WHERE CloneID = $($item.CloneID);"
-                    Write-PSFMessage -Message $query -Level Verbose
-                    Invoke-DbaSqlQuery -SqlInstance $pdcSqlInstance -Database $pdcDatabase -Query $query -EnableException
+
+                    $null = Invoke-DbaSqlQuery -SqlInstance $pdcSqlInstance -SqlCredential $PSDCSqlCredential -Database $pdcDatabase -Query $query -EnableException
                 }
                 catch {
                     Stop-PSFFunction -Message "Could not remove clone record from database" -ErrorRecord $_ -Target $query -Continue

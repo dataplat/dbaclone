@@ -39,6 +39,10 @@
 
         $scred = Get-Credential, then pass $scred object to the -DestinationCredential parameter.
 
+    .PARAMETER PSDCSqlCredential
+        Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted.
+        This works similar as SqlCredential but is only meant for authentication to the PSDatabaseClone database server and database.
+
     .PARAMETER ImageNetworkPath
         Network path where to save the image. This has to be a UNC path
 
@@ -103,6 +107,8 @@
         $DestinationSqlCredential,
         [System.Management.Automation.PSCredential]
         $DestinationCredential,
+        [System.Management.Automation.PSCredential]
+        $PSDCSqlCredential,
         [Parameter(Mandatory = $true)]
         [ValidateNotNullOrEmpty()]
         [string]$ImageNetworkPath,
@@ -250,17 +256,17 @@
             if ($CreateFullBackup) {
                 # Create the backup
                 Write-PSFMessage -Message "Creating new full backup for database $db" -Level Verbose
-                $null = Backup-DbaDatabase -SqlInstance $SourceSqlInstance -Database $db.Name
+                $null = Backup-DbaDatabase -SqlInstance $SourceSqlInstance -SqlCredential $SourceSqlCredential -Database $db.Name
 
                 # Get the last full backup
                 Write-PSFMessage -Message "Trying to retrieve the last full backup for $db" -Level Verbose
-                $lastFullBackup = Get-DbaBackupHistory -SqlServer $SourceSqlInstance -Databases $db.Name -LastFull -Credential $SourceSqlCredential
+                $lastFullBackup = Get-DbaBackupHistory -SqlServer $SourceSqlInstance -SqlCredential $SourceSqlCredential -Databases $db.Name -LastFull
             }
             elseif ($UseLastFullBackup) {
                 Write-PSFMessage -Message "Trying to retrieve the last full backup for $db" -Level Verbose
 
                 # Get the last full backup
-                $lastFullBackup = Get-DbaBackupHistory -SqlServer $SourceSqlInstance -Databases $db.Name -LastFull -Credential $SourceSqlCredential
+                $lastFullBackup = Get-DbaBackupHistory -SqlServer $SourceSqlInstance -SqlCredential $SourceSqlCredential -Databases $db.Name -LastFull
             }
 
             # try to create the new VHD
@@ -450,7 +456,7 @@
             try {
                 Write-PSFMessage -Message "Saving image information in database" -Level Verbose
 
-                $result += Invoke-DbaSqlQuery -SqlInstance $pdcSqlInstance -Database $pdcDatabase -Query $query -EnableException
+                $result += Invoke-DbaSqlQuery -SqlInstance $pdcSqlInstance -SqlCredential $PSDCSqlCredential -Database $pdcDatabase -Query $query -EnableException
             }
             catch {
                 Stop-PSFFunction -Message "Couldn't add image to database" -Target $imageName -ErrorRecord $_

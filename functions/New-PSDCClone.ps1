@@ -18,6 +18,10 @@
         Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
         To connect as a different Windows user, run PowerShell as that user.
 
+    .PARAMETER PSDCSqlCredential
+        Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted.
+        This works similar as SqlCredential but is only meant for authentication to the PSDatabaseClone database server and database.
+
     .PARAMETER Credential
         Allows you to login to servers using Windows Auth/Integrated/Trusted. To use:
 
@@ -88,6 +92,8 @@
         [object[]]$SqlInstance,
         [System.Management.Automation.PSCredential]
         $SqlCredential,
+        [System.Management.Automation.PSCredential]
+        $PSDCSqlCredential,
         [System.Management.Automation.PSCredential]
         $Credential,
         [parameter(Mandatory = $true, ParameterSetName = "ByParent")]
@@ -201,7 +207,7 @@
                         "
 
                     try {
-                        $result = Invoke-DbaSqlQuery -SqlInstance $pdcSqlInstance -SqlCredential $SqlCredential -Database $pdcDatabase -Query $query -EnableException
+                        $result = Invoke-DbaSqlQuery -SqlInstance $pdcSqlInstance -SqlCredential $PSDCSqlCredential -Database $pdcDatabase -Query $query -EnableException
 
                         # Check the results
                         if ($null -eq $result) {
@@ -367,10 +373,10 @@
 
                     # Check if computer is local
                     if ($computer.IsLocalhost) {
-                        $null = Mount-DbaDatabase -SqlInstance $SqlInstance -Database $cloneDatabase -FileStructure $dbFileStructure
+                        $null = Mount-DbaDatabase -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database $cloneDatabase -FileStructure $dbFileStructure
                     }
                     else {
-                        $command = [ScriptBlock]::Create("Mount-DbaDatabase -SqlInstance $SqlInstance -Database $cloneDatabase -FileStructure $dbFileStructure")
+                        $command = [ScriptBlock]::Create("Mount-DbaDatabase -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database $cloneDatabase -FileStructure $dbFileStructure")
                         $null = Invoke-PSFCommand -ComputerName $computer -ScriptBlock $command -Credential $Credential
                     }
                 }
@@ -400,7 +406,7 @@
                         "
 
                     # Execute the query
-                    $result = Invoke-DbaSqlQuery -SqlInstance $pdcSqlInstance -SqlCredential $SqlCredential -Database $pdcDatabase -Query $query -EnableException
+                    $result = Invoke-DbaSqlQuery -SqlInstance $pdcSqlInstance -SqlCredential $PSDCSqlCredential -Database $pdcDatabase -Query $query -EnableException
                 }
                 catch {
                     Stop-PSFFunction -Message "Couldnt execute query to see if host was known" -Target $query -ErrorRecord $_ -Continue
@@ -423,7 +429,7 @@
                     Write-PSFMessage -Message "Query New Host`n$query" -Level Debug
 
                     try {
-                        $hostId = (Invoke-DbaSqlQuery -SqlInstance $pdcSqlInstance -SqlCredential $SqlCredential -Database $pdcDatabase -Query $query -EnableException).HostID
+                        $hostId = (Invoke-DbaSqlQuery -SqlInstance $pdcSqlInstance -SqlCredential $PSDCSqlCredential -Database $pdcDatabase -Query $query -EnableException).HostID
                     }
                     catch {
                         Stop-PSFFunction -Message "Couldnt execute query for adding host" -Target $query -ErrorRecord $_ -Continue
@@ -434,7 +440,7 @@
                     $query = "SELECT HostID FROM Host WHERE HostName = '$hostname'"
 
                     try {
-                        $hostId = (Invoke-DbaSqlQuery -SqlInstance $pdcSqlInstance -SqlCredential $SqlCredential -Database $pdcDatabase -Query $query -EnableException).HostID
+                        $hostId = (Invoke-DbaSqlQuery -SqlInstance $pdcSqlInstance -SqlCredential $PSDCSqlCredential -Database $pdcDatabase -Query $query -EnableException).HostID
                     }
                     catch {
                         Stop-PSFFunction -Message "Couldnt execute query for retrieving host id" -Target $query -ErrorRecord $_ -Continue
@@ -446,7 +452,7 @@
                 Write-PSFMessage -Message "Selecting image from database" -Level Verbose
                 try {
                     $query = "SELECT ImageID, ImageName FROM dbo.Image WHERE ImageLocation = '$ParentVhd'"
-                    $resultImage = Invoke-DbaSqlQuery -SqlInstance $pdcSqlInstance -SqlCredential $SqlCredential -Database $pdcDatabase -Query $query -EnableException
+                    $resultImage = Invoke-DbaSqlQuery -SqlInstance $pdcSqlInstance -SqlCredential $PSDCSqlCredential -Database $pdcDatabase -Query $query -EnableException
                 }
                 catch {
                     Stop-PSFFunction -Message "Couldnt execute query for retrieving image id" -Target $query -ErrorRecord $_ -Continue
@@ -477,7 +483,7 @@
 
                     # execute the query
                     try {
-                        $result = Invoke-DbaSqlQuery -SqlInstance $pdcSqlInstance -SqlCredential $SqlCredential -Database $pdcDatabase -Query $query -EnableException
+                        $result = Invoke-DbaSqlQuery -SqlInstance $pdcSqlInstance -SqlCredential $PSDCSqlCredential -Database $pdcDatabase -Query $query -EnableException
                     }
                     catch {
                         Stop-PSFFunction -Message "Couldnt execute query for adding clone" -Target $query -ErrorRecord $_ -Continue

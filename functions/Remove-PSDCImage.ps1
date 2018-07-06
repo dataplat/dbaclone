@@ -22,6 +22,10 @@
     .PARAMETER ExcludeDatabase
         Filter the images based on the excluded database
 
+    .PARAMETER PSDCSqlCredential
+        Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted.
+        This works similar as SqlCredential but is only meant for authentication to the PSDatabaseClone database server and database.
+
     .PARAMETER Credential
         Allows you to login to servers using  Windows Auth/Integrated/Trusted. To use:
 
@@ -75,6 +79,8 @@
         [string[]]$Database,
         [string[]]$ExcludeDatabase,
         [System.Management.Automation.PSCredential]
+        $PSDCSqlCredential,
+        [System.Management.Automation.PSCredential]
         $Credential,
         [switch]$Force,
         [parameter(ValueFromPipeline = $true, ParameterSetName = "Image")]
@@ -99,7 +105,7 @@
         Write-PSFMessage -Message "Started removing database images" -Level Verbose
 
         # Get all the items
-        $items = Get-PSDCImage
+        $items = Get-PSDCImage -PSDCSqlCredential $PSDCSqlCredential
 
         if ($ImageID) {
             Write-PSFMessage -Message "Filtering image ids" -Level Verbose
@@ -164,7 +170,7 @@
                 try {
                     Write-PSFMessage -Message "Retrieving data for image '$($item.Name)'" -Level Verbose
                     $results = @()
-                    $results += Invoke-DbaSqlQuery -SqlInstance $pdcSqlInstance -Database $pdcDatabase -Query $query
+                    $results += Invoke-DbaSqlQuery -SqlInstance $pdcSqlInstance -SqlCredential $PSDCSqlCredential -Database $pdcDatabase -Query $query
 
                     # Check the results
                     if ($results.Count -ge 1) {
@@ -175,7 +181,7 @@
                             # Remove the clones for the host
                             try {
                                 Write-PSFMessage -Message "Removing clones for host $($result.HostName) and database $($result.DatabaseName)" -Level Verbose
-                                Remove-PSDCClone -HostName $result.HostName -Database $result.DatabaseName -Credential $Credential -Confirm:$false
+                                Remove-PSDCClone -HostName $result.HostName -Database $result.DatabaseName -PSDCSqlCredential $PSDCSqlCredential -Credential $Credential -Confirm:$false
                             }
                             catch {
                                 Stop-PSFFunction -Message "Couldn't remove clones from host $($result.HostName)" -ErrorRecord $_ -Target $result -Continue
@@ -208,7 +214,7 @@
                 try {
                     $query = "DELETE FROM dbo.Image WHERE ImageID = $($item.ImageID)"
 
-                    $null = Invoke-DbaSqlQuery -SqlInstance $pdcSqlInstance -Database $pdcDatabase -Query $query
+                    $null = Invoke-DbaSqlQuery -SqlInstance $pdcSqlInstance -SqlCredential $PSDCSqlCredential -Database $pdcDatabase -Query $query
                 }
                 catch {
                     Stop-PSFFunction -Message "Couldn't remove image '$($item.ImageLocation)' from database" -ErrorRecord $_ -Target $query
