@@ -21,7 +21,7 @@ $server = Get-PSFConfigValue psdatabaseclone.database.server
 $database = Get-PSFConfigValue psdatabaseclone.database.name
 
 if (($server -eq $null) -or ($database -eq $null)) {
-    Write-PSFMessage -Message "The module is not yet configured. Please run Set-PdcConfiguration to make the neccesary changes" -Level Warning
+    Write-PSFMessage -Message "The module is not yet configured. Please run Set-PSDCConfiguration to make the neccesary changes" -Level Warning
 }
 
 $TypeAliasTable = @{
