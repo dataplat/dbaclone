@@ -1,11 +1,19 @@
 ﻿function Get-PSDCClone {
-<#
+    <#
 .SYNOPSIS
     Get-PSDCClone get on or more clones
 
 .DESCRIPTION
     Get-PSDCClone will retrieve the clones and apply filters if needed.
     By default all the clones are returned
+
+.PARAMETER SqlCredential
+    Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
+
+    $scred = Get-Credential, then pass $scred object to the -SqlCredential parameter.
+
+    Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
+    To connect as a different Windows user, run PowerShell as that user.
 
 .PARAMETER HostName
     Filter based on the hostname
@@ -51,6 +59,7 @@
     [CmdLetBinding()]
 
     param(
+        [System.Management.Automation.PSCredential]$SqlCredential,
         [string[]]$HostName,
         [string[]]$Database,
         [int[]]$ImageID,
@@ -70,13 +79,6 @@
 
         $pdcSqlInstance = Get-PSFConfigValue -FullName psdatabaseclone.database.server
         $pdcDatabase = Get-PSFConfigValue -FullName psdatabaseclone.database.name
-
-    }
-
-    process {
-
-        # Test if there are any errors
-        if (Test-PSFFunctionInterrupt) { return }
 
         $query = "
             SELECT c.CloneID,
@@ -98,53 +100,59 @@
 
         try {
             $results = @()
-            $results = Invoke-DbaSqlQuery -SqlInstance $pdcSqlInstance -Database $pdcDatabase -Query $query -As PSObject
+            $results = Invoke-DbaSqlQuery -SqlInstance $pdcSqlInstance -SqlCredential $SqlCredential -Database $pdcDatabase -Query $query -As PSObject
         }
         catch {
             Stop-PSFFunction -Message "Could not execute query" -ErrorRecord $_ -Target $query
         }
 
         # Filter host name
-        if($HostName){
+        if ($HostName) {
             $results = $results | Where-Object {$_.HostName -in $HostName}
         }
 
         # Filter image id
-        if($Database){
+        if ($Database) {
             $results = $results | Where-Object {$_.DatabaseName -in $Database}
         }
 
         # Filter image id
-        if($ImageID){
+        if ($ImageID) {
             $results = $results | Where-Object {$_.ImageID -in $ImageID}
         }
 
         # Filter image name
-        if($ImageName){
+        if ($ImageName) {
             $results = $results | Where-Object {$_.ImageName -in $ImageName}
         }
 
         # Filter image location
-        if($ImageLocation){
+        if ($ImageLocation) {
             $results = $results | Where-Object {$_.ImageLocation -in $ImageLocation}
         }
 
+    }
+
+    process {
+
+        # Test if there are any errors
+        if (Test-PSFFunctionInterrupt) { return }
+
         # Convert the results to the PSDCClone data type
-        foreach($result in $results){
+        foreach ($result in $results) {
 
-            [PSDCClone]$clone = New-Object PSDCClone
-            $clone.CloneID = $result.CloneID
-            $clone.CloneLocation = $result.CloneLocation
-            $clone.AccessPath = $result.AccessPath
-            $clone.SqlInstance = $result.SqlInstance
-            $clone.DatabaseName = $result.DatabaseName
-            $clone.IsEnabled = $result.IsEnabled
-            $clone.ImageID = $result.ImageID
-            $clone.ImageName = $result.ImageName
-            $clone.ImageLocation = $result.ImageLocation
-            $clone.HostName = $result.HostName
-
-            return $clone
+            [pscustomobject]@{
+                CloneID       = $result.CloneID
+                CloneLocation = $result.CloneLocation
+                AccessPath    = $result.AccessPath
+                SqlInstance   = $result.SqlInstance
+                DatabaseName  = $result.IsEnabled
+                IsEnabled     = $result.IsEnabled
+                ImageID       = $result.ImageID
+                ImageName     = $result.ImageName
+                ImageLocation = $result.ImageLocation
+                HostName      = $result.HostName
+            }
         }
 
     }
