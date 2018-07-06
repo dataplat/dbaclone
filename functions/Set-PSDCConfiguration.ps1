@@ -148,16 +148,21 @@ function Set-PSDCConfiguration {
         Set-PSFConfig -Module PSDatabaseClone -Name database.server -Value $SqlInstance -Initialize -Validation string
         Set-PSFConfig -Module PSDatabaseClone -Name database.name -Value $Database -Initialize -Validation string
 
-        if(Test-PSDCHyperVEnabled){
+        if ($SqlCredential) {
+            Set-PSFConfig -Module PSDatabaseClone -Name database.credential -Value $SqlCredential -Initialize
+        }
+
+        if (Test-PSDCHyperVEnabled) {
             Set-PSFConfig -Module PSDatabaseClone -Name hyperv.enabled -Value $true -Initialize -Validation bool
         }
-        else{
+        else {
             Set-PSFConfig -Module PSDatabaseClone -Name hyperv.enabled -Value $false -Initialize -Validation bool
         }
 
 
         Get-PSFConfig -FullName psdatabaseclone.database.server | Register-PSFConfig -Scope SystemDefault
         Get-PSFConfig -FullName psdatabaseclone.database.name | Register-PSFConfig -Scope SystemDefault
+        Get-PSFConfig -FullName psdatabaseclone.database.credential | Register-PSFConfig -Scope SystemDefault
         Get-PSFConfig -FullName psdatabaseclone.hyperv.enabled | Register-PSFConfig -Scope SystemDefault
     }
 
