@@ -251,17 +251,17 @@
                 $accessPath = "$Destination\$mountDirectory"
 
                 # Check if access path is already present
-                if (-not (Test-Path -Path $accessPath -Credential $sou)) {
+                if (-not (Test-Path -Path $accessPath -Credential $Credential)) {
                     try {
                         # Check if computer is local
                         if ($computer.IsLocalhost) {
-
+                            $null = New-Item -Path $accessPath -ItemType Directory -Credential $Credential -Force
                         }
                         else {
-                            $command = [ScriptBlock]::Create("")
-                            $Destination = Invoke-PSFCommand -ComputerName $computer -ScriptBlock $command -Credential $Credential
+                            $command = [ScriptBlock]::Create("New-Item -Path $accessPath -ItemType Directory -Credential $Credential -Force")
+                            $null = Invoke-PSFCommand -ComputerName $computer -ScriptBlock $command -Credential $Credential
                         }
-                        $null = New-Item -Path $accessPath -ItemType Directory -Credential $Credential -Force
+
                     }
                     catch {
                         Stop-PSFFunction -Message "Couldn't create access path directory" -ErrorRecord $_ -Target $accessPath -Continue
@@ -279,13 +279,13 @@
 
                     # Check if computer is local
                     if ($computer.IsLocalhost) {
-
+                        $vhd = New-VHD -ParentPath $ParentVhd -Path "$Destination\$CloneName.vhdx" -Differencing
                     }
                     else {
-                        $command = [ScriptBlock]::Create("")
-                        $Destination = Invoke-PSFCommand -ComputerName $computer -ScriptBlock $command -Credential $Credential
+                        $command = [ScriptBlock]::Create("New-VHD -ParentPath $ParentVhd -Path '$Destination\$CloneName.vhdx' -Differencing")
+                        $vhd = Invoke-PSFCommand -ComputerName $computer -ScriptBlock $command -Credential $Credential
                     }
-                    $vhd = New-VHD -ParentPath $ParentVhd -Path "$Destination\$CloneName.vhdx" -Differencing
+
                 }
                 catch {
                     Stop-PSFFunction -Message "Could not create clone" -Target $vhd -Continue
@@ -297,18 +297,21 @@
 
                     # Check if computer is local
                     if ($computer.IsLocalhost) {
+                        # Mount the disk
+                        $null = Mount-VHD -Path "$Destination\$CloneName.vhdx" -NoDriveLetter
 
+                        # Get the disk based on the name of the vhd
+                        $disk = Get-Disk | Where-Object {$_.Location -eq "$Destination\$CloneName.vhdx"}
                     }
                     else {
-                        $command = [ScriptBlock]::Create("")
-                        $Destination = Invoke-PSFCommand -ComputerName $computer -ScriptBlock $command -Credential $Credential
+                        # Mount the disk
+                        $command = [ScriptBlock]::Create("Mount-VHD -Path `"$Destination\$CloneName.vhdx`" -NoDriveLetter")
+                        $null = Invoke-PSFCommand -ComputerName $computer -ScriptBlock $command -Credential $Credential
+
+                        # Get the disk based on the name of the vhd
+                        $command = [ScriptBlock]::Create("Get-Disk | Where-Object {$_.Location -eq `"$Destination\$CloneName.vhdx`"}")
+                        $disk = Invoke-PSFCommand -ComputerName $computer -ScriptBlock $command -Credential $Credential
                     }
-                    # Mount the disk
-                    $null = Mount-VHD -Path "$Destination\$CloneName.vhdx" -NoDriveLetter
-
-                    # Get the disk based on the name of the vhd
-                    $disk = Get-Disk | Where-Object {$_.Location -eq "$Destination\$CloneName.vhdx"}
-
                 }
                 catch {
                     Stop-PSFFunction -Message "Couldn't mount vhd $vhdPath" -ErrorRecord $_ -Target $disk -Continue
@@ -495,7 +498,7 @@
                 }
 
                 # Add the results to the custom object
-                [PSDCClone]$clone = New-Object PSDCClone
+                $clone = New-Object PSDCClone
 
                 $clone.CloneID = $result.CloneID
                 $clone.CloneLocation = $cloneLocation
