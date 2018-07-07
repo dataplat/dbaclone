@@ -152,7 +152,7 @@
                 CloneLocation = $result.CloneLocation
                 AccessPath    = $result.AccessPath
                 SqlInstance   = $result.SqlInstance
-                DatabaseName  = $result.IsEnabled
+                DatabaseName  = $result.DatabaseName
                 IsEnabled     = $result.IsEnabled
                 ImageID       = $result.ImageID
                 ImageName     = $result.ImageName
