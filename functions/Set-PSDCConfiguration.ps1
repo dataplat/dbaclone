@@ -1,4 +1,4 @@
-function Set-PSDCConfiguration {
+﻿function Set-PSDCConfiguration {
     <#
     .SYNOPSIS
         Set-PSDCConfiguration sets up the module
