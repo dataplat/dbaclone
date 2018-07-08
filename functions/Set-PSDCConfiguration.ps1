@@ -81,6 +81,9 @@
         if (-not $Database) {
             $Database = "PSDatabaseClone"
         }
+
+        # Set the flag for the new database
+        [bool]$newDatabase = $false
     }
 
     process {
@@ -105,10 +108,14 @@
         }
 
         # Get the databases from the instance
-        $databases = Get-DbaDatabase -SqlInstance $SqlInstance -SqlCredential $SqlCredential
+        #$databases = Get-DbaDatabase -SqlInstance $SqlInstance -SqlCredential $SqlCredential
 
         # Check if the database exists
-        if ($databases.Name -notcontains $Database) {
+        if ($server.Databases.Name -notcontains $Database) {
+
+            # Set the flag
+            $newDatabase = $true
+
             try {
                 # Setup the query to create the database
                 $query = "CREATE DATABASE [$Database]"
@@ -122,26 +129,37 @@
                 Stop-PSFFunction -Message "Couldn't create database $Database on $SqlInstance" -ErrorRecord $_ -Target $SqlInstance
             }
         }
+        else{
+            # Check if there are any user objects already in the database
+            $newDatabase = ($server.Databases[$Database].Tables.Count -eq 0)
+        }
 
         # Setup the path to the sql file
-        try {
-            $path = "$($MyInvocation.MyCommand.Module.ModuleBase)\internal\scripts\database.sql"
-            $query = [System.IO.File]::ReadAllText($path)
+        if ($newDatabase) {
+            try {
+                $path = "$($MyInvocation.MyCommand.Module.ModuleBase)\internal\scripts\database.sql"
+                $query = [System.IO.File]::ReadAllText($path)
+
+                # Create the objects
+                try {
+                    Write-PSFMessage -Message "Creating database objects" -Level Verbose
+
+                    # Executing the query
+                    Invoke-DbaSqlQuery -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database $Database -Query $query
+                }
+                catch {
+                    Stop-PSFFunction -Message "Couldn't create database objects" -ErrorRecord $_ -Target $SqlInstance
+                }
+            }
+            catch {
+                Stop-PSFFunction -Message "Couldn't find database script. Make sure you have a valid installation of the module" -ErrorRecord $_ -Target $SqlInstance
+            }
         }
-        catch {
-            Stop-PSFFunction -Message "Couldn't find database script. Make sure you have a valid installation of the module" -ErrorRecord $_ -Target $SqlInstance
+        else{
+            Write-PSFMessage -Message "Database already contains objects" -Level Verbose
         }
 
-        # Create the objects
-        try {
-            Write-PSFMessage -Message "Creating database objects" -Level Verbose
 
-            # Executing the query
-            Invoke-DbaSqlQuery -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database $Database -Query $query
-        }
-        catch {
-            Stop-PSFFunction -Message "Couldn't create database objects" -ErrorRecord $_ -Target $SqlInstance
-        }
 
         # Writing the setting to the configuration file
         Write-PSFMessage -Message "Registering config values" -Level Verbose
