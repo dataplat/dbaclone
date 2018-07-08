@@ -18,11 +18,17 @@ $osDetails = Get-CimInstance Win32_OperatingSystem | Select-Object Caption, Desc
 
 # Check which version of windows we're dealing with
 if ($osDetails.Caption -notin $supportedVersions ) {
-    if ($osDetails.Caption -like '*Windows 10*') {
+    if($osDetails.Caption -like '*Windows 7*'){
+        Stop-PSFFunction -Message "Module can not work on Windows 7" -Target $OSDetails -FunctionName 'Pre Import' 
+    }
+    elseif ($osDetails.Caption -like '*Windows 10*') {
         Stop-PSFFunction -Message "Module can only work on Windows 10 Pro, Enterprise or Education" -Target $OSDetails -FunctionName 'Pre Import'
     }
     elseif ($osDetails.Caption -like '*Windows Server*') {
         Stop-PSFFunction -Message "Module can only work on Windows Server 2012 R2 and up, Enterprise or Education" -Target $OSDetails -FunctionName 'Pre Import'
+    }
+    else{
+        Stop-PSFFunction -Message "Unsupported version of Windows." -Target $OSDetails -FunctionName 'Pre Import'
     }
 }
 
