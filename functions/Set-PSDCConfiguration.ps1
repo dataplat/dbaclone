@@ -107,9 +107,6 @@
             }
         }
 
-        # Get the databases from the instance
-        #$databases = Get-DbaDatabase -SqlInstance $SqlInstance -SqlCredential $SqlCredential
-
         # Check if the database exists
         if ($server.Databases.Name -notcontains $Database) {
 
@@ -158,8 +155,6 @@
         else{
             Write-PSFMessage -Message "Database already contains objects" -Level Verbose
         }
-
-
 
         # Writing the setting to the configuration file
         Write-PSFMessage -Message "Registering config values" -Level Verbose
