@@ -1,69 +1,73 @@
 ﻿function Remove-PSDCImage {
     <#
-.SYNOPSIS
-    Remove-PSDCImage removes one or more images
+    .SYNOPSIS
+        Remove-PSDCImage removes one or more images
 
-.DESCRIPTION
-    The command will remove an image from PSDatabaseClone.
-    It will also remove all the clones associated with it on the hosts.
+    .DESCRIPTION
+        The command will remove an image from PSDatabaseClone.
+        It will also remove all the clones associated with it on the hosts.
 
-.PARAMETER ImageID
-    Remove images based on the image id
+    .PARAMETER ImageID
+        Remove images based on the image id
 
-.PARAMETER ImageName
-    Remove images based on the image name
+    .PARAMETER ImageName
+        Remove images based on the image name
 
-.PARAMETER ImageLocation
-    Location of the image as it's saved in the database or can be seen on the file system.
+    .PARAMETER ImageLocation
+        Location of the image as it's saved in the database or can be seen on the file system.
 
-.PARAMETER Database
-    Remove images based on the database
+    .PARAMETER Database
+        Remove images based on the database
 
-.PARAMETER ExcludeDatabase
-    Filter the images based on the excluded database
+    .PARAMETER ExcludeDatabase
+        Filter the images based on the excluded database
 
-.PARAMETER Credential
-    Allows you to login to servers using  Windows Auth/Integrated/Trusted. To use:
+    .PARAMETER PSDCSqlCredential
+        Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted.
+        This works similar as SqlCredential but is only meant for authentication to the PSDatabaseClone database server and database.
 
-    $scred = Get-Credential, then pass $scred object to the -Credential parameter.
+    .PARAMETER Credential
+        Allows you to login to servers using  Windows Auth/Integrated/Trusted. To use:
 
-.PARAMETER Force
-    Forcefully remove the items.
+        $scred = Get-Credential, then pass $scred object to the -Credential parameter.
 
-.PARAMETER InputObject
-    The input object that is used for pipeline use
+    .PARAMETER Force
+        Forcefully remove the items.
 
-.PARAMETER EnableException
-    By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-    This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-    Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+    .PARAMETER InputObject
+        The input object that is used for pipeline use
 
-.PARAMETER WhatIf
-    If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-.PARAMETER Confirm
-    If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
+    .PARAMETER WhatIf
+        If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
 
-.NOTES
-    Author: Sander Stad (@sqlstad, sqlstad.nl)
+    .PARAMETER Confirm
+        If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
 
-    Website: https://psdatabaseclone.io
-    Copyright: (C) Sander Stad, sander@sqlstad.nl
-    License: MIT https://opensource.org/licenses/MIT
+    .NOTES
+        Author: Sander Stad (@sqlstad, sqlstad.nl)
 
-.LINK
-    https://psdatabaseclone.io/
+        Website: https://psdatabaseclone.io
+        Copyright: (C) Sander Stad, sander@sqlstad.nl
+        License: MIT https://opensource.org/licenses/MIT
 
-.EXAMPLE
-    Remove-PSDCImage -ImageLocation "\\server1\images\DB1_20180703193345.vhdx"
+    .LINK
+        https://psdatabaseclone.io/
 
-    Remove an image
+    .EXAMPLE
+        Remove-PSDCImage -ImageLocation "\\server1\images\DB1_20180703193345.vhdx"
 
-.EXAMPLE
-    Get-PSDCImage -Database DB1 | Remove-PSDCImage
+        Remove an image
 
-    Remove all images and clones based on database DB1
-#>
+    .EXAMPLE
+        Get-PSDCImage -Database DB1 | Remove-PSDCImage
+
+        Remove all images and clones based on database DB1
+    #>
     [CmdLetBinding(DefaultParameterSetName = "ImageLocation", SupportsShouldProcess = $true,
         ConfirmImpact = 'High')]
 
@@ -74,6 +78,8 @@
         [string[]]$ImageLocation,
         [string[]]$Database,
         [string[]]$ExcludeDatabase,
+        [System.Management.Automation.PSCredential]
+        $PSDCSqlCredential,
         [System.Management.Automation.PSCredential]
         $Credential,
         [switch]$Force,
@@ -86,7 +92,7 @@
 
         # Test the module database setup
         try {
-            Test-PSDCConfiguration -EnableException
+            Test-PSDCConfiguration -SqlCredential $PSDCSqlCredential -EnableException
         }
         catch {
             Stop-PSFFunction -Message "Something is wrong in the module configuration" -ErrorRecord $_ -Continue
@@ -99,7 +105,7 @@
         Write-PSFMessage -Message "Started removing database images" -Level Verbose
 
         # Get all the items
-        $items = Get-PSDCImage
+        $items = Get-PSDCImage -PSDCSqlCredential $PSDCSqlCredential
 
         if ($ImageID) {
             Write-PSFMessage -Message "Filtering image ids" -Level Verbose
@@ -164,7 +170,7 @@
                 try {
                     Write-PSFMessage -Message "Retrieving data for image '$($item.Name)'" -Level Verbose
                     $results = @()
-                    $results += Invoke-DbaSqlQuery -SqlInstance $pdcSqlInstance -Database $pdcDatabase -Query $query
+                    $results += Invoke-DbaSqlQuery -SqlInstance $pdcSqlInstance -SqlCredential $PSDCSqlCredential -Database $pdcDatabase -Query $query
 
                     # Check the results
                     if ($results.Count -ge 1) {
@@ -175,7 +181,7 @@
                             # Remove the clones for the host
                             try {
                                 Write-PSFMessage -Message "Removing clones for host $($result.HostName) and database $($result.DatabaseName)" -Level Verbose
-                                Remove-PSDCClone -HostName $result.HostName -Database $result.DatabaseName -Credential $Credential -Confirm:$false
+                                Remove-PSDCClone -HostName $result.HostName -Database $result.DatabaseName -PSDCSqlCredential $PSDCSqlCredential -Credential $Credential -Confirm:$false
                             }
                             catch {
                                 Stop-PSFFunction -Message "Couldn't remove clones from host $($result.HostName)" -ErrorRecord $_ -Target $result -Continue
@@ -208,7 +214,7 @@
                 try {
                     $query = "DELETE FROM dbo.Image WHERE ImageID = $($item.ImageID)"
 
-                    $null = Invoke-DbaSqlQuery -SqlInstance $pdcSqlInstance -Database $pdcDatabase -Query $query
+                    $null = Invoke-DbaSqlQuery -SqlInstance $pdcSqlInstance -SqlCredential $PSDCSqlCredential -Database $pdcDatabase -Query $query
                 }
                 catch {
                     Stop-PSFFunction -Message "Couldn't remove image '$($item.ImageLocation)' from database" -ErrorRecord $_ -Target $query

@@ -1,63 +1,62 @@
-function Set-PSDCConfiguration {
-<#
-.SYNOPSIS
-    Set-PSDCConfiguration sets up the module
+﻿function Set-PSDCConfiguration {
+    <#
+    .SYNOPSIS
+        Set-PSDCConfiguration sets up the module
 
-.DESCRIPTION
-    For the module to work properly the module needs a couple of settings.
-    The most important settings are the ones for the database to store the information
-    about the images and the clones.
+    .DESCRIPTION
+        For the module to work properly the module needs a couple of settings.
+        The most important settings are the ones for the database to store the information
+        about the images and the clones.
 
-    The configurations will be saved in the registry of Windows for all users.
+        The configurations will be saved in the registry of Windows for all users.
 
-    If the database does not yet exist on the server it will try to create the database.
-    After that the objects for the database will be created.
+        If the database does not yet exist on the server it will try to create the database.
+        After that the objects for the database will be created.
 
-.PARAMETER SqlInstance
-    SQL Server name or SMO object representing the SQL Server to connect to
+    .PARAMETER SqlInstance
+        SQL Server name or SMO object representing the SQL Server to connect to
 
-.PARAMETER SqlCredential
-    Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
+    .PARAMETER SqlCredential
+        Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
 
-    $scred = Get-Credential, then pass $scred object to the -SqlCredential parameter.
+        $scred = Get-Credential, then pass $scred object to the -SqlCredential parameter.
 
-    Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
-    To connect as a different Windows user, run PowerShell as that user.
+        Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
+        To connect as a different Windows user, run PowerShell as that user.
 
-.PARAMETER Database
-    Database to use to save all the information in
+    .PARAMETER Database
+        Database to use to save all the information in
 
-.PARAMETER EnableException
-    By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-    This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-    Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-.PARAMETER WhatIf
-    If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
+    .PARAMETER WhatIf
+        If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
 
-.PARAMETER Confirm
-    If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
+    .PARAMETER Confirm
+        If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
 
-.NOTES
-    Author: Sander Stad (@sqlstad, sqlstad.nl)
+    .NOTES
+        Author: Sander Stad (@sqlstad, sqlstad.nl)
 
-    Website: https://psdatabaseclone.io
-    Copyright: (C) Sander Stad, sander@sqlstad.nl
-    License: MIT https://opensource.org/licenses/MIT
+        Website: https://psdatabaseclone.io
+        Copyright: (C) Sander Stad, sander@sqlstad.nl
+        License: MIT https://opensource.org/licenses/MIT
 
-.LINK
-    https://psdatabaseclone.io/
+    .LINK
+        https://psdatabaseclone.io/
 
-.EXAMPLE
-    Set-PSDCConfiguration -SqlInstance SQLDB1 -Database PSDatabaseClone
+    .EXAMPLE
+        Set-PSDCConfiguration -SqlInstance SQLDB1 -Database PSDatabaseClone
 
-    Set up the module to use SQLDB1 as the database servers and PSDatabaseClone to save the values in
-#>
+        Set up the module to use SQLDB1 as the database servers and PSDatabaseClone to save the values in
+    #>
     [CmdLetBinding(SupportsShouldProcess = $true)]
     param(
         [parameter(Mandatory = $true)]
         [ValidateNotNullOrEmpty()]
-        [Alias("ServerInstance", "SqlServerSqlServer")]
         [object]$SqlInstance,
         [System.Management.Automation.PSCredential]
         $SqlCredential,
@@ -82,6 +81,9 @@ function Set-PSDCConfiguration {
         if (-not $Database) {
             $Database = "PSDatabaseClone"
         }
+
+        # Set the flag for the new database
+        [bool]$newDatabase = $false
     }
 
     process {
@@ -106,10 +108,14 @@ function Set-PSDCConfiguration {
         }
 
         # Get the databases from the instance
-        $databases = Get-DbaDatabase -SqlInstance $SqlInstance -SqlCredential $SqlCredential
+        #$databases = Get-DbaDatabase -SqlInstance $SqlInstance -SqlCredential $SqlCredential
 
         # Check if the database exists
-        if ($databases.Name -notcontains $Database) {
+        if ($server.Databases.Name -notcontains $Database) {
+
+            # Set the flag
+            $newDatabase = $true
+
             try {
                 # Setup the query to create the database
                 $query = "CREATE DATABASE [$Database]"
@@ -123,42 +129,58 @@ function Set-PSDCConfiguration {
                 Stop-PSFFunction -Message "Couldn't create database $Database on $SqlInstance" -ErrorRecord $_ -Target $SqlInstance
             }
         }
+        else{
+            # Check if there are any user objects already in the database
+            $newDatabase = ($server.Databases[$Database].Tables.Count -eq 0)
+        }
 
         # Setup the path to the sql file
-        try {
-            $path = "$($MyInvocation.MyCommand.Module.ModuleBase)\internal\scripts\database.sql"
-            $query = [System.IO.File]::ReadAllText($path)
+        if ($newDatabase) {
+            try {
+                $path = "$($MyInvocation.MyCommand.Module.ModuleBase)\internal\scripts\database.sql"
+                $query = [System.IO.File]::ReadAllText($path)
+
+                # Create the objects
+                try {
+                    Write-PSFMessage -Message "Creating database objects" -Level Verbose
+
+                    # Executing the query
+                    Invoke-DbaSqlQuery -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database $Database -Query $query
+                }
+                catch {
+                    Stop-PSFFunction -Message "Couldn't create database objects" -ErrorRecord $_ -Target $SqlInstance
+                }
+            }
+            catch {
+                Stop-PSFFunction -Message "Couldn't find database script. Make sure you have a valid installation of the module" -ErrorRecord $_ -Target $SqlInstance
+            }
         }
-        catch {
-            Stop-PSFFunction -Message "Couldn't find database script. Make sure you have a valid installation of the module" -ErrorRecord $_ -Target $SqlInstance
+        else{
+            Write-PSFMessage -Message "Database already contains objects" -Level Verbose
         }
 
-        # Create the objects
-        try {
-            Write-PSFMessage -Message "Creating database objects" -Level Verbose
 
-            # Executing the query
-            Invoke-DbaSqlQuery -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database $Database -Query $query
-        }
-        catch {
-            Stop-PSFFunction -Message "Couldn't create database objects" -ErrorRecord $_ -Target $SqlInstance
-        }
 
         # Writing the setting to the configuration file
         Write-PSFMessage -Message "Registering config values" -Level Verbose
         Set-PSFConfig -Module PSDatabaseClone -Name database.server -Value $SqlInstance -Initialize -Validation string
         Set-PSFConfig -Module PSDatabaseClone -Name database.name -Value $Database -Initialize -Validation string
 
-        if(Test-PSDCHyperVEnabled){
+        if ($SqlCredential) {
+            Set-PSFConfig -Module PSDatabaseClone -Name database.credential -Value $SqlCredential -Initialize
+        }
+
+        if (Test-PSDCHyperVEnabled) {
             Set-PSFConfig -Module PSDatabaseClone -Name hyperv.enabled -Value $true -Initialize -Validation bool
         }
-        else{
+        else {
             Set-PSFConfig -Module PSDatabaseClone -Name hyperv.enabled -Value $false -Initialize -Validation bool
         }
 
 
         Get-PSFConfig -FullName psdatabaseclone.database.server | Register-PSFConfig -Scope SystemDefault
         Get-PSFConfig -FullName psdatabaseclone.database.name | Register-PSFConfig -Scope SystemDefault
+        Get-PSFConfig -FullName psdatabaseclone.database.credential | Register-PSFConfig -Scope SystemDefault
         Get-PSFConfig -FullName psdatabaseclone.hyperv.enabled | Register-PSFConfig -Scope SystemDefault
     }
 

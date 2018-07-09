@@ -21,6 +21,10 @@
         Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
         To connect as a different Windows user, run PowerShell as that user.
 
+    .PARAMETER PSDCSqlCredential
+        Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted.
+        This works similar as SqlCredential but is only meant for authentication to the PSDatabaseClone database server and database.
+
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
@@ -48,6 +52,7 @@
         Repair the clones for Host1
 
     #>
+
     [CmdLetBinding()]
 
     param(
@@ -55,13 +60,15 @@
         [string[]]$HostName,
         [System.Management.Automation.PSCredential]
         $SqlCredential,
+        [System.Management.Automation.PSCredential]
+        $PSDCSqlCredential,
         [switch]$EnableException
     )
 
     begin {
         # Test the module database setup
         try {
-            Test-PSDCConfiguration -EnableException
+            Test-PSDCConfiguration -SqlCredential $PSDCSqlCredential -EnableException
         }
         catch {
             Stop-PSFFunction -Message "Something is wrong in the module configuration" -ErrorRecord $_ -Continue
@@ -98,7 +105,7 @@
             # Get the clones registered for the host
             try {
                 Write-PSFMessage -Message "Get the clones for host $hst" -Level Verbose
-                $results = Invoke-DbaSqlQuery -SqlInstance $pdcSqlInstance -Database $pdcDatabase -Query $query
+                $results = Invoke-DbaSqlQuery -SqlInstance $pdcSqlInstance -SqlCredential $PSDCSqlCredential -Database $pdcDatabase -Query $query
             }
             catch {
                 Stop-PSFFunction -Message "Couldn't get the clones for $hst" -Target $pdcSqlInstance -ErrorRecord $_ -Continue

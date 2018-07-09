@@ -1,60 +1,60 @@
 ﻿function New-PSDCVhdDisk {
-<#
-.SYNOPSIS
-    New-PSDCVhdDisk creates a new VHD
+    <#
+    .SYNOPSIS
+        New-PSDCVhdDisk creates a new VHD
 
-.DESCRIPTION
-    New-PSDCVhdDisk will create a new VHD.
+    .DESCRIPTION
+        New-PSDCVhdDisk will create a new VHD.
 
-.PARAMETER Destination
-    The destination path of the VHD
+    .PARAMETER Destination
+        The destination path of the VHD
 
-.PARAMETER Name
-    The name of the VHD
+    .PARAMETER Name
+        The name of the VHD
 
-.PARAMETER FileName
-    The file name of the VHD
+    .PARAMETER FileName
+        The file name of the VHD
 
-.PARAMETER Size
-    The size of the VHD.
+    .PARAMETER Size
+        The size of the VHD.
 
-.PARAMETER FixedSize
-    Set the VHD to have a fixed size or not.
-    Be careful using this parameter. Fixed will make the VHD use the space assigned in -Size
+    .PARAMETER FixedSize
+        Set the VHD to have a fixed size or not.
+        Be careful using this parameter. Fixed will make the VHD use the space assigned in -Size
 
-.PARAMETER ReadOnly
-    Set the VHD to readonly
+    .PARAMETER ReadOnly
+        Set the VHD to readonly
 
-.PARAMETER Force
-    Forcefully create the neccesary items
+    .PARAMETER Force
+        Forcefully create the neccesary items
 
-.PARAMETER EnableException
-    By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-    This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-    Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-.PARAMETER WhatIf
-    If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
+    .PARAMETER WhatIf
+        If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
 
-.PARAMETER Confirm
-    If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
+    .PARAMETER Confirm
+        If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
 
-.NOTES
-    Author: Sander Stad (@sqlstad, sqlstad.nl)
+    .NOTES
+        Author: Sander Stad (@sqlstad, sqlstad.nl)
 
-    Website: https://psdatabaseclone.io
-    Copyright: (C) Sander Stad, sander@sqlstad.nl
-    License: MIT https://opensource.org/licenses/MIT
+        Website: https://psdatabaseclone.io
+        Copyright: (C) Sander Stad, sander@sqlstad.nl
+        License: MIT https://opensource.org/licenses/MIT
 
-.LINK
-    https://psdatabaseclone.io/
+    .LINK
+        https://psdatabaseclone.io/
 
-.EXAMPLE
-    New-PSDCVhdDisk -Destination C:\temp -Name Database1 -Size 1GB
+    .EXAMPLE
+        New-PSDCVhdDisk -Destination C:\temp -Name Database1 -Size 1GB
 
-    Creates a dynamic VHD in C:\Temp named Database1.vhdx with a size of 1GB
+        Creates a dynamic VHD in C:\Temp named Database1.vhdx with a size of 1GB
 
-#>
+    #>
 
     [CmdLetBinding(SupportsShouldProcess = $true)]
 

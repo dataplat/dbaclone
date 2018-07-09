@@ -1,43 +1,41 @@
 ﻿function Convert-PSDCLocalUncPathToLocalPath {
-<#
-.SYNOPSIS
-    Convert a UNC path on a computer to a local path.
+    <#
+    .SYNOPSIS
+        Convert a UNC path on a computer to a local path.
 
-.DESCRIPTION
-    In some cases you want to convert a UNC path to a local path.
-    This function will look up which path belongs to the UNC path by supplying only the UNC path
+    .DESCRIPTION
+        In some cases you want to convert a UNC path to a local path.
+        This function will look up which path belongs to the UNC path by supplying only the UNC path
 
-.PARAMETER UncPath
-    UNC path to convert to local path
+    .PARAMETER UncPath
+        UNC path to convert to local path
 
-.PARAMETER EnableException
-    By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-    This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-    Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-.PARAMETER WhatIf
-    If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
+    .PARAMETER WhatIf
+        If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
 
-.PARAMETER Confirm
-    If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
+    .PARAMETER Confirm
+        If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
 
-.NOTES
-    Author: Sander Stad (@sqlstad, sqlstad.nl)
+    .NOTES
+        Author: Sander Stad (@sqlstad, sqlstad.nl)
 
-    Website: https://psdatabaseclone.io
-    Copyright: (C) Sander Stad, sander@sqlstad.nl
-    License: MIT https://opensource.org/licenses/MIT
+        Website: https://psdatabaseclone.io
+        Copyright: (C) Sander Stad, sander@sqlstad.nl
+        License: MIT https://opensource.org/licenses/MIT
 
-.LINK
-    https://psdatabaseclone.io/
+    .LINK
+        https://psdatabaseclone.io/
 
-.EXAMPLE
-    Convert-PSDCLocalUncPathToLocalPath -UncPath "\\server1\share1"
+    .EXAMPLE
+        Convert-PSDCLocalUncPathToLocalPath -UncPath "\\server1\share1"
 
-    Convert path "\\server1\share1" to a local path from server1
-
-
-#>
+        Convert path "\\server1\share1" to a local path from server1
+    #>
 
     [CmdletBinding()]
     param(

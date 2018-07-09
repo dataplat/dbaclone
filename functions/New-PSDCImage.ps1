@@ -1,94 +1,98 @@
 ﻿function New-PSDCImage {
-<#
-.SYNOPSIS
-    New-PSDCImage creates a new image
+    <#
+    .SYNOPSIS
+        New-PSDCImage creates a new image
 
-.DESCRIPTION
-    New-PSDCImage will create a new image based on a SQL Server database
+    .DESCRIPTION
+        New-PSDCImage will create a new image based on a SQL Server database
 
-    The command will either create a full backup or use the last full backup to create the image.
+        The command will either create a full backup or use the last full backup to create the image.
 
-    Every image is created with the name of the database and a time stamp yyyyMMddHHmmss i.e "DB1_20180622171819.vhdx"
+        Every image is created with the name of the database and a time stamp yyyyMMddHHmmss i.e "DB1_20180622171819.vhdx"
 
-.PARAMETER SourceSqlInstance
-    Source SQL Server name or SMO object representing the SQL Server to connect to.
-    This will be where the database is currently located
+    .PARAMETER SourceSqlInstance
+        Source SQL Server name or SMO object representing the SQL Server to connect to.
+        This will be where the database is currently located
 
-.PARAMETER SourceSqlCredential
-    Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
+    .PARAMETER SourceSqlCredential
+        Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
 
-    $scred = Get-Credential, then pass $scred object to the -SourceSqlCredential parameter.
+        $scred = Get-Credential, then pass $scred object to the -SourceSqlCredential parameter.
 
-    Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
-    To connect as a different Windows user, run PowerShell as that user.
+        Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
+        To connect as a different Windows user, run PowerShell as that user.
 
-.PARAMETER DestinationSqlInstance
-    SQL Server name or SMO object representing the SQL Server to connect to.
-    This is the server to use to temporarily restore the database to create the image.
+    .PARAMETER DestinationSqlInstance
+        SQL Server name or SMO object representing the SQL Server to connect to.
+        This is the server to use to temporarily restore the database to create the image.
 
-.PARAMETER DestinationSqlCredential
-    Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
+    .PARAMETER DestinationSqlCredential
+        Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
 
-    $scred = Get-Credential, then pass $scred object to the -DestinationSqlCredential parameter.
+        $scred = Get-Credential, then pass $scred object to the -DestinationSqlCredential parameter.
 
-    Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
-    To connect as a different Windows user, run PowerShell as that user.
+        Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
+        To connect as a different Windows user, run PowerShell as that user.
 
-.PARAMETER DestinationCredential
-    Allows you to login to other parts of a system like folders. To use:
+    .PARAMETER DestinationCredential
+        Allows you to login to other parts of a system like folders. To use:
 
-    $scred = Get-Credential, then pass $scred object to the -DestinationCredential parameter.
+        $scred = Get-Credential, then pass $scred object to the -DestinationCredential parameter.
 
-.PARAMETER ImageNetworkPath
-    Network path where to save the image. This has to be a UNC path
+    .PARAMETER PSDCSqlCredential
+        Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted.
+        This works similar as SqlCredential but is only meant for authentication to the PSDatabaseClone database server and database.
 
-.PARAMETER ImageLocalPath
-    Local path where to save the image
+    .PARAMETER ImageNetworkPath
+        Network path where to save the image. This has to be a UNC path
 
-.PARAMETER Database
-    Databases to create an image of
+    .PARAMETER ImageLocalPath
+        Local path where to save the image
 
-.PARAMETER CreateFullBackup
-    Create a new full backup of the database. The backup will be saved in the default backup directory
+    .PARAMETER Database
+        Databases to create an image of
 
-.PARAMETER UseLastFullBackup
-    Use the last full backup created for the database
+    .PARAMETER CreateFullBackup
+        Create a new full backup of the database. The backup will be saved in the default backup directory
 
-.PARAMETER Force
-    Forcefully execute commands when needed
+    .PARAMETER UseLastFullBackup
+        Use the last full backup created for the database
 
-.PARAMETER EnableException
-    By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
-    This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
-    Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+    .PARAMETER Force
+        Forcefully execute commands when needed
 
-.PARAMETER WhatIf
-    If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
 
-.PARAMETER Confirm
-    If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
+    .PARAMETER WhatIf
+        If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
 
-.NOTES
-    Author: Sander Stad (@sqlstad, sqlstad.nl)
+    .PARAMETER Confirm
+        If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
 
-    Website: https://psdatabaseclone.io
-    Copyright: (C) Sander Stad, sander@sqlstad.nl
-    License: MIT https://opensource.org/licenses/MIT
+    .NOTES
+        Author: Sander Stad (@sqlstad, sqlstad.nl)
 
-.LINK
-    https://psdatabaseclone.io/
+        Website: https://psdatabaseclone.io
+        Copyright: (C) Sander Stad, sander@sqlstad.nl
+        License: MIT https://opensource.org/licenses/MIT
 
-.EXAMPLE
-    New-PSDCImage -SourceSqlInstance SQLDB1 -DestinationSqlInstance SQLDB2 -ImageLocalPath C:\Temp\images\ -Database DB1 -CreateFullBackup
+    .LINK
+        https://psdatabaseclone.io/
 
-    Create an image for databas DB1 from SQL Server SQLDB1. The temporary destination will be SQLDB2.
-    The image will be saved in C:\Temp\images.
-.EXAMPLE
-    New-PSDCImage -SourceSqlInstance SQLDB1 -DestinationSqlInstance SQLDB2 -ImageLocalPath C:\Temp\images\ -Database DB1 -UseLastFullBackup
+    .EXAMPLE
+        New-PSDCImage -SourceSqlInstance SQLDB1 -DestinationSqlInstance SQLDB2 -ImageLocalPath C:\Temp\images\ -Database DB1 -CreateFullBackup
 
-    Create an image from the database DB1 on SQLDB1 using the last full backup and use SQLDB2 as the temporary database server.
-    The image is written to c:\Temp\images
-#>
+        Create an image for databas DB1 from SQL Server SQLDB1. The temporary destination will be SQLDB2.
+        The image will be saved in C:\Temp\images.
+    .EXAMPLE
+        New-PSDCImage -SourceSqlInstance SQLDB1 -DestinationSqlInstance SQLDB2 -ImageLocalPath C:\Temp\images\ -Database DB1 -UseLastFullBackup
+
+        Create an image from the database DB1 on SQLDB1 using the last full backup and use SQLDB2 as the temporary database server.
+        The image is written to c:\Temp\images
+    #>
     [CmdLetBinding(SupportsShouldProcess = $true)]
     param(
         [parameter(Mandatory = $true)]
@@ -103,6 +107,8 @@
         $DestinationSqlCredential,
         [System.Management.Automation.PSCredential]
         $DestinationCredential,
+        [System.Management.Automation.PSCredential]
+        $PSDCSqlCredential,
         [Parameter(Mandatory = $true)]
         [ValidateNotNullOrEmpty()]
         [string]$ImageNetworkPath,
@@ -119,7 +125,7 @@
 
         # Test the module database setup
         try {
-            Test-PSDCConfiguration -EnableException
+            Test-PSDCConfiguration -SqlCredential $PSDCSqlCredential -EnableException
         }
         catch {
             Stop-PSFFunction -Message "Something is wrong in the module configuration" -ErrorRecord $_ -Continue
@@ -165,6 +171,7 @@
         # Get the local path from the network path
         if (-not $ImageLocalPath) {
             try {
+                # Check if computer is local
                 if ($computer.IsLocalhost) {
                     $ImageLocalPath = Convert-PSDCLocalUncPathToLocalPath -UncPath $ImageNetworkPath
                 }
@@ -249,23 +256,32 @@
             if ($CreateFullBackup) {
                 # Create the backup
                 Write-PSFMessage -Message "Creating new full backup for database $db" -Level Verbose
-                $null = Backup-DbaDatabase -SqlInstance $SourceSqlInstance -Database $db.Name
+                $null = Backup-DbaDatabase -SqlInstance $SourceSqlInstance -SqlCredential $SourceSqlCredential -Database $db.Name
 
                 # Get the last full backup
                 Write-PSFMessage -Message "Trying to retrieve the last full backup for $db" -Level Verbose
-                $lastFullBackup = Get-DbaBackupHistory -SqlServer $SourceSqlInstance -Databases $db.Name -LastFull -Credential $SourceSqlCredential
+                $lastFullBackup = Get-DbaBackupHistory -SqlServer $SourceSqlInstance -SqlCredential $SourceSqlCredential -Databases $db.Name -LastFull
             }
             elseif ($UseLastFullBackup) {
                 Write-PSFMessage -Message "Trying to retrieve the last full backup for $db" -Level Verbose
 
                 # Get the last full backup
-                $lastFullBackup = Get-DbaBackupHistory -SqlServer $SourceSqlInstance -Databases $db.Name -LastFull -Credential $SourceSqlCredential
+                $lastFullBackup = Get-DbaBackupHistory -SqlServer $SourceSqlInstance -SqlCredential $SourceSqlCredential -Databases $db.Name -LastFull
             }
 
             # try to create the new VHD
             try {
                 Write-PSFMessage -Message "Create the vhd $imageName.vhdx" -Level Verbose
-                $null = New-PSDCVhdDisk -Destination $imagePath -FileName "$imageName.vhdx"
+
+                # Check if computer is local
+                if ($computer.IsLocalhost) {
+                    $null = New-PSDCVhdDisk -Destination $imagePath -FileName "$imageName.vhdx"
+                }
+                else {
+                    $command = [ScriptBlock]::Create("$null = New-PSDCVhdDisk -Destination $imagePath -FileName '$imageName.vhdx'")
+                    $null = Invoke-PSFCommand -ComputerName $computer -ScriptBlock $command -Credential $DestinationCredential
+                }
+
             }
             catch {
                 Stop-PSFFunction -Message "Couldn't create vhd $imageName" -Target "$imageName.vhd" -ErrorRecord $_ -Continue
@@ -275,7 +291,14 @@
             try {
                 Write-PSFMessage -Message "Initializing the vhd $imageName.vhd" -Level Verbose
 
-                $diskResult = Initialize-PSDCVhdDisk -Path $vhdPath -Credential $DestinationCredential
+                # Check if computer is local
+                if ($computer.IsLocalhost) {
+                    $diskResult = Initialize-PSDCVhdDisk -Path $vhdPath -Credential $DestinationCredential
+                }
+                else {
+                    $command = [ScriptBlock]::Create("Initialize-PSDCVhdDisk -Path $vhdPath -Credential $DestinationCredential")
+                    $diskResult = Invoke-PSFCommand -ComputerName $computer -ScriptBlock $command -Credential $DestinationCredential
+                }
             }
             catch {
                 Stop-PSFFunction -Message "Couldn't initialize vhd $vhdPath" -Target $imageName -ErrorRecord $_ -Continue
@@ -287,7 +310,14 @@
                 # Check if access path is already present
                 if (-not (Test-Path -Path $accessPath)) {
                     try {
-                        $null = New-Item -Path $accessPath -ItemType Directory -Force:$Force
+                        # Check if computer is local
+                        if ($computer.IsLocalhost) {
+                            $null = New-Item -Path $accessPath -ItemType Directory -Force:$Force
+                        }
+                        else {
+                            $command = [ScriptBlock]::Create("New-Item -Path $accessPath -ItemType Directory -Force:$Force")
+                            $null = Invoke-PSFCommand -ComputerName $computer -ScriptBlock $command -Credential $DestinationCredential
+                        }
                     }
                     catch {
                         Stop-PSFFunction -Message "Couldn't create access path directory" -ErrorRecord $_ -Target $accessPath -Continue
@@ -299,7 +329,14 @@
                 $partition = $diskResult.Partition
 
                 # Add the access path to the mounted disk
-                $null = Add-PartitionAccessPath -DiskNumber $disk.Number -PartitionNumber $partition[1].PartitionNumber -AccessPath $accessPath -ErrorAction SilentlyContinue
+                if ($computer.IsLocalhost) {
+                    $null = Add-PartitionAccessPath -DiskNumber $disk.Number -PartitionNumber $partition[1].PartitionNumber -AccessPath $accessPath -ErrorAction SilentlyContinue
+                }
+                else {
+                    $command = [ScriptBlock]::Create("Add-PartitionAccessPath -DiskNumber $disk.Number -PartitionNumber $partition[1].PartitionNumber -AccessPath $accessPath -ErrorAction SilentlyContinue")
+                    $null = Invoke-PSFCommand -ComputerName $computer -ScriptBlock $command -Credential $DestinationCredential
+                }
+
             }
             catch {
                 Stop-PSFFunction -Message "Couldn't create access path for partition" -ErrorRecord $_ -Target $diskResult.partition
@@ -309,21 +346,39 @@
             $imageDataFolder = "$($imagePath)\$imageName\Data"
             $imageLogFolder = "$($imagePath)\$imageName\Log"
 
-            # Check if image folder structure exist
+            # Check if image data folder exist
             if (-not (Test-Path -Path $imageDataFolder)) {
                 try {
                     Write-PSFMessage -Message "Creating data folder for image" -Level Verbose
-                    $null = New-Item -Path $imageDataFolder -ItemType Directory
+
+                    # Check if computer is local
+                    if ($computer.IsLocalhost) {
+                        $null = New-Item -Path $imageDataFolder -ItemType Directory
+                    }
+                    else {
+                        $command = [ScriptBlock]::Create("New-Item -Path $imageDataFolder -ItemType Directory")
+                        $null = Invoke-PSFCommand -ComputerName $computer -ScriptBlock $command -Credential $DestinationCredential
+                    }
                 }
                 catch {
                     Stop-PSFFunction -Message "Couldn't create image data folder" -Target $imageName -ErrorRecord $_ -Continue
                 }
             }
 
+            # Test if the image log folder exists
             if (-not (Test-Path -Path $imageLogFolder)) {
                 try {
                     Write-PSFMessage -Message "Creating transaction log folder for image" -Level Verbose
-                    $null = New-Item -Path $imageLogFolder -ItemType Directory
+
+                    # Check if computer is local
+                    if ($computer.IsLocalhost) {
+                        $null = New-Item -Path $imageLogFolder -ItemType Directory
+                    }
+                    else {
+                        $command = [ScriptBlock]::Create("New-Item -Path $imageLogFolder -ItemType Directory")
+                        $null = Invoke-PSFCommand -ComputerName $computer -ScriptBlock $command -Credential $DestinationCredential
+                    }
+
                 }
                 catch {
                     Stop-PSFFunction -Message "Couldn't create image data folder" -Target $imageName -ErrorRecord $_ -Continue
@@ -336,7 +391,6 @@
             # Restore database to image folder
             try {
                 Write-PSFMessage -Message "Restoring database $db on $DestinationSqlInstance" -Level Verbose
-
                 $restore = Restore-DbaDatabase -SqlInstance $DestinationSqlInstance -SqlCredential $DestinationSqlCredential `
                     -DatabaseName $tempDbName -Path $lastFullBackup `
                     -DestinationDataDirectory $imageDataFolder `
@@ -349,7 +403,6 @@
             # Detach database
             try {
                 Write-PSFMessage -Message "Detaching database $tempDbName on $DestinationSqlInstance" -Level Verbose
-
                 $null = Dismount-DbaDatabase -SqlInstance $DestinationSqlInstance -Database $tempDbName -SqlCredential $DestinationSqlCredential
             }
             catch {
@@ -360,11 +413,21 @@
             try {
                 Write-PSFMessage -Message "Dismounting vhd" -Level Verbose
 
-                # Dismount the VHD
-                $null = Dismount-VHD -Path $vhdPath
+                # Check if computer is local
+                if ($computer.IsLocalhost) {
+                    # Dismount the VHD
+                    $null = Dismount-VHD -Path $vhdPath
 
-                # Remove the access path
-                $null = Remove-Item -Path $accessPath -Force
+                    # Remove the access path
+                    $null = Remove-Item -Path $accessPath -Force
+                }
+                else {
+                    $command = [ScriptBlock]::Create("Dismount-VHD -Path $vhdPath")
+                    $null = Invoke-PSFCommand -ComputerName $computer -ScriptBlock $command -Credential $DestinationCredential
+
+                    $command = [ScriptBlock]::Create("Remove-Item -Path $accessPath -Force")
+                    $null = Invoke-PSFCommand -ComputerName $computer -ScriptBlock $command -Credential $DestinationCredential
+                }
             }
             catch {
                 Stop-PSFFunction -Message "Couldn't dismount vhd" -Target $imageName -ErrorRecord $_ -Continue
@@ -377,36 +440,39 @@
             $databaseTS = $lastFullBackup.Start
 
             $query = "
-                    DECLARE @ImageID INT;
-                    EXECUTE dbo.Image_New @ImageID = @ImageID OUTPUT,				  -- int
-                                        @ImageName = '$imageName',                    -- varchar(100)
-                                        @ImageLocation = '$imageLocation',			  -- varchar(255)
-                                        @SizeMB = $sizeMB,							  -- int
-                                        @DatabaseName = '$databaseName',			  -- varchar(100)
-                                        @DatabaseTimestamp = '$databaseTS'           -- datetime
+                DECLARE @ImageID INT;
+                EXECUTE dbo.Image_New @ImageID = @ImageID OUTPUT,				  -- int
+                                    @ImageName = '$imageName',                    -- varchar(100)
+                                    @ImageLocation = '$imageLocation',			  -- varchar(255)
+                                    @SizeMB = $sizeMB,							  -- int
+                                    @DatabaseName = '$databaseName',			  -- varchar(100)
+                                    @DatabaseTimestamp = '$databaseTS'           -- datetime
 
-                    SELECT @ImageID as ImageID
-                "
+                SELECT @ImageID as ImageID
+            "
 
             Write-PSFMessage -Message "Query New Image`n$query" -Level Debug
 
             try {
                 Write-PSFMessage -Message "Saving image information in database" -Level Verbose
-                $result = @()
-                $result += Invoke-DbaSqlQuery -SqlInstance $pdcSqlInstance -Database $pdcDatabase -Query $query -EnableException
+
+                $result += Invoke-DbaSqlQuery -SqlInstance $pdcSqlInstance -SqlCredential $PSDCSqlCredential -Database $pdcDatabase -Query $query -EnableException
             }
             catch {
                 Stop-PSFFunction -Message "Couldn't add image to database" -Target $imageName -ErrorRecord $_
             }
 
             # Add the results to the custom object
-            [PSCustomObject]@{
-                Name      = $imageName
-                Location  = $imageLocation
-                Size      = $sizeMB
-                Database  = $databaseName
-                Timestamp = $databaseTS
-            }
+            [PSDCImage]$image = New-Object PSDCImage
+
+            $image.ImageID = $result.ImageID
+            $image.ImageName = $imageName
+            $image.ImageLocation = $imageLocation
+            $image.SizeMB = $sizeMB
+            $image.DatabaseName = $databaseName
+            $image.DatabaseTimestamp = $databaseTS
+
+            return $image
 
         } # for each database
 

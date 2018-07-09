@@ -1,53 +1,68 @@
 ﻿function Get-PSDCImage {
     <#
-.SYNOPSIS
-    Get-PSDCImage get on or more clones
+    .SYNOPSIS
+        Get-PSDCImage get on or more clones
 
-.DESCRIPTION
-    Get-PSDCImage will retrieve the clones and apply filters if needed.
-    By default all the clones are returned
+    .DESCRIPTION
+        Get-PSDCImage will retrieve the clones and apply filters if needed.
+        By default all the clones are returned
 
-.PARAMETER ImageID
-    Filter based on the image id
+    .PARAMETER SqlCredential
+        Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
 
-.PARAMETER ImageName
-    Filter based on the image name
+        $scred = Get-Credential, then pass $scred object to the -SqlCredential parameter.
 
-.PARAMETER ImageLocation
-    Filter based on the image location
+        Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
+        To connect as a different Windows user, run PowerShell as that user.
 
-.PARAMETER Database
-    Filter based on the database
+    .PARAMETER PSDCSqlCredential
+        Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted.
+        This works similar as SqlCredential but is only meant for authentication to the PSDatabaseClone database server and database.
 
-.NOTES
-    Author: Sander Stad (@sqlstad, sqlstad.nl)
+    .PARAMETER ImageID
+        Filter based on the image id
 
-    Website: https://psdatabaseclone.io
-    Copyright: (C) Sander Stad, sander@sqlstad.nl
-    License: MIT https://opensource.org/licenses/MIT
+    .PARAMETER ImageName
+        Filter based on the image name
 
-.LINK
-    https://psdatabaseclone.io/
+    .PARAMETER ImageLocation
+        Filter based on the image location
 
-.EXAMPLE
-    Get-PSDCImage -ImageName DB1_20180704220944, DB2_20180704221144
+    .PARAMETER Database
+        Filter based on the database
 
-    Retrieve the images for DB1_20180704220944, DB2_20180704221144
+    .NOTES
+        Author: Sander Stad (@sqlstad, sqlstad.nl)
 
-.EXAMPLE
-    Get-PSDCImage -ImageLocation "\\fileserver1\psdatabaseclone\images\DB1_20180704220944.vhdx"
+        Website: https://psdatabaseclone.io
+        Copyright: (C) Sander Stad, sander@sqlstad.nl
+        License: MIT https://opensource.org/licenses/MIT
 
-    Get all the images that are the same as the image location
+    .LINK
+        https://psdatabaseclone.io/
 
-.EXAMPLE
-    Get-PSDCImage -Database DB1, DB2
+    .EXAMPLE
+        Get-PSDCImage -ImageName DB1_20180704220944, DB2_20180704221144
 
-    Get all the images that were made for databases DB1 and DB2
-#>
+        Retrieve the images for DB1_20180704220944, DB2_20180704221144
+
+    .EXAMPLE
+        Get-PSDCImage -ImageLocation "\\fileserver1\psdatabaseclone\images\DB1_20180704220944.vhdx"
+
+        Get all the images that are the same as the image location
+
+    .EXAMPLE
+        Get-PSDCImage -Database DB1, DB2
+
+        Get all the images that were made for databases DB1 and DB2
+    #>
 
     [CmdLetBinding()]
 
     param(
+        [System.Management.Automation.PSCredential]$SqlCredential,
+        [System.Management.Automation.PSCredential]
+        $PSDCSqlCredential,
         [int[]]$ImageID,
         [string[]]$ImageName,
         [string[]]$ImageLocation,
@@ -57,7 +72,7 @@
     begin {
         # Test the module database setup
         try {
-            Test-PSDCConfiguration -EnableException
+            Test-PSDCConfiguration -SqlCredential $PSDCSqlCredential -EnableException
         }
         catch {
             Stop-PSFFunction -Message "Something is wrong in the module configuration" -ErrorRecord $_ -Continue
@@ -65,11 +80,6 @@
 
         $pdcSqlInstance = Get-PSFConfigValue -FullName psdatabaseclone.database.server
         $pdcDatabase = Get-PSFConfigValue -FullName psdatabaseclone.database.name
-    }
-
-    process {
-        # Test if there are any errors
-        if (Test-PSFFunctionInterrupt) { return }
 
         $query = "
             SELECT ImageID,
@@ -83,11 +93,11 @@
         "
 
         try {
-            $result = @()
-            $results = Invoke-DbaSqlQuery -SqlInstance $pdcSqlInstance -Database $pdcDatabase -Query $query -As PSObject
+            $results = @()
+            $results += Invoke-DbaSqlQuery -SqlInstance $pdcSqlInstance -SqlCredential $PSDCSqlCredential -Database $pdcDatabase -Query $query -As PSObject
         }
         catch {
-            Stop-PSFFunction -Message "Could not execute query" -ErrorRecord $_ -Target $query
+            Stop-PSFFunction -Message "Could retrieve images from database $pdcDatabase" -ErrorRecord $_ -Target $query
         }
 
         # Filter image id
@@ -109,22 +119,27 @@
         if ($Database) {
             $results = $results | Where-Object {$_.DatabaseName -in $Database}
         }
+    }
 
+    process {
+        # Test if there are any errors
+        if (Test-PSFFunctionInterrupt) { return }
 
         # Convert the results to the PSDCClone data type
-        foreach($result in $results){
+        foreach ($result in $results) {
 
-            [PSDCImage]$image = New-Object PSDCImage
-            $image.ImageID = $result.ImageID
-            $image.ImageName = $result.ImageName
-            $image.ImageLocation = $result.ImageLocation
-            $image.SizeMB = $result.SizeMB
-            $image.DatabaseName = $result.DatabaseName
-            $image.DatabaseTimestamp = $result.DatabaseTimestamp
-            $image.CreatedOn = $result.CreatedOn
+            [pscustomobject]@{
+                ImageID           = $result.ImageID
+                ImageName         = $result.ImageName
+                ImageLocation     = $result.ImageLocation
+                SizeMB            = $result.SizeMB
+                DatabaseName      = $result.DatabaseName
+                DatabaseTimestamp = $result.DatabaseTimestamp
+                CreatedOn         = $result.CreatedOn
+            }
 
-            return $image
         }
+
     }
 
     end {

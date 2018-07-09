@@ -1,56 +1,71 @@
 ﻿function Get-PSDCClone {
-<#
-.SYNOPSIS
-    Get-PSDCClone get on or more clones
+    <#
+    .SYNOPSIS
+        Get-PSDCClone get on or more clones
 
-.DESCRIPTION
-    Get-PSDCClone will retrieve the clones and apply filters if needed.
-    By default all the clones are returned
+    .DESCRIPTION
+        Get-PSDCClone will retrieve the clones and apply filters if needed.
+        By default all the clones are returned
 
-.PARAMETER HostName
-    Filter based on the hostname
+    .PARAMETER SqlCredential
+        Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
 
-.PARAMETER Database
-    Filter based on the database
+        $scred = Get-Credential, then pass $scred object to the -SqlCredential parameter.
 
-.PARAMETER ImageID
-    Filter based on the image id
+        Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
+        To connect as a different Windows user, run PowerShell as that user.
 
-.PARAMETER ImageName
-    Filter based on the image name
+    .PARAMETER PSDCSqlCredential
+        Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted.
+        This works similar as SqlCredential but is only meant for authentication to the PSDatabaseClone database server and database.
 
-.PARAMETER ImageLocation
-    Filter based on the image location
+    .PARAMETER HostName
+        Filter based on the hostname
 
-.NOTES
-    Author: Sander Stad (@sqlstad, sqlstad.nl)
+    .PARAMETER Database
+        Filter based on the database
 
-    Website: https://psdatabaseclone.io
-    Copyright: (C) Sander Stad, sander@sqlstad.nl
-    License: MIT https://opensource.org/licenses/MIT
+    .PARAMETER ImageID
+        Filter based on the image id
 
-.LINK
-    https://psdatabaseclone.io/
+    .PARAMETER ImageName
+        Filter based on the image name
 
-.EXAMPLE
-    Get-PSDCClone -HostName host1, host2
+    .PARAMETER ImageLocation
+        Filter based on the image location
 
-    Retrieve the clones for host1 and host2
+    .NOTES
+        Author: Sander Stad (@sqlstad, sqlstad.nl)
 
-.EXAMPLE
-    Get-PSDCClone -Database DB1
+        Website: https://psdatabaseclone.io
+        Copyright: (C) Sander Stad, sander@sqlstad.nl
+        License: MIT https://opensource.org/licenses/MIT
 
-    Get all the clones that have the name DB1
+    .LINK
+        https://psdatabaseclone.io/
 
-.EXAMPLE
-    Get-PSDCClone -ImageName DB1_20180703085917
+    .EXAMPLE
+        Get-PSDCClone -HostName host1, host2
 
-    Get all the clones that were made with image "DB1_20180703085917"
-#>
+        Retrieve the clones for host1 and host2
+
+    .EXAMPLE
+        Get-PSDCClone -Database DB1
+
+        Get all the clones that have the name DB1
+
+    .EXAMPLE
+        Get-PSDCClone -ImageName DB1_20180703085917
+
+        Get all the clones that were made with image "DB1_20180703085917"
+    #>
 
     [CmdLetBinding()]
 
     param(
+        [System.Management.Automation.PSCredential]$SqlCredential,
+        [System.Management.Automation.PSCredential]
+        $PSDCSqlCredential,
         [string[]]$HostName,
         [string[]]$Database,
         [int[]]$ImageID,
@@ -62,7 +77,7 @@
 
         # Test the module database setup
         try {
-            Test-PSDCConfiguration -EnableException
+            Test-PSDCConfiguration -SqlCredential $PSDCSqlCredential -EnableException
         }
         catch {
             Stop-PSFFunction -Message "Something is wrong in the module configuration" -ErrorRecord $_ -Continue
@@ -70,13 +85,6 @@
 
         $pdcSqlInstance = Get-PSFConfigValue -FullName psdatabaseclone.database.server
         $pdcDatabase = Get-PSFConfigValue -FullName psdatabaseclone.database.name
-
-    }
-
-    process {
-
-        # Test if there are any errors
-        if (Test-PSFFunctionInterrupt) { return }
 
         $query = "
             SELECT c.CloneID,
@@ -98,53 +106,59 @@
 
         try {
             $results = @()
-            $results = Invoke-DbaSqlQuery -SqlInstance $pdcSqlInstance -Database $pdcDatabase -Query $query -As PSObject
+            $results = Invoke-DbaSqlQuery -SqlInstance $pdcSqlInstance -SqlCredential $PSDCSqlCredential -Database $pdcDatabase -Query $query -As PSObject
         }
         catch {
             Stop-PSFFunction -Message "Could not execute query" -ErrorRecord $_ -Target $query
         }
 
         # Filter host name
-        if($HostName){
+        if ($HostName) {
             $results = $results | Where-Object {$_.HostName -in $HostName}
         }
 
         # Filter image id
-        if($Database){
+        if ($Database) {
             $results = $results | Where-Object {$_.DatabaseName -in $Database}
         }
 
         # Filter image id
-        if($ImageID){
+        if ($ImageID) {
             $results = $results | Where-Object {$_.ImageID -in $ImageID}
         }
 
         # Filter image name
-        if($ImageName){
+        if ($ImageName) {
             $results = $results | Where-Object {$_.ImageName -in $ImageName}
         }
 
         # Filter image location
-        if($ImageLocation){
+        if ($ImageLocation) {
             $results = $results | Where-Object {$_.ImageLocation -in $ImageLocation}
         }
 
+    }
+
+    process {
+
+        # Test if there are any errors
+        if (Test-PSFFunctionInterrupt) { return }
+
         # Convert the results to the PSDCClone data type
-        foreach($result in $results){
+        foreach ($result in $results) {
 
-            [PSDCClone]$clone = New-Object PSDCClone
-            $clone.CloneID = $result.CloneID
-            $clone.CloneLocation = $result.CloneLocation
-            $clone.AccessPath = $result.AccessPath
-            $clone.SqlInstance = $result.SqlInstance
-            $clone.DatabaseName = $result.DatabaseName
-            $clone.IsEnabled = $result.IsEnabled
-            $clone.ImageID = $result.ImageID
-            $clone.ImageName = $result.ImageName
-            $clone.ImageLocation = $result.ImageLocation
-            $clone.HostName = $result.HostName
-
-            return $clone
+            [pscustomobject]@{
+                CloneID       = $result.CloneID
+                CloneLocation = $result.CloneLocation
+                AccessPath    = $result.AccessPath
+                SqlInstance   = $result.SqlInstance
+                DatabaseName  = $result.DatabaseName
+                IsEnabled     = $result.IsEnabled
+                ImageID       = $result.ImageID
+                ImageName     = $result.ImageName
+                ImageLocation = $result.ImageLocation
+                HostName      = $result.HostName
+            }
         }
 
     }
