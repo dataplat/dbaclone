@@ -164,6 +164,15 @@
         $computer = [PsfComputer]$uriHost
 
         if (-not $computer.IsLocalhost) {
+            $command = [ScriptBlock]::Create("Import-Module dbatools")
+            Invoke-PSFCommand -ComputerName $computer -ScriptBlock $command -Credential $DestinationCredential
+
+            $command = [ScriptBlock]::Create("Import-Module PSFramework")
+            Invoke-PSFCommand -ComputerName $computer -ScriptBlock $command -Credential $DestinationCredential
+
+            $command = [ScriptBlock]::Create("Import-Module PSDatabaseClone")
+            Invoke-PSFCommand -ComputerName $computer -ScriptBlock $command -Credential $DestinationCredential
+
             $command = "Convert-PSDCLocalUncPathToLocalPath -UncPath '$ImageNetworkPath'"
             $commandGetLocalPath = [ScriptBlock]::Create($command)
         }
