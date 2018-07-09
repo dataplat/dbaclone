@@ -153,6 +153,18 @@
             # Setup the computer object
             $computer = [PsfComputer]$server.Name
 
+            if (-not $computer.IsLocalhost) {
+                $command = [scriptblock]::Create("Import-Module PSDatabaseClone")
+
+                try {
+                    Invoke-PSFCommand -ComputerName $computer -ScriptBlock $command -Credential $Credential
+                }
+                catch {
+                    Stop-PSFFunction -Message "Couldn't import module remotely" -Target $command
+                    return
+                }
+            }
+
             # Check destination
             if (-not $Destination) {
                 $Destination = "$($server.DefaultFile)\clone"
@@ -168,7 +180,7 @@
                             $Destination = Convert-PSDCLocalUncPathToLocalPath -UncPath $Destination -Credential $Credential
                         }
                         else {
-                            $command = [ScriptBlock]::Create("Convert-PSDCLocalUncPathToLocalPath -UncPath '$Destination'")
+                            $command = [ScriptBlock]::Create("Convert-PSDCLocalUncPathToLocalPath -UncPath `"$Destination`"")
                             $Destination = Invoke-PSFCommand -ComputerName $computer -ScriptBlock $command -Credential $Credential
                         }
                     }
@@ -184,9 +196,20 @@
                 }
 
                 # Test if the destination can be reached
-                if (-not (Test-Path -Path $Destination -Credential $Credential)) {
-                    Stop-PSFFunction -Message "Could not find destination path $Destination" -Target $SqlInstance
+                # Check if computer is local
+                if ($computer.IsLocalhost) {
+                    if (-not (Test-Path -Path $Destination -Credential $Credential)) {
+                        Stop-PSFFunction -Message "Could not find destination path $Destination" -Target $SqlInstance
+                    }
                 }
+                else {
+                    $command = [ScriptBlock]::Create("Test-Path -Path $Destination")
+                    $result = Invoke-PSFCommand -ComputerName $computer -ScriptBlock $command -Credential $Credential
+                    if (-not $result) {
+                        Stop-PSFFunction -Message "Could not find destination path $Destination" -Target $SqlInstance
+                    }
+                }
+
             }
 
             # Loopt through all the databases
@@ -251,26 +274,42 @@
                 $accessPath = "$Destination\$mountDirectory"
 
                 # Check if access path is already present
-                if (-not (Test-Path -Path $accessPath -Credential $Credential)) {
-                    try {
-                        # Check if computer is local
-                        if ($computer.IsLocalhost) {
+                if ($computer.IsLocalhost) {
+                    if (-not (Test-Path -Path $accessPath -Credential $Credential)) {
+                        try {
                             $null = New-Item -Path $accessPath -ItemType Directory -Credential $Credential -Force
                         }
-                        else {
-                            $command = [ScriptBlock]::Create("New-Item -Path $accessPath -ItemType Directory -Credential $Credential -Force")
+                        catch {
+                            Stop-PSFFunction -Message "Couldn't create access path directory" -ErrorRecord $_ -Target $accessPath -Continue
+                        }
+                    }
+                }
+                else {
+                    $command = [ScriptBlock]::Create("Test-Path -Path $accessPath")
+                    $result = Invoke-PSFCommand -ComputerName $computer -ScriptBlock $command -Credential $Credential
+                    if (-not $result) {
+                        try {
+                            $command = [ScriptBlock]::Create("New-Item -Path $accessPath -ItemType Directory -Force")
                             $null = Invoke-PSFCommand -ComputerName $computer -ScriptBlock $command -Credential $Credential
                         }
-
-                    }
-                    catch {
-                        Stop-PSFFunction -Message "Couldn't create access path directory" -ErrorRecord $_ -Target $accessPath -Continue
+                        catch {
+                            Stop-PSFFunction -Message "Couldn't create access path directory" -ErrorRecord $_ -Target $accessPath -Continue
+                        }
                     }
                 }
 
                 # Check if the clone vhd does not yet exist
-                if (Test-Path -Path "$Destination\$CloneName.vhdx" -Credential $DestinationCredential) {
-                    Stop-PSFFunction -Message "Clone $CloneName already exists" -Target $accessPath -Continue
+                if ($computer.IsLocalhost) {
+                    if (Test-Path -Path "$Destination\$CloneName.vhdx" -Credential $DestinationCredential) {
+                        Stop-PSFFunction -Message "Clone $CloneName already exists" -Target $accessPath -Continue
+                    }
+                }
+                else {
+                    $command = [ScriptBlock]::Create("Test-Path -Path `"$Destination\$CloneName.vhdx`"")
+                    $result = Invoke-PSFCommand -ComputerName $computer -ScriptBlock $command -Credential $Credential
+                    if (-not $result) {
+                        Stop-PSFFunction -Message "Clone $CloneName already exists" -Target $accessPath -Continue
+                    }
                 }
 
                 # Create the new child vhd
@@ -282,7 +321,7 @@
                         $vhd = New-VHD -ParentPath $ParentVhd -Path "$Destination\$CloneName.vhdx" -Differencing
                     }
                     else {
-                        $command = [ScriptBlock]::Create("New-VHD -ParentPath $ParentVhd -Path '$Destination\$CloneName.vhdx' -Differencing")
+                        $command = [ScriptBlock]::Create("New-VHD -ParentPath $ParentVhd -Path `"$Destination\$CloneName.vhdx`" -Differencing")
                         $vhd = Invoke-PSFCommand -ComputerName $computer -ScriptBlock $command -Credential $Credential
                     }
 
@@ -309,7 +348,8 @@
                         $null = Invoke-PSFCommand -ComputerName $computer -ScriptBlock $command -Credential $Credential
 
                         # Get the disk based on the name of the vhd
-                        $command = [ScriptBlock]::Create("Get-Disk | Where-Object {$_.Location -eq `"$Destination\$CloneName.vhdx`"}")
+                        $commandText = "Get-Disk | Where-Object {$_.Location -eq `"$Destination\$CloneName.vhdx`"}"
+                        $command = [ScriptBlock]::Create($commandText)
                         $disk = Invoke-PSFCommand -ComputerName $computer -ScriptBlock $command -Credential $Credential
                     }
                 }
@@ -379,8 +419,8 @@
                         $null = Mount-DbaDatabase -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database $cloneDatabase -FileStructure $dbFileStructure
                     }
                     else {
-                        $command = [ScriptBlock]::Create("Mount-DbaDatabase -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database $cloneDatabase -FileStructure $dbFileStructure")
-                        $null = Invoke-PSFCommand -ComputerName $computer -ScriptBlock $command -Credential $Credential
+                        $command = [ScriptBlock]::Create("Mount-DbaDatabase -SqlInstance $SqlInstance -Database $cloneDatabase -FileStructure $dbFileStructure")
+                        $null = Invoke-PSFCommand -ComputerName $computer -ScriptBlock $command -Credential $SqlCredential
                     }
                 }
                 catch {
