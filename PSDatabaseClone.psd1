@@ -72,7 +72,8 @@
 	'Remove-PSDCImage',
     'Set-PSDCConfiguration',
     'Get-PSDCClone',
-    'Get-PSDCImage'
+    'Get-PSDCImage',
+    'Convert-PSDCLocalUncPathToLocalPath'
 
     # Cmdlets to export from this module
     CmdletsToExport   = ''
