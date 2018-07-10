@@ -67,10 +67,11 @@
     Write-PSFMessage -Message "SqlInstance: $SqlInstance, Database: $Database" -Level Debug
 
     # Check if the values for the PSDatabaseClone database are set
-    if (($null -eq $SqlInstance) -or ($null -eq $Database)) {
+    if (($null -eq $SqlInstance) -or ($null -eq $Database) -or ($null -eq $SqlCredential)) {
         # Get the configurations for the program database
         $Database = Get-PSFConfigValue -FullName psdatabaseclone.database.name -Fallback "NotConfigured"
-        $SqlInstance = Get-PSFConfigValue -FullName psdatabaseclone.database.Server -Fallback "NotConfigured"
+        $SqlInstance = Get-PSFConfigValue -FullName psdatabaseclone.database.server -Fallback "NotConfigured"
+        $SqlCredential = Get-PSFConfigValue -FullName psdatabaseclone.database.credential -Fallback $null
     }
 
     Write-PSFMessage -Message "Checking configurations" -Level Verbose
@@ -101,13 +102,13 @@
     if ($osDetails.Caption -like '*Windows 10*') {
         $feature = Get-WindowsOptionalFeature -FeatureName 'Microsoft-Hyper-V-All' -Online
         if ($feature.State -ne "Enabled") {
-            Write-PSFMessage -Message 'Please enable the Hyper-V feature with "Enable-WindowsOptionalFeature -Online -FeatureName Microsoft-Hyper-V -All"' -Level Warning  -FunctionName 'Pre Import'
+            Write-PSFMessage -Message 'Hyper-V is not enabled, the module can only be used remotely.`n To use the module locally execute the following command: "Enable-WindowsOptionalFeature -Online -FeatureName Microsoft-Hyper-V -All"' -Level Warning  -FunctionName 'Pre Import'
         }
     }
     elseif ($osDetails.Caption -like '*Windows Server*') {
         $feature = Get-WindowsFeature -Name 'Hyper-V'
         if (-not $feature.Installed) {
-            Write-PSFMessage -Message 'Please enable the Hyper-V feature with "Install-WindowsFeature -Name Hyper-V"' -Level Warning  -FunctionName 'Pre Import'
+            Write-PSFMessage -Message 'Hyper-V is not enabled, the module can only be used remotely.`n To use the module locally execute the following command: "Install-WindowsFeature -Name Hyper-V"' -Level Warning  -FunctionName 'Pre Import'
         }
     }
 
