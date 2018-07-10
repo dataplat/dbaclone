@@ -129,9 +129,9 @@
         $pdcSqlInstance = Get-PSFConfigValue -FullName psdatabaseclone.database.Server
         $pdcDatabase = Get-PSFConfigValue -FullName psdatabaseclone.database.name
         if (-not $PSDCSqlCredential) {
-            $pdcCredential = Get-PSFConfig -FullName psdatabaseclone.database.credential -Fallback $null
+            $pdcCredential = Get-PSFConfigValue -FullName psdatabaseclone.database.credential -Fallback $null
         }
-        else{
+        else {
             $pdcCredential = $PSDCSqlCredential
         }
 
@@ -148,7 +148,7 @@
         # Try connecting to the instance
         Write-PSFMessage -Message "Attempting to connect to Sql Server $SourceSqlInstance.." -Level Output
         try {
-            $SourceServer = Connect-DbaInstance -SqlInstance $SourceSqlInstance -SqlCredential $SourceSqlCredential
+            $sourceServer = Connect-DbaInstance -SqlInstance $SourceSqlInstance -SqlCredential $SourceSqlCredential
         }
         catch {
             Stop-PSFFunction -Message "Could not connect to Sql Server instance $SourceSqlInstance" -ErrorRecord $_ -Target $SourceSqlInstance
@@ -172,8 +172,14 @@
         # Setup the computer object
         $computer = [PsfComputer]$uriHost
 
-        if (-not $computer.IsLocalhost) {
+        # Check if Hyper-V is enabled
+        if (-not (Test-PSDCHyperVEnabled -HostName $uriHost -Credential $DestinationCredential)) {
+            Stop-PSFFunction -Message "Hyper-V is not enabled on the remote host." -ErrorRecord $_ -Target $uriHost
+            return
+        }
 
+        # Check if the computer is localhost and import the neccesary modules... just in case
+        if (-not $computer.IsLocalhost) {
             $command = [ScriptBlock]::Create("Import-Module dbatools")
             Invoke-PSFCommand -ComputerName $computer -ScriptBlock $command -Credential $DestinationCredential
 
@@ -182,9 +188,6 @@
 
             $command = [ScriptBlock]::Create("Import-Module PSDatabaseClone")
             Invoke-PSFCommand -ComputerName $computer -ScriptBlock $command -Credential $DestinationCredential
-
-            $command = "Convert-PSDCLocalUncPathToLocalPath -UncPath '$ImageNetworkPath'"
-            $commandGetLocalPath = [ScriptBlock]::Create($command)
         }
 
         # Get the local path from the network path
@@ -195,8 +198,11 @@
                     $ImageLocalPath = Convert-PSDCLocalUncPathToLocalPath -UncPath $ImageNetworkPath
                 }
                 else {
+                    $command = "Convert-PSDCLocalUncPathToLocalPath -UncPath `"$ImageNetworkPath`""
+                    $commandGetLocalPath = [ScriptBlock]::Create($command)
                     $ImageLocalPath = Invoke-PSFCommand -ComputerName $computer -ScriptBlock $commandGetLocalPath -Credential $DestinationCredential
                 }
+
                 Write-PSFMessage -Message "Converted '$ImageNetworkPath' to '$ImageLocalPath'" -Level Verbose
             }
             catch {
@@ -224,12 +230,12 @@
         # Check the database parameter
         if ($Database) {
             foreach ($db in $Database) {
-                if ($db -notin $SourceServer.Databases.Name) {
+                if ($db -notin $sourceServer.Databases.Name) {
                     Stop-PSFFunction -Message "Database $db cannot be found on instance $SourceSqlInstance" -Target $SourceSqlInstance
                 }
-
-                $DatabaseCollection = $SourceServer.Databases | Where-Object { $_.Name -in $Database }
             }
+
+            $DatabaseCollection = $sourceServer.Databases | Where-Object { $_.Name -in $Database }
         }
         else {
             Stop-PSFFunction -Message "Please supply a database to create an image for" -Target $SourceSqlInstance -Continue
