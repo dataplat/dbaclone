@@ -88,7 +88,7 @@
     }
     elseif ($osDetails.Caption -like '*Windows Server*') {
         if ($computer.IsLocalhost) {
-            $feature = Get-WindowsOptionalFeature -FeatureName 'Microsoft-Hyper-V-All' -Online
+            $feature = Get-WindowsFeature -Name 'Hyper-V'
         }
         else{
             $command  = [scriptblock]::Create("Get-WindowsFeature -Name 'Hyper-V'")
