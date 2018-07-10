@@ -259,8 +259,8 @@
                 $availableMB = (Get-PSDrive -Name $ImageLocalPath.Substring(0, 1)).Free / 1MB
             }
             else {
-                $command = [ScriptBlock]::Create("(Get-PSDrive -Name $($ImageLocalPath).Substring(0, 1)).Free / 1MB")
-                $ImageLocalPath = Invoke-PSFCommand -ComputerName $computer -ScriptBlock $commandGetLocalPath -Credential $DestinationCredential
+                $command = [ScriptBlock]::Create("(Get-PSDrive -Name $($ImageLocalPath.Substring(0, 1)) ).Free / 1MB")
+                $availableMB = Invoke-PSFCommand -ComputerName $computer -ScriptBlock $commandGetLocalPath -Credential $DestinationCredential
             }
 
             $dbSizeMB = $db.Size
@@ -303,7 +303,7 @@
                     $null = New-PSDCVhdDisk -Destination $imagePath -FileName "$imageName.vhdx"
                 }
                 else {
-                    $command = [ScriptBlock]::Create("$null = New-PSDCVhdDisk -Destination $imagePath -FileName '$imageName.vhdx'")
+                    $command = [ScriptBlock]::Create("New-PSDCVhdDisk -Destination $imagePath -FileName '$imageName.vhdx'")
                     $null = Invoke-PSFCommand -ComputerName $computer -ScriptBlock $command -Credential $DestinationCredential
                 }
 
@@ -321,7 +321,7 @@
                     $diskResult = Initialize-PSDCVhdDisk -Path $vhdPath -Credential $DestinationCredential
                 }
                 else {
-                    $command = [ScriptBlock]::Create("Initialize-PSDCVhdDisk -Path $vhdPath -Credential $DestinationCredential")
+                    $command = [ScriptBlock]::Create("Initialize-PSDCVhdDisk -Path $vhdPath")
                     $diskResult = Invoke-PSFCommand -ComputerName $computer -ScriptBlock $command -Credential $DestinationCredential
                 }
             }
@@ -337,10 +337,10 @@
                     try {
                         # Check if computer is local
                         if ($computer.IsLocalhost) {
-                            $null = New-Item -Path $accessPath -ItemType Directory -Force:$Force
+                            $null = New-Item -Path $accessPath -ItemType Directory -Force
                         }
                         else {
-                            $command = [ScriptBlock]::Create("New-Item -Path $accessPath -ItemType Directory -Force:$Force")
+                            $command = [ScriptBlock]::Create("New-Item -Path $accessPath -ItemType Directory -Force")
                             $null = Invoke-PSFCommand -ComputerName $computer -ScriptBlock $command -Credential $DestinationCredential
                         }
                     }
@@ -358,7 +358,7 @@
                     $null = Add-PartitionAccessPath -DiskNumber $disk.Number -PartitionNumber $partition[1].PartitionNumber -AccessPath $accessPath -ErrorAction SilentlyContinue
                 }
                 else {
-                    $command = [ScriptBlock]::Create("Add-PartitionAccessPath -DiskNumber $disk.Number -PartitionNumber $partition[1].PartitionNumber -AccessPath $accessPath -ErrorAction SilentlyContinue")
+                    $command = [ScriptBlock]::Create("Add-PartitionAccessPath -DiskNumber $($disk.Number) -PartitionNumber $($partition[1].PartitionNumber) -AccessPath $accessPath -ErrorAction SilentlyContinue")
                     $null = Invoke-PSFCommand -ComputerName $computer -ScriptBlock $command -Credential $DestinationCredential
                 }
 
