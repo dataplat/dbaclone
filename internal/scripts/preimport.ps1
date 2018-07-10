@@ -18,16 +18,26 @@ $osDetails = Get-CimInstance Win32_OperatingSystem | Select-Object Caption, Desc
 
 # Check which version of windows we're dealing with
 if ($osDetails.Caption -notin $supportedVersions ) {
-    if($osDetails.Caption -like '*Windows 7*'){
-        Stop-PSFFunction -Message "Module can not work on Windows 7" -Target $OSDetails -FunctionName 'Pre Import' 
+    if ($osDetails.Caption -like '*Windows 7*') {
+        Stop-PSFFunction -Message "Module can not work on Windows 7" -Target $OSDetails -FunctionName 'Pre Import'
     }
     elseif ($osDetails.Caption -like '*Windows 10*') {
+        $feature = Get-WindowsOptionalFeature -FeatureName 'Microsoft-Hyper-V-All' -Online
+        if ($feature.State -ne "Enabled") {
+            Write-PSFMessage -Message "Hyper-V is not enabled, the module can only be used remotely.`nTo use the module locally execute the following command: `"Enable-WindowsOptionalFeature -Online -FeatureName Microsoft-Hyper-V -All`"" -Level Warning  -FunctionName 'Test-PSDCConfiguration'
+        }
+
         Stop-PSFFunction -Message "Module can only work on Windows 10 Pro, Enterprise or Education" -Target $OSDetails -FunctionName 'Pre Import'
     }
     elseif ($osDetails.Caption -like '*Windows Server*') {
+        $feature = Get-WindowsFeature -Name 'Hyper-V'
+        if (-not $feature.Installed) {
+            Write-PSFMessage -Message "Hyper-V is not enabled, the module can only be used remotely.`nTo use the module locally execute the following command: `"Install-WindowsFeature -Name Hyper-V`"" -Level Warning  -FunctionName 'Test-PSDCConfiguration'
+        }
+
         Stop-PSFFunction -Message "Module can only work on Windows Server 2012 R2 and up, Enterprise or Education" -Target $OSDetails -FunctionName 'Pre Import'
     }
-    else{
+    else {
         Stop-PSFFunction -Message "Unsupported version of Windows." -Target $OSDetails -FunctionName 'Pre Import'
     }
 }
