@@ -115,7 +115,7 @@
         $pdcSqlInstance = Get-PSFConfigValue -FullName psdatabaseclone.database.Server
         $pdcDatabase = Get-PSFConfigValue -FullName psdatabaseclone.database.name
         if (-not $PSDCSqlCredential) {
-            $pdcCredential = Get-PSFConfig -FullName psdatabaseclone.database.credential -Fallback $null
+            $pdcCredential = Get-PSFConfigValue -FullName psdatabaseclone.database.credential -Fallback $null
         }
         else{
             $pdcCredential = $PSDCSqlCredential
@@ -155,6 +155,11 @@
             }
             catch {
                 Stop-PSFFunction -Message "Could not connect to Sql Server instance $SqlInstance" -ErrorRecord $_ -Target $SqlInstance
+            }
+
+            # Check if Hyper-V enabled for the SQL instance
+            if (-not (Test-PSDCHyperVEnabled -HostName $server.Name -Credential $Credential)) {
+                Stop-PSFFunction -Message "Hyper-V is not enabled on the remote host." -ErrorRecord $_ -Target $uriHost -Continue
             }
 
             # Setup the computer object
