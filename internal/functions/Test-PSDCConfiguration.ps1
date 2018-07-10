@@ -87,7 +87,7 @@
 
     Write-PSFMessage -Message "Attempting to connect to PSDatabaseClone database server $SqlInstance.." -Level Verbose
     try {
-        $pdcServer = Connect-DbaInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
+        $pdcServer = Connect-DbaInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential -SqlConnectionOnly -NonPooledConnection
     }
     catch {
         Stop-PSFFunction -Message "Could not connect to Sql Server instance $SqlInstance" -ErrorRecord $_ -Target $pdcServer -Continue
@@ -96,20 +96,6 @@
     # Check if the PSDatabaseClone database is present
     if ($pdcServer.Databases.Name -notcontains $Database) {
         Stop-PSFFunction -Message "PSDatabaseClone database $Database is not present on $SqlInstance" -Target $pdcServer -Continue
-    }
-
-    # Check if the Hyper-V feature is enabled
-    if ($osDetails.Caption -like '*Windows 10*') {
-        $feature = Get-WindowsOptionalFeature -FeatureName 'Microsoft-Hyper-V-All' -Online
-        if ($feature.State -ne "Enabled") {
-            Write-PSFMessage -Message "Hyper-V is not enabled, the module can only be used remotely.`nTo use the module locally execute the following command: `"Enable-WindowsOptionalFeature -Online -FeatureName Microsoft-Hyper-V -All`"" -Level Warning  -FunctionName 'Test-PSDCConfiguration'
-        }
-    }
-    elseif ($osDetails.Caption -like '*Windows Server*') {
-        $feature = Get-WindowsFeature -Name 'Hyper-V'
-        if (-not $feature.Installed) {
-            Write-PSFMessage -Message "Hyper-V is not enabled, the module can only be used remotely.`nTo use the module locally execute the following command: `"Install-WindowsFeature -Name Hyper-V`"" -Level Warning  -FunctionName 'Test-PSDCConfiguration'
-        }
     }
 
     Write-PSFMessage -Message "Finished checking configurations" -Level Verbose
