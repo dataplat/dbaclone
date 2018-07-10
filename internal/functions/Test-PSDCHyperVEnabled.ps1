@@ -10,6 +10,11 @@
     .PARAMETER HostName
         Hostname to check. The default is the current hostname
 
+    .PARAMETER Credential
+        Allows you to login to servers using Windows Auth/Integrated/Trusted. To use:
+
+        $scred = Get-Credential, then pass $scred object to the -Credential parameter.
+
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
@@ -47,30 +52,51 @@
     [OutputType([bool])]
 
     param(
-        [string]$HostName = $env:COMPUTERNAME.
+        [string]$HostName = $env:COMPUTERNAME,
+        [System.Management.Automation.PSCredential]$Credential,
         [switch]$EnableException
     )
 
-    $osDetails = Get-CimInstance Win32_OperatingSystem -ComputerName $HostName | Select-Object Caption, Description, Name, OSType, Version
+    $computer = [PSFComputer]$HostName
+
+    if ($computer.IsLocalhost) {
+        $osDetails = Get-CimInstance Win32_OperatingSystem | Select-Object Caption, Description, Name, OSType, Version
+    }
+    else {
+        $command = [scriptblock]::Create("Get-CimInstance Win32_OperatingSystem | Select-Object Caption, Description, Name, OSType, Version")
+
+        $osDetails = Invoke-PSFCommand -ComputerName $computer -ScriptBlock $command -Credential $Credential
+    }
 
     # Check if the Hyper-V feature is enabled
     if ($osDetails.Caption -like '*Windows 10*') {
-        $feature = Get-WindowsOptionalFeature -FeatureName 'Microsoft-Hyper-V-All' -Online
-        if ($feature.State -eq "Enabled") {
-            return $true
+        if ($computer.IsLocalhost) {
+            $feature = Get-WindowsOptionalFeature -FeatureName 'Microsoft-Hyper-V-All' -Online
         }
         else{
+            $command  = [scriptblock]::Create("Get-WindowsOptionalFeature -FeatureName 'Microsoft-Hyper-V-All' -Online")
+            $feature = Invoke-PSFCommand -ComputerName $computer -ScriptBlock $command -Credential $Credential
+        }
+
+        if($feature.State -ne "Enabled"){
             return $false
         }
+        else{
+            return $true
+        }
+
     }
     elseif ($osDetails.Caption -like '*Windows Server*') {
-        $feature = Get-WindowsFeature -Name 'Hyper-V'
-        if ($feature.Installed) {
-            return $true
+        if ($computer.IsLocalhost) {
+            $feature = Get-WindowsOptionalFeature -FeatureName 'Microsoft-Hyper-V-All' -Online
         }
         else{
-            return $false
+            $command  = [scriptblock]::Create("Get-WindowsFeature -Name 'Hyper-V'")
+            $feature = Invoke-PSFCommand -ComputerName $computer -ScriptBlock $command -Credential $Credential
         }
+
+        return $feature.Installed
     }
+
 
 }
