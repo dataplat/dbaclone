@@ -270,11 +270,11 @@
                 if (-not $CloneName) {
                     $cloneDatabase = $parentVhdFile
                     $CloneName = $parentVhdFile
-                    $mountDirectory = "$($parentVhdFile)_$random"
+                    $mountDirectory = "$($parentVhdFile)_$($random)"
                 }
                 elseif ($CloneName) {
                     $cloneDatabase = $CloneName
-                    $mountDirectory = "$($CloneName)_$random"
+                    $mountDirectory = "$($CloneName)_$($random)"
                 }
 
                 # Check if the database is already present
@@ -319,7 +319,7 @@
                 else {
                     $command = [ScriptBlock]::Create("Test-Path -Path `"$Destination\$CloneName.vhdx`"")
                     $result = Invoke-PSFCommand -ComputerName $computer -ScriptBlock $command -Credential $Credential
-                    if (-not $result) {
+                    if ($result) {
                         Stop-PSFFunction -Message "Clone $CloneName already exists" -Target $accessPath -Continue
                     }
                 }
@@ -360,7 +360,8 @@
                         $null = Invoke-PSFCommand -ComputerName $computer -ScriptBlock $command -Credential $Credential
 
                         # Get the disk based on the name of the vhd
-                        $commandText = "Get-Disk | Where-Object {$_.Location -eq `"$Destination\$CloneName.vhdx`"}"
+                        #$commandText = 'Get-Disk | Where-Object {$_.Location -eq' + " `"$Destination\$CloneName.vhdx`"}"
+                        $commandText = "Get-Vhd -Path `"$Destination\$CloneName.vhdx`""
                         $command = [ScriptBlock]::Create($commandText)
                         $disk = Invoke-PSFCommand -ComputerName $computer -ScriptBlock $command -Credential $Credential
                     }
@@ -391,7 +392,7 @@
                         $null = Add-PartitionAccessPath -DiskNumber $disk.Number -PartitionNumber $partition[1].PartitionNumber -AccessPath $accessPath -ErrorAction Ignore
                     }
                     else {
-                        $command = [ScriptBlock]::Create("Get-Partition -Disk $disk")
+                        $command = [ScriptBlock]::Create("Get-Partition -DiskNumber $($disk.Number)")
                         $partition = Invoke-PSFCommand -ComputerName $computer -ScriptBlock $command -Credential $Credential
 
                         $command = [ScriptBlock]::Create("Add-PartitionAccessPath -DiskNumber $($disk.Number) -PartitionNumber $($partition[1].PartitionNumber) -AccessPath $accessPath -ErrorAction Ignore")
@@ -409,7 +410,8 @@
                     $databaseFiles = Get-ChildItem -Path $accessPath -Recurse | Where-Object {-not $_.PSIsContainer}
                 }
                 else {
-                    $command = [ScriptBlock]::Create("Get-ChildItem -Path $accessPath -Recurse | Where-Object {-not $($_.PSIsContainer)}")
+                    $commandText = "Get-ChildItem -Path $accessPath -Recurse |" + 'Where-Object {-not $_.PSIsContainer}'
+                    $command = [ScriptBlock]::Create($commandText)
                     $databaseFiles = Invoke-PSFCommand -ComputerName $computer -ScriptBlock $command -Credential $Credential
                 }
 
@@ -425,15 +427,7 @@
                 # Mount the database
                 try {
                     Write-PSFMessage -Message "Mounting database from clone" -Level Verbose
-
-                    # Check if computer is local
-                    if ($computer.IsLocalhost) {
-                        $null = Mount-DbaDatabase -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database $cloneDatabase -FileStructure $dbFileStructure
-                    }
-                    else {
-                        $command = [ScriptBlock]::Create("Mount-DbaDatabase -SqlInstance $SqlInstance -Database $cloneDatabase -FileStructure $dbFileStructure")
-                        $null = Invoke-PSFCommand -ComputerName $computer -ScriptBlock $command -Credential $SqlCredential
-                    }
+                    $null = Mount-DbaDatabase -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database $cloneDatabase -FileStructure $dbFileStructure
                 }
                 catch {
                     Stop-PSFFunction -Message "Couldn't mount database $cloneDatabase" -Target $SqlInstance -Continue
