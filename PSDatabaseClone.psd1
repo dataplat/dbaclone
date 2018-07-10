@@ -18,7 +18,7 @@
     Copyright         = 'Copyright (c) 2018 Sander Stad'
 
     # Description of the functionality provided by this module
-    Description       = 'Cloning module for SQL Server databases'
+    Description       = 'Module for cloning SQL Server databases'
 
     # Minimum version of the Windows PowerShell engine required by this module
     PowerShellVersion = '5.0'
