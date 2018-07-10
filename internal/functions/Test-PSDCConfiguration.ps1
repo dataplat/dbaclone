@@ -87,7 +87,7 @@
 
     Write-PSFMessage -Message "Attempting to connect to PSDatabaseClone database server $SqlInstance.." -Level Verbose
     try {
-        $pdcServer = Connect-DbaInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential -SqlConnectionOnly -NonPooledConnection
+        $pdcServer = Connect-DbaInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential -NonPooledConnection
     }
     catch {
         Stop-PSFFunction -Message "Could not connect to Sql Server instance $SqlInstance" -ErrorRecord $_ -Target $pdcServer -Continue
