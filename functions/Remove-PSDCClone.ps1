@@ -103,16 +103,23 @@
 
     begin {
 
+        # Get the module configurations
+        $pdcSqlInstance = Get-PSFConfigValue -FullName psdatabaseclone.database.Server
+        $pdcDatabase = Get-PSFConfigValue -FullName psdatabaseclone.database.name
+        if (-not $PSDCSqlCredential) {
+            $pdcCredential = Get-PSFConfigValue -FullName psdatabaseclone.database.credential -Fallback $null
+        }
+        else {
+            $pdcCredential = $PSDCSqlCredential
+        }
+
         # Test the module database setup
         try {
-            Test-PSDCConfiguration -SqlCredential $PSDCSqlCredential -EnableException
+            Test-PSDCConfiguration -SqlCredential $pdcCredential -EnableException
         }
         catch {
             Stop-PSFFunction -Message "Something is wrong in the module configuration" -ErrorRecord $_ -Continue
         }
-
-        $pdcSqlInstance = Get-PSFConfigValue -FullName psdatabaseclone.database.server
-        $pdcDatabase = Get-PSFConfigValue -FullName psdatabaseclone.database.name
 
         Write-PSFMessage -Message "Started removing database clones" -Level Verbose
 
@@ -160,6 +167,21 @@
                 Stop-PSFFunction -Message "Could not connect to Sql Server instance $($clone.Name)" -ErrorRecord $_ -Target $clone.Name -Continue
             }
 
+            # Setup the computer object
+            $computer = [PsfComputer]$server.Name
+
+            if (-not $computer.IsLocalhost) {
+                $command = [scriptblock]::Create("Import-Module PSDatabaseClone")
+
+                try {
+                    Invoke-PSFCommand -ComputerName $computer -ScriptBlock $command -Credential $Credential
+                }
+                catch {
+                    Stop-PSFFunction -Message "Couldn't import module remotely" -Target $command
+                    return
+                }
+            }
+
             # Loop through each of the results
             foreach ($item in $clone.Group) {
                 $item
@@ -177,7 +199,14 @@
                 try {
                     if (Test-Path -Path $item.CloneLocation) {
                         Write-PSFMessage -Message "Dismounting disk $($item.CloneLocation) from $($item.HostName)" -Level Verbose
-                        $null = Dismount-VHD -Path $item.CloneLocation
+
+                        if ($computer.IsLocalhost) {
+                            $null = Dismount-VHD -Path $item.CloneLocation
+                        }
+                        else {
+                            $command = [scriptblock]::Create("Dismount-VHD -Path $($item.CloneLocation)")
+                            $null = Invoke-PSFCommand -ComputerName $computer -ScriptBlock $command -Credential $Credential
+                        }
                     }
                 }
                 catch {
@@ -186,14 +215,29 @@
 
                 # Remove clone file and related access path
                 try {
-                    if (Test-Path -Path $item.AccessPath) {
-                        Write-PSFMessage -Message "Removing vhd access path" -Level Verbose
-                        $null = Remove-Item -Path $item.AccessPath -Credential $Credential -Force
-                    }
+                    if ($computer.IsLocalhost) {
+                        if (Test-Path -Path $item.AccessPath) {
+                            Write-PSFMessage -Message "Removing vhd access path" -Level Verbose
+                            $null = Remove-Item -Path $item.AccessPath -Credential $Credential -Force
+                        }
 
-                    if (Test-Path -Path $item.CloneLocation) {
-                        Write-PSFMessage -Message "Removing vhd" -Level Verbose
-                        $null = Remove-Item -Path $item.CloneLocation -Credential $Credential -Force
+                        if (Test-Path -Path $item.CloneLocation) {
+                            Write-PSFMessage -Message "Removing vhd" -Level Verbose
+                            $null = Remove-Item -Path $item.CloneLocation -Credential $Credential -Force
+                        }
+                    }
+                    else {
+                        if (Test-Path -Path $item.AccessPath) {
+                            Write-PSFMessage -Message "Removing vhd access path" -Level Verbose
+                            $command = [scriptblock]::Create("Remove-Item -Path $($item.AccessPath) -Force")
+                            $null = Invoke-PSFCommand -ComputerName $computer -ScriptBlock $command -Credential $Credential
+                        }
+
+                        if (Test-Path -Path $item.CloneLocation) {
+                            Write-PSFMessage -Message "Removing vhd" -Level Verbose
+                            $command = [scriptblock]::Create("Remove-Item -Path $($item.CloneLocation) -Force")
+                            $null = Invoke-PSFCommand -ComputerName $computer -ScriptBlock $command -Credential $Credential
+                        }
                     }
                 }
                 catch {
@@ -204,7 +248,7 @@
                 try {
                     $query = "DELETE FROM dbo.Clone WHERE CloneID = $($item.CloneID);"
 
-                    $null = Invoke-DbaSqlQuery -SqlInstance $pdcSqlInstance -SqlCredential $PSDCSqlCredential -Database $pdcDatabase -Query $query -EnableException
+                    $null = Invoke-DbaSqlQuery -SqlInstance $pdcSqlInstance -SqlCredential $pdcCredential -Database $pdcDatabase -Query $query -EnableException
                 }
                 catch {
                     Stop-PSFFunction -Message "Could not remove clone record from database" -ErrorRecord $_ -Target $query -Continue
