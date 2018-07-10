@@ -55,8 +55,6 @@
     #>
     [CmdLetBinding(SupportsShouldProcess = $true)]
     param(
-        [parameter(Mandatory = $true)]
-        [ValidateNotNullOrEmpty()]
         [object]$SqlInstance,
         [System.Management.Automation.PSCredential]
         $SqlCredential,
@@ -68,13 +66,15 @@
         Write-PSFMessage -Message "Started PSDatabaseClone Setup" -Level Output
 
         # Try connecting to the instance
-        Write-PSFMessage -Message "Attempting to connect to Sql Server $SqlInstance.." -Level Output
-        try {
-            $server = Connect-DbaInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
-        }
-        catch {
-            Stop-PSFFunction -Message "Could not connect to Sql Server instance $SqlInstance" -ErrorRecord $_ -Target $SqlInstance
-            return
+        if ($SqlInstance) {
+            Write-PSFMessage -Message "Attempting to connect to Sql Server $SqlInstance.." -Level Output
+            try {
+                $server = Connect-DbaInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
+            }
+            catch {
+                Stop-PSFFunction -Message "Could not connect to Sql Server instance $SqlInstance" -ErrorRecord $_ -Target $SqlInstance
+                return
+            }
         }
 
         # Setup the database name
@@ -84,6 +84,15 @@
 
         # Set the flag for the new database
         [bool]$newDatabase = $false
+
+        # Unregister any configurations
+        try{
+            Unregister-PSFConfig -Scope SystemDefault -Module psdatabaseclone
+        }
+        catch{
+            Stop-PSFFunction -Message "Something went wrong unregistering the configurations" -ErrorRecord $_ -Target $SqlInstance
+                return
+        }
     }
 
     process {
@@ -92,87 +101,85 @@
         if (Test-PSFFunctionInterrupt) { return }
 
         # Check if the database is already present
-        if (($server.Databases.Name -contains $Database) -or ($server.Databases[$Database].Tables.Count -ge 1)) {
-            if ($Force) {
+        if ($SqlInstance) {
+            if (($server.Databases.Name -contains $Database) -or ($server.Databases[$Database].Tables.Count -ge 1)) {
+                if ($Force) {
+                    try {
+                        Remove-DbaDatabase -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database $Database
+                    }
+                    catch {
+                        Stop-PSFFunction -Message "Couldn't remove database $Database on $SqlInstance" -ErrorRecord $_ -Target $SqlInstance
+                        return
+                    }
+                }
+                else {
+                    Write-PSFMessage -Message "Database $Database already exists" -Level Verbose
+                }
+            }
+
+            # Check if the database exists
+            if ($server.Databases.Name -notcontains $Database) {
+
+                # Set the flag
+                $newDatabase = $true
+
                 try {
-                    Remove-DbaDatabase -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database $Database
+                    # Setup the query to create the database
+                    $query = "CREATE DATABASE [$Database]"
+
+                    Write-PSFMessage -Message "Creating database $Database on $SqlInstance" -Level Verbose
+
+                    # Executing the query
+                    Invoke-DbaSqlQuery -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database master -Query $query
                 }
                 catch {
-                    Stop-PSFFunction -Message "Couldn't remove database $Database on $SqlInstance" -ErrorRecord $_ -Target $SqlInstance
-                    return
+                    Stop-PSFFunction -Message "Couldn't create database $Database on $SqlInstance" -ErrorRecord $_ -Target $SqlInstance
                 }
             }
             else {
-                Write-PSFMessage -Message "Database $Database already exists" -Level Verbose
+                # Check if there are any user objects already in the database
+                $newDatabase = ($server.Databases[$Database].Tables.Count -eq 0)
             }
-        }
 
-        # Check if the database exists
-        if ($server.Databases.Name -notcontains $Database) {
-
-            # Set the flag
-            $newDatabase = $true
-
-            try {
-                # Setup the query to create the database
-                $query = "CREATE DATABASE [$Database]"
-
-                Write-PSFMessage -Message "Creating database $Database on $SqlInstance" -Level Verbose
-
-                # Executing the query
-                Invoke-DbaSqlQuery -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database master -Query $query
-            }
-            catch {
-                Stop-PSFFunction -Message "Couldn't create database $Database on $SqlInstance" -ErrorRecord $_ -Target $SqlInstance
-            }
-        }
-        else{
-            # Check if there are any user objects already in the database
-            $newDatabase = ($server.Databases[$Database].Tables.Count -eq 0)
-        }
-
-        # Setup the path to the sql file
-        if ($newDatabase) {
-            try {
-                $path = "$($MyInvocation.MyCommand.Module.ModuleBase)\internal\scripts\database.sql"
-                $query = [System.IO.File]::ReadAllText($path)
-
-                # Create the objects
+            # Setup the path to the sql file
+            if ($newDatabase) {
                 try {
-                    Write-PSFMessage -Message "Creating database objects" -Level Verbose
+                    $path = "$($MyInvocation.MyCommand.Module.ModuleBase)\internal\scripts\database.sql"
+                    $query = [System.IO.File]::ReadAllText($path)
 
-                    # Executing the query
-                    Invoke-DbaSqlQuery -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database $Database -Query $query
+                    # Create the objects
+                    try {
+                        Write-PSFMessage -Message "Creating database objects" -Level Verbose
+
+                        # Executing the query
+                        Invoke-DbaSqlQuery -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database $Database -Query $query
+                    }
+                    catch {
+                        Stop-PSFFunction -Message "Couldn't create database objects" -ErrorRecord $_ -Target $SqlInstance
+                    }
                 }
                 catch {
-                    Stop-PSFFunction -Message "Couldn't create database objects" -ErrorRecord $_ -Target $SqlInstance
+                    Stop-PSFFunction -Message "Couldn't find database script. Make sure you have a valid installation of the module" -ErrorRecord $_ -Target $SqlInstance
                 }
             }
-            catch {
-                Stop-PSFFunction -Message "Couldn't find database script. Make sure you have a valid installation of the module" -ErrorRecord $_ -Target $SqlInstance
+            else {
+                Write-PSFMessage -Message "Database already contains objects" -Level Verbose
             }
-        }
-        else{
-            Write-PSFMessage -Message "Database already contains objects" -Level Verbose
+
+            # Set the database server and database values
+            Set-PSFConfig -Module PSDatabaseClone -Name database.server -Value $SqlInstance -Initialize -Validation string
+            Set-PSFConfig -Module PSDatabaseClone -Name database.name -Value $Database -Initialize -Validation string
         }
 
-        # Writing the setting to the configuration file
-        Write-PSFMessage -Message "Registering config values" -Level Verbose
-        Set-PSFConfig -Module PSDatabaseClone -Name database.server -Value $SqlInstance -Initialize -Validation string
-        Set-PSFConfig -Module PSDatabaseClone -Name database.name -Value $Database -Initialize -Validation string
-
+        # Set the credential for the database if needed
         if ($SqlCredential) {
             Set-PSFConfig -Module PSDatabaseClone -Name database.credential -Value $SqlCredential -Initialize
         }
 
-        if (Test-PSDCHyperVEnabled) {
-            Set-PSFConfig -Module PSDatabaseClone -Name hyperv.enabled -Value $true -Initialize -Validation bool
-        }
-        else {
-            Set-PSFConfig -Module PSDatabaseClone -Name hyperv.enabled -Value $false -Initialize -Validation bool
-        }
+        # Set if Hyper-V is enabled
+        Set-PSFConfig -Module PSDatabaseClone -Name hyperv.enabled -Value (Test-PSDCHyperVEnabled) -Validation bool
 
-
+        # Register the configurations in the system for all users
         Get-PSFConfig -FullName psdatabaseclone.database.server | Register-PSFConfig -Scope SystemDefault
         Get-PSFConfig -FullName psdatabaseclone.database.name | Register-PSFConfig -Scope SystemDefault
         Get-PSFConfig -FullName psdatabaseclone.database.credential | Register-PSFConfig -Scope SystemDefault
