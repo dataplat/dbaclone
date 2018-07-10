@@ -43,6 +43,8 @@
         Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted.
         This works similar as SqlCredential but is only meant for authentication to the PSDatabaseClone database server and database.
 
+        By default the script will try to retrieve the configuration value "psdatabaseclone.database.credential"
+
     .PARAMETER ImageNetworkPath
         Network path where to save the image. This has to be a UNC path
 
@@ -123,16 +125,23 @@
 
     begin {
 
+        # Get the module configurations
+        $pdcSqlInstance = Get-PSFConfigValue -FullName psdatabaseclone.database.Server
+        $pdcDatabase = Get-PSFConfigValue -FullName psdatabaseclone.database.name
+        if (-not $PSDCSqlCredential) {
+            $pdcCredential = Get-PSFConfig -FullName psdatabaseclone.database.credential -Fallback $null
+        }
+        else{
+            $pdcCredential = $PSDCSqlCredential
+        }
+
         # Test the module database setup
         try {
-            Test-PSDCConfiguration -SqlCredential $PSDCSqlCredential -EnableException
+            Test-PSDCConfiguration -SqlCredential $pdcCredential -EnableException
         }
         catch {
             Stop-PSFFunction -Message "Something is wrong in the module configuration" -ErrorRecord $_ -Continue
         }
-
-        $pdcSqlInstance = Get-PSFConfigValue -FullName psdatabaseclone.database.Server
-        $pdcDatabase = Get-PSFConfigValue -FullName psdatabaseclone.database.name
 
         Write-PSFMessage -Message "Started image creation" -Level Output
 
@@ -164,6 +173,7 @@
         $computer = [PsfComputer]$uriHost
 
         if (-not $computer.IsLocalhost) {
+
             $command = [ScriptBlock]::Create("Import-Module dbatools")
             Invoke-PSFCommand -ComputerName $computer -ScriptBlock $command -Credential $DestinationCredential
 
@@ -465,7 +475,7 @@
             try {
                 Write-PSFMessage -Message "Saving image information in database" -Level Verbose
 
-                $result += Invoke-DbaSqlQuery -SqlInstance $pdcSqlInstance -SqlCredential $PSDCSqlCredential -Database $pdcDatabase -Query $query -EnableException
+                $result += Invoke-DbaSqlQuery -SqlInstance $pdcSqlInstance -SqlCredential $pdcCredential -Database $pdcDatabase -Query $query -EnableException
             }
             catch {
                 Stop-PSFFunction -Message "Couldn't add image to database" -Target $imageName -ErrorRecord $_
