@@ -117,7 +117,7 @@
         if (-not $PSDCSqlCredential) {
             $pdcCredential = Get-PSFConfigValue -FullName psdatabaseclone.database.credential -Fallback $null
         }
-        else{
+        else {
             $pdcCredential = $PSDCSqlCredential
         }
 
@@ -258,13 +258,27 @@
                 }
 
                 # Take apart the vhd directory
-                if (Test-Path -Path $ParentVhd) {
-                    $parentVhdFileName = $ParentVhd.Split("\")[-1]
-                    $parentVhdFile = $parentVhdFileName.Split(".")[0]
+                if ($computer.IsLocalhost) {
+                    if (Test-Path -Path $ParentVhd) {
+                        $parentVhdFileName = $ParentVhd.Split("\")[-1]
+                        $parentVhdFile = $parentVhdFileName.Split(".")[0]
+                    }
+                    else {
+                        Stop-PSFFunction -Message "Parent vhd could not be found" -Target $SqlInstance -Continue
+                    }
                 }
                 else {
-                    Stop-PSFFunction -Message "Parent vhd could not be found" -Target $SqlInstance -Continue
+                    $command = [scriptblock]::Create("Test-Path -Path $ParentVhd")
+                    $result = Invoke-PSFCommand -ComputerName $computer -ScriptBlock $command -Credential $Credential
+                    if ($result) {
+                        $parentVhdFileName = $ParentVhd.Split("\")[-1]
+                        $parentVhdFile = $parentVhdFileName.Split(".")[0]
+                    }
+                    else {
+                        Stop-PSFFunction -Message "Parent vhd could not be found" -Target $SqlInstance -Continue
+                    }
                 }
+
 
                 # Check clone name parameter
                 if (-not $CloneName) {
@@ -360,9 +374,7 @@
                         $null = Invoke-PSFCommand -ComputerName $computer -ScriptBlock $command -Credential $Credential
 
                         # Get the disk based on the name of the vhd
-                        #$commandText = 'Get-Disk | Where-Object {$_.Location -eq' + " `"$Destination\$CloneName.vhdx`"}"
-                        $commandText = "Get-Vhd -Path `"$Destination\$CloneName.vhdx`""
-                        $command = [ScriptBlock]::Create($commandText)
+                        $command = [ScriptBlock]::Create("Get-Vhd -Path `"$Destination\$CloneName.vhdx`"")
                         $disk = Invoke-PSFCommand -ComputerName $computer -ScriptBlock $command -Credential $Credential
                     }
                 }
@@ -371,16 +383,17 @@
                 }
 
                 # Check if the disk is offline
-                if ($disk.OperationalStatus -eq 'Offline') {
+                #if ($disk.OperationalStatus -eq 'Offline') {
                     # Check if computer is local
                     if ($computer.IsLocalhost) {
-                        $null = Initialize-Disk -Number $disk.DiskNumber -PartitionStyle GPT -ErrorAction SilentlyContinue
+                        $null = Initialize-Disk -Number $disk.Number -PartitionStyle GPT -ErrorAction SilentlyContinue
                     }
                     else {
-                        $command = [ScriptBlock]::Create("Initialize-Disk -Number $($disk.DiskNumber) -PartitionStyle GPT -ErrorAction SilentlyContinue")
+                        $command = [ScriptBlock]::Create("Initialize-Disk -Number $($disk.Number) -PartitionStyle GPT -ErrorAction SilentlyContinue")
+
                         $null = Invoke-PSFCommand -ComputerName $computer -ScriptBlock $command -Credential $Credential
                     }
-                }
+               # }
 
                 try {
                     # Check if computer is local
@@ -396,6 +409,7 @@
                         $partition = Invoke-PSFCommand -ComputerName $computer -ScriptBlock $command -Credential $Credential
 
                         $command = [ScriptBlock]::Create("Add-PartitionAccessPath -DiskNumber $($disk.Number) -PartitionNumber $($partition[1].PartitionNumber) -AccessPath $accessPath -ErrorAction Ignore")
+
                         $null = Invoke-PSFCommand -ComputerName $computer -ScriptBlock $command -Credential $Credential
                     }
 
@@ -436,11 +450,24 @@
                 # Write the data to the database
                 try {
                     # Get the data of the host
-                    $computerinfo = [System.Net.Dns]::GetHostByName(($env:computerName))
+                    if ($computer.IsLocalhost) {
+                        $computerinfo = [System.Net.Dns]::GetHostByName(($env:computerName))
 
-                    $hostname = $env:computerName
-                    $ipAddress = $computerinfo.AddressList[0]
-                    $fqdn = $computerinfo.HostName
+                        $hostname = $computerinfo.HostName
+                        $ipAddress = $computerinfo.AddressList[0]
+                        $fqdn = $computerinfo.HostName
+                    }
+                    else {
+                        $command = [scriptblock]::Create('[System.Net.Dns]::GetHostByName(($env:computerName))')
+                        $computerinfo = Invoke-PSFCommand -ComputerName $computer -ScriptBlock $command -Credential $Credential
+
+                        $command = [scriptblock]::Create('$env:COMPUTERNAME')
+
+                        $hostname = Invoke-PSFCommand -ComputerName $computer -ScriptBlock $command -Credential $Credential
+                        $ipAddress = $computerinfo.AddressList[0]
+                        $fqdn = $computerinfo.HostName
+                    }
+
 
                     # Setup the query to check of the host is already added
                     $query = "
