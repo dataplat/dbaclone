@@ -102,13 +102,13 @@
     if ($osDetails.Caption -like '*Windows 10*') {
         $feature = Get-WindowsOptionalFeature -FeatureName 'Microsoft-Hyper-V-All' -Online
         if ($feature.State -ne "Enabled") {
-            Write-PSFMessage -Message 'Hyper-V is not enabled, the module can only be used remotely.`n To use the module locally execute the following command: "Enable-WindowsOptionalFeature -Online -FeatureName Microsoft-Hyper-V -All"' -Level Warning  -FunctionName 'Pre Import'
+            Write-PSFMessage -Message "Hyper-V is not enabled, the module can only be used remotely.`nTo use the module locally execute the following command: `"Enable-WindowsOptionalFeature -Online -FeatureName Microsoft-Hyper-V -All`"" -Level Warning  -FunctionName 'Test-PSDCConfiguration'
         }
     }
     elseif ($osDetails.Caption -like '*Windows Server*') {
         $feature = Get-WindowsFeature -Name 'Hyper-V'
         if (-not $feature.Installed) {
-            Write-PSFMessage -Message 'Hyper-V is not enabled, the module can only be used remotely.`n To use the module locally execute the following command: "Install-WindowsFeature -Name Hyper-V"' -Level Warning  -FunctionName 'Pre Import'
+            Write-PSFMessage -Message "Hyper-V is not enabled, the module can only be used remotely.`nTo use the module locally execute the following command: `"Install-WindowsFeature -Name Hyper-V`"" -Level Warning  -FunctionName 'Test-PSDCConfiguration'
         }
     }
 
