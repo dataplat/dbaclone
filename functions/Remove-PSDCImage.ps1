@@ -90,22 +90,28 @@
 
     begin {
 
+        # Get the module configurations
+        $pdcSqlInstance = Get-PSFConfigValue -FullName psdatabaseclone.database.Server
+        $pdcDatabase = Get-PSFConfigValue -FullName psdatabaseclone.database.name
+        if (-not $pdcCredential) {
+            $pdcCredential = Get-PSFConfigValue -FullName psdatabaseclone.database.credential -Fallback $null
+        }
+        else {
+            $pdcCredential = $pdcCredential
+        }
+
         # Test the module database setup
         try {
-            Test-PSDCConfiguration -SqlCredential $PSDCSqlCredential -EnableException
+            Test-PSDCConfiguration -SqlCredential $pdcCredential -EnableException
         }
         catch {
             Stop-PSFFunction -Message "Something is wrong in the module configuration" -ErrorRecord $_ -Continue
         }
 
-        # Get the database values
-        $pdcSqlInstance = Get-PSFConfigValue -FullName psdatabaseclone.database.server
-        $pdcDatabase = Get-PSFConfigValue -FullName psdatabaseclone.database.name
-
         Write-PSFMessage -Message "Started removing database images" -Level Verbose
 
         # Get all the items
-        $items = Get-PSDCImage -PSDCSqlCredential $PSDCSqlCredential
+        $items = Get-PSDCImage -pdcCredential $pdcCredential
 
         if ($ImageID) {
             Write-PSFMessage -Message "Filtering image ids" -Level Verbose
@@ -170,7 +176,7 @@
                 try {
                     Write-PSFMessage -Message "Retrieving data for image '$($item.Name)'" -Level Verbose
                     $results = @()
-                    $results += Invoke-DbaSqlQuery -SqlInstance $pdcSqlInstance -SqlCredential $PSDCSqlCredential -Database $pdcDatabase -Query $query
+                    $results += Invoke-DbaSqlQuery -SqlInstance $pdcSqlInstance -SqlCredential $pdcCredential -Database $pdcDatabase -Query $query
 
                     # Check the results
                     if ($results.Count -ge 1) {
@@ -181,7 +187,7 @@
                             # Remove the clones for the host
                             try {
                                 Write-PSFMessage -Message "Removing clones for host $($result.HostName) and database $($result.DatabaseName)" -Level Verbose
-                                Remove-PSDCClone -HostName $result.HostName -Database $result.DatabaseName -PSDCSqlCredential $PSDCSqlCredential -Credential $Credential -Confirm:$false
+                                Remove-PSDCClone -HostName $result.HostName -Database $result.DatabaseName -pdcCredential $pdcCredential -Credential $Credential -Confirm:$false
                             }
                             catch {
                                 Stop-PSFFunction -Message "Couldn't remove clones from host $($result.HostName)" -ErrorRecord $_ -Target $result -Continue
@@ -214,7 +220,7 @@
                 try {
                     $query = "DELETE FROM dbo.Image WHERE ImageID = $($item.ImageID)"
 
-                    $null = Invoke-DbaSqlQuery -SqlInstance $pdcSqlInstance -SqlCredential $PSDCSqlCredential -Database $pdcDatabase -Query $query
+                    $null = Invoke-DbaSqlQuery -SqlInstance $pdcSqlInstance -SqlCredential $pdcCredential -Database $pdcDatabase -Query $query
                 }
                 catch {
                     Stop-PSFFunction -Message "Couldn't remove image '$($item.ImageLocation)' from database" -ErrorRecord $_ -Target $query
