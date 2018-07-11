@@ -137,11 +137,13 @@
         }
 
         # Test the module database setup
-        try {
-            Test-PSDCConfiguration -SqlCredential $pdcCredential -EnableException
-        }
-        catch {
-            Stop-PSFFunction -Message "Something is wrong in the module configuration" -ErrorRecord $_ -Continue
+        if ($PSCmdlet.ShouldProcess("Test-PSDCConfiguration", "Testing module setup")) {
+            try {
+                Test-PSDCConfiguration -SqlCredential $pdcCredential -EnableException
+            }
+            catch {
+                Stop-PSFFunction -Message "Something is wrong in the module configuration" -ErrorRecord $_ -Continue
+            }
         }
 
         Write-PSFMessage -Message "Started image creation" -Level Output
@@ -192,7 +194,7 @@
         }
 
         # Get the local path from the network path
-        if ($PSCmdlet.ShouldProcess($ImageNetworkPath, "Converting UNC path '$ImageNetworkPath' to local path")) {
+        if ($PSCmdlet.ShouldProcess($ImageNetworkPath, "Converting UNC path to local path")) {
             if (-not $ImageLocalPath) {
                 try {
                     # Check if computer is local
@@ -215,7 +217,7 @@
         }
 
         # Check the image local path
-        if ($ImageLocalPath) {
+        if ($PSCmdlet.ShouldProcess("Verifying image local path")) {
             if ((Test-DbaSqlPath -Path $ImageLocalPath -SqlInstance $SourceSqlInstance -SqlCredential $DestinationCredential) -ne $true) {
                 Stop-PSFFunction -Message "Image local path $ImageLocalPath is not valid directory or can't be reached." -Target $SourceSqlInstance
                 return
@@ -227,7 +229,6 @@
             }
 
             $imagePath = $ImageLocalPath
-
         }
 
         # Check the database parameter
@@ -257,26 +258,28 @@
         foreach ($db in $DatabaseCollection) {
             Write-PSFMessage -Message "Creating image for database $db from $SourceSqlInstance" -Level Verbose
 
-            # Check the database size to the available disk space
-            if ($computer.IsLocalhost) {
-                $availableMB = (Get-PSDrive -Name $ImageLocalPath.Substring(0, 1)).Free / 1MB
-            }
-            else {
-                $command = [ScriptBlock]::Create("(Get-PSDrive -Name $($ImageLocalPath.Substring(0, 1)) ).Free / 1MB")
-                $availableMB = Invoke-PSFCommand -ComputerName $computer -ScriptBlock $commandGetLocalPath -Credential $DestinationCredential
-            }
+            if ($PSCmdlet.ShouldProcess($db, "Checking available disk space for database")) {
+                # Check the database size to the available disk space
+                if ($computer.IsLocalhost) {
+                    $availableMB = (Get-PSDrive -Name $ImageLocalPath.Substring(0, 1)).Free / 1MB
+                }
+                else {
+                    $command = [ScriptBlock]::Create("(Get-PSDrive -Name $($ImageLocalPath.Substring(0, 1)) ).Free / 1MB")
+                    $availableMB = Invoke-PSFCommand -ComputerName $computer -ScriptBlock $commandGetLocalPath -Credential $DestinationCredential
+                }
 
-            $dbSizeMB = $db.Size
+                $dbSizeMB = $db.Size
 
-            if ($availableMB -lt $dbSizeMB) {
-                Stop-PSFFunction -Message "Size of database $($db.Name) does not fit within the image local path" -Target $db -Continue
+                if ($availableMB -lt $dbSizeMB) {
+                    Stop-PSFFunction -Message "Size of database $($db.Name) does not fit within the image local path" -Target $db -Continue
+                }
             }
 
             # Setup the image variables
             $imageName = "$($db.Name)_$timestamp"
 
             # Setup the access path
-            $accessPath = "$($ImageLocalPath)\$imageName"
+            $accessPath = "$ImageLocalPath\$imageName"
 
             # Setup the vhd path
             $vhdPath = "$($accessPath).vhdx"
@@ -454,7 +457,7 @@
                 }
             }
 
-            if ($PSCmdlet.ShouldProcess($vhdPath, "Dismount the vhd")) {
+            if ($PSCmdlet.ShouldProcess($vhdPath, "Dismounting the vhd")) {
                 # Dismount the vhd
                 try {
                     Write-PSFMessage -Message "Dismounting vhd" -Level Verbose
