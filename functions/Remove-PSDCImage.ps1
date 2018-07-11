@@ -111,7 +111,7 @@
         Write-PSFMessage -Message "Started removing database images" -Level Verbose
 
         # Get all the items
-        $items = Get-PSDCImage -PSDCSqlCredential $pdcCredential
+        $items = Get-PSDCImage
 
         if ($ImageID) {
             Write-PSFMessage -Message "Filtering image ids" -Level Verbose
@@ -216,7 +216,7 @@
                     Stop-PSFFunction -Message "Couldn't retrieve clone records for host $($result.HostName)" -ErrorRecord $_  -Target $hst -Continue
                 }
 
-                if ($PSCmdlet.ShouldProcess($item.ImageLocation, "Removing image '$($item.ImageLocation)' from system")) {
+                if ($PSCmdlet.ShouldProcess($item.ImageLocation, "Removing image from system")) {
                     # Remove the image from the file system
                     try {
                         if ($computer.IsLocalhost) {
@@ -247,7 +247,7 @@
                     }
                 }
 
-                if ($PSCmdlet.ShouldProcess($item.ImageLocation, "Removing image from system database")) {
+                if ($PSCmdlet.ShouldProcess($item.ImageLocation, "Removing image from database")) {
                     # Remove the image from the database
                     try {
                         $query = "DELETE FROM dbo.Image WHERE ImageID = $($item.ImageID)"
