@@ -1,5 +1,5 @@
 ﻿function Initialize-PSDCVhdDisk {
-<#
+    <#
 .SYNOPSIS
     Initialize-PSDCVhdDisk initialized the VHD
 
@@ -55,7 +55,7 @@
 
 #>
 
-    [CmdLetBinding()]
+    [CmdLetBinding(SupportsShouldProcess = $true)]
 
     Param(
         [Parameter(Mandatory = $true)]
@@ -90,44 +90,50 @@
             $disk = $disks | Where-Object {$_.Location -eq $Path}
         }
         else {
-            # Mount the vhd
-            try {
-                Write-PSFMessage -Message "Mounting disk $disk" -Level Verbose
+            if ($PSCmdlet.ShouldProcess($disk, "Mounting disk")) {
+                # Mount the vhd
+                try {
+                    Write-PSFMessage -Message "Mounting disk $disk" -Level Verbose
 
-                $disk = Mount-VHD -Path $Path -PassThru | Get-Disk
+                    $disk = Mount-VHD -Path $Path -PassThru | Get-Disk
+                }
+                catch {
+                    Stop-PSFFunction -Message "Couldn't mount vhd" -Target $Path -ErrorRecord $_ -Continue
+                }
+            }
+        }
+
+        if ($PSCmdlet.ShouldProcess($disk, "Initializing disk")) {
+            # Check if the disk is already initialized
+            if ($disk.PartitionStyle -eq 'RAW') {
+                try {
+                    Write-PSFMessage -Message "Initializing disk $disk" -Level Verbose
+                    $disk | Initialize-Disk -PartitionStyle $PartitionStyle -Confirm:$false
+                }
+                catch {
+                    Stop-PSFFunction -Message "Couldn't initialize disk" -Target $disk -ErrorRecord $_ -Continue
+                }
+            }
+        }
+
+        if ($PSCmdlet.ShouldProcess($disk, "Partitioning volume")) {
+            # Create the partition, set the drive letter and format the volume
+            try {
+                $volume = Get-Disk -Number $disk.Number | New-Partition -UseMaximumSize | Format-Volume -FileSystem NTFS -NewFileSystemLabel "PSDatabaseClone" -AllocationUnitSize $AllocationUnitSize -Confirm:$false
             }
             catch {
-                Stop-PSFFunction -Message "Couldn't mount vhd" -Target $Path -ErrorRecord $_ -Continue
-            }
-        }
+                # Dismount the drive
+                Dismount-VHD -Path $Path
 
-        # Check if the disk is already initialized
-        if ($disk.PartitionStyle -eq 'RAW') {
-            try {
-                Write-PSFMessage -Message "Initializing disk $disk" -Level Verbose
-                $disk | Initialize-Disk -PartitionStyle $PartitionStyle -Confirm:$false
+                Stop-PSFFunction -Message "Couldn't create the partition" -Target $disk -ErrorRecord $_ -Continue
             }
-            catch {
-                Stop-PSFFunction -Message "Couldn't initialize disk" -Target $disk -ErrorRecord $_ -Continue
-            }
-        }
-
-        # Create the partition, set the drive letter and format the volume
-        try {
-            $volume = Get-Disk -Number $disk.Number | New-Partition -UseMaximumSize | Format-Volume -FileSystem NTFS -NewFileSystemLabel "PSDatabaseClone" -AllocationUnitSize $AllocationUnitSize -Confirm:$false
-        }
-        catch {
-            # Dismount the drive
-            Dismount-VHD -Path $Path
-
-            Stop-PSFFunction -Message "Couldn't create the partition" -Target $disk -ErrorRecord $_ -Continue
         }
 
         # Add the results to the custom object
         [PSCustomObject]@{
-            Disk       = $disk
-            Partition  = (Get-Partition -Disk $disk)
-            Volume     = $volume
+            Disk      = $disk
+            Partition = (Get-Partition -Disk $disk)
+            Volume    = $volume
         }
 
     }

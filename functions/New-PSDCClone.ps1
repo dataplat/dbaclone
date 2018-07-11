@@ -186,19 +186,21 @@
                 if ($Destination.StartsWith("\\")) {
                     Write-PSFMessage -Message "The destination cannot be an UNC path. Trying to convert to local path" -Level Verbose
 
-                    try {
-                        # Check if computer is local
-                        if ($computer.IsLocalhost) {
-                            $Destination = Convert-PSDCLocalUncPathToLocalPath -UncPath $Destination -Credential $Credential
+                    if ($PSCmdlet.ShouldProcess($Destination, "Converting UNC path '$Destination' to local path")) {
+                        try {
+                            # Check if computer is local
+                            if ($computer.IsLocalhost) {
+                                $Destination = Convert-PSDCLocalUncPathToLocalPath -UncPath $Destination -Credential $Credential
+                            }
+                            else {
+                                $command = [ScriptBlock]::Create("Convert-PSDCLocalUncPathToLocalPath -UncPath `"$Destination`"")
+                                $Destination = Invoke-PSFCommand -ComputerName $computer -ScriptBlock $command -Credential $Credential
+                            }
                         }
-                        else {
-                            $command = [ScriptBlock]::Create("Convert-PSDCLocalUncPathToLocalPath -UncPath `"$Destination`"")
-                            $Destination = Invoke-PSFCommand -ComputerName $computer -ScriptBlock $command -Credential $Credential
+                        catch {
+                            Stop-PSFFunction -Message "Something went wrong getting the local image path" -Target $Destination
+                            return
                         }
-                    }
-                    catch {
-                        Stop-PSFFunction -Message "Something went wrong getting the local image path" -Target $Destination
-                        return
                     }
                 }
 
@@ -229,7 +231,8 @@
 
                 # Check for the parent
                 if ($LatestImage) {
-                    $query = "
+                    if ($PSCmdlet.ShouldProcess($LatestImage, "Retrieving latest image")) {
+                        $query = "
                             SELECT TOP ( 1 )
                                     [ImageLocation],
                                     [SizeMB],
@@ -241,19 +244,20 @@
                             ORDER BY CreatedOn DESC;
                         "
 
-                    try {
-                        $result = Invoke-DbaSqlQuery -SqlInstance $pdcSqlInstance -SqlCredential $pdcCredential -Database $pdcDatabase -Query $query -EnableException
+                        try {
+                            $result = Invoke-DbaSqlQuery -SqlInstance $pdcSqlInstance -SqlCredential $pdcCredential -Database $pdcDatabase -Query $query -EnableException
 
-                        # Check the results
-                        if ($null -eq $result) {
-                            Stop-PSFFunction -Message "No image could be found for database $db" -Target $pdcSqlInstance -Continue
+                            # Check the results
+                            if ($null -eq $result) {
+                                Stop-PSFFunction -Message "No image could be found for database $db" -Target $pdcSqlInstance -Continue
+                            }
+                            else {
+                                $ParentVhd = $result.ImageLocation
+                            }
                         }
-                        else {
-                            $ParentVhd = $result.ImageLocation
+                        catch {
+                            Stop-PSFFunction -Message "Could not execute query to retrieve latest image" -Target $pdcSqlInstance -ErrorRecord $_ -Continue
                         }
-                    }
-                    catch {
-                        Stop-PSFFunction -Message "Could not execute query to retrieve latest image" -Target $pdcSqlInstance -ErrorRecord $_ -Continue
                     }
                 }
 
@@ -300,26 +304,28 @@
                 $accessPath = "$Destination\$mountDirectory"
 
                 # Check if access path is already present
-                if ($computer.IsLocalhost) {
-                    if (-not (Test-Path -Path $accessPath -Credential $Credential)) {
-                        try {
-                            $null = New-Item -Path $accessPath -ItemType Directory -Credential $Credential -Force
-                        }
-                        catch {
-                            Stop-PSFFunction -Message "Couldn't create access path directory" -ErrorRecord $_ -Target $accessPath -Continue
+                if ($PSCmdlet.ShouldProcess($accessPath, "Testing existence access path $accessPath and create it")) {
+                    if ($computer.IsLocalhost) {
+                        if (-not (Test-Path -Path $accessPath -Credential $Credential)) {
+                            try {
+                                $null = New-Item -Path $accessPath -ItemType Directory -Credential $Credential -Force
+                            }
+                            catch {
+                                Stop-PSFFunction -Message "Couldn't create access path directory" -ErrorRecord $_ -Target $accessPath -Continue
+                            }
                         }
                     }
-                }
-                else {
-                    $command = [ScriptBlock]::Create("Test-Path -Path $accessPath")
-                    $result = Invoke-PSFCommand -ComputerName $computer -ScriptBlock $command -Credential $Credential
-                    if (-not $result) {
-                        try {
-                            $command = [ScriptBlock]::Create("New-Item -Path $accessPath -ItemType Directory -Force")
-                            $null = Invoke-PSFCommand -ComputerName $computer -ScriptBlock $command -Credential $Credential
-                        }
-                        catch {
-                            Stop-PSFFunction -Message "Couldn't create access path directory" -ErrorRecord $_ -Target $accessPath -Continue
+                    else {
+                        $command = [ScriptBlock]::Create("Test-Path -Path $accessPath")
+                        $result = Invoke-PSFCommand -ComputerName $computer -ScriptBlock $command -Credential $Credential
+                        if (-not $result) {
+                            try {
+                                $command = [ScriptBlock]::Create("New-Item -Path $accessPath -ItemType Directory -Force")
+                                $null = Invoke-PSFCommand -ComputerName $computer -ScriptBlock $command -Credential $Credential
+                            }
+                            catch {
+                                Stop-PSFFunction -Message "Couldn't create access path directory" -ErrorRecord $_ -Target $accessPath -Continue
+                            }
                         }
                     }
                 }
@@ -339,51 +345,55 @@
                 }
 
                 # Create the new child vhd
-                try {
-                    Write-PSFMessage -Message "Creating clone from $ParentVhd" -Level Verbose
+                if ($PSCmdlet.ShouldProcess($ParentVhd, "Creating clone")) {
+                    try {
+                        Write-PSFMessage -Message "Creating clone from $ParentVhd" -Level Verbose
 
-                    # Check if computer is local
-                    if ($computer.IsLocalhost) {
-                        $vhd = New-VHD -ParentPath $ParentVhd -Path "$Destination\$CloneName.vhdx" -Differencing
-                    }
-                    else {
-                        $command = [ScriptBlock]::Create("New-VHD -ParentPath $ParentVhd -Path `"$Destination\$CloneName.vhdx`" -Differencing")
-                        $vhd = Invoke-PSFCommand -ComputerName $computer -ScriptBlock $command -Credential $Credential
-                    }
+                        # Check if computer is local
+                        if ($computer.IsLocalhost) {
+                            $vhd = New-VHD -ParentPath $ParentVhd -Path "$Destination\$CloneName.vhdx" -Differencing
+                        }
+                        else {
+                            $command = [ScriptBlock]::Create("New-VHD -ParentPath $ParentVhd -Path `"$Destination\$CloneName.vhdx`" -Differencing")
+                            $vhd = Invoke-PSFCommand -ComputerName $computer -ScriptBlock $command -Credential $Credential
+                        }
 
-                }
-                catch {
-                    Stop-PSFFunction -Message "Could not create clone" -Target $vhd -Continue
+                    }
+                    catch {
+                        Stop-PSFFunction -Message "Could not create clone" -Target $vhd -Continue
+                    }
                 }
 
                 # Mount the vhd
-                try {
-                    Write-PSFMessage -Message "Mounting clone" -Level Verbose
+                if ($PSCmdlet.ShouldProcess("$Destination\$CloneName.vhdx", "Mounting clone clone")) {
+                    try {
+                        Write-PSFMessage -Message "Mounting clone" -Level Verbose
 
-                    # Check if computer is local
-                    if ($computer.IsLocalhost) {
-                        # Mount the disk
-                        $null = Mount-VHD -Path "$Destination\$CloneName.vhdx" -NoDriveLetter
+                        # Check if computer is local
+                        if ($computer.IsLocalhost) {
+                            # Mount the disk
+                            $null = Mount-VHD -Path "$Destination\$CloneName.vhdx" -NoDriveLetter
 
-                        # Get the disk based on the name of the vhd
-                        $disk = Get-Disk | Where-Object {$_.Location -eq "$Destination\$CloneName.vhdx"}
+                            # Get the disk based on the name of the vhd
+                            $disk = Get-Disk | Where-Object {$_.Location -eq "$Destination\$CloneName.vhdx"}
+                        }
+                        else {
+                            # Mount the disk
+                            $command = [ScriptBlock]::Create("Mount-VHD -Path `"$Destination\$CloneName.vhdx`" -NoDriveLetter")
+                            $null = Invoke-PSFCommand -ComputerName $computer -ScriptBlock $command -Credential $Credential
+
+                            # Get the disk based on the name of the vhd
+                            $command = [ScriptBlock]::Create("Get-Vhd -Path `"$Destination\$CloneName.vhdx`"")
+                            $disk = Invoke-PSFCommand -ComputerName $computer -ScriptBlock $command -Credential $Credential
+                        }
                     }
-                    else {
-                        # Mount the disk
-                        $command = [ScriptBlock]::Create("Mount-VHD -Path `"$Destination\$CloneName.vhdx`" -NoDriveLetter")
-                        $null = Invoke-PSFCommand -ComputerName $computer -ScriptBlock $command -Credential $Credential
-
-                        # Get the disk based on the name of the vhd
-                        $command = [ScriptBlock]::Create("Get-Vhd -Path `"$Destination\$CloneName.vhdx`"")
-                        $disk = Invoke-PSFCommand -ComputerName $computer -ScriptBlock $command -Credential $Credential
+                    catch {
+                        Stop-PSFFunction -Message "Couldn't mount vhd $vhdPath" -ErrorRecord $_ -Target $disk -Continue
                     }
-                }
-                catch {
-                    Stop-PSFFunction -Message "Couldn't mount vhd $vhdPath" -ErrorRecord $_ -Target $disk -Continue
                 }
 
                 # Check if the disk is offline
-                #if ($disk.OperationalStatus -eq 'Offline') {
+                if ($PSCmdlet.ShouldProcess($disk.Number, "Initializing disk")) {
                     # Check if computer is local
                     if ($computer.IsLocalhost) {
                         $null = Initialize-Disk -Number $disk.Number -PartitionStyle GPT -ErrorAction SilentlyContinue
@@ -393,29 +403,32 @@
 
                         $null = Invoke-PSFCommand -ComputerName $computer -ScriptBlock $command -Credential $Credential
                     }
-               # }
-
-                try {
-                    # Check if computer is local
-                    if ($computer.IsLocalhost) {
-                        # Get the partition based on the disk
-                        $partition = Get-Partition -Disk $disk
-
-                        # Create an access path for the disk
-                        $null = Add-PartitionAccessPath -DiskNumber $disk.Number -PartitionNumber $partition[1].PartitionNumber -AccessPath $accessPath -ErrorAction Ignore
-                    }
-                    else {
-                        $command = [ScriptBlock]::Create("Get-Partition -DiskNumber $($disk.Number)")
-                        $partition = Invoke-PSFCommand -ComputerName $computer -ScriptBlock $command -Credential $Credential
-
-                        $command = [ScriptBlock]::Create("Add-PartitionAccessPath -DiskNumber $($disk.Number) -PartitionNumber $($partition[1].PartitionNumber) -AccessPath $accessPath -ErrorAction Ignore")
-
-                        $null = Invoke-PSFCommand -ComputerName $computer -ScriptBlock $command -Credential $Credential
-                    }
-
                 }
-                catch {
-                    Stop-PSFFunction -Message "Couldn't create access path for partition" -ErrorRecord $_ -Target $partition -Continue
+
+                # Mounting disk to access path
+                if ($PSCmdlet.ShouldProcess($disk.Number, "Mounting volume to accesspath")) {
+                    try {
+                        # Check if computer is local
+                        if ($computer.IsLocalhost) {
+                            # Get the partition based on the disk
+                            $partition = Get-Partition -Disk $disk
+
+                            # Create an access path for the disk
+                            $null = Add-PartitionAccessPath -DiskNumber $disk.Number -PartitionNumber $partition[1].PartitionNumber -AccessPath $accessPath -ErrorAction Ignore
+                        }
+                        else {
+                            $command = [ScriptBlock]::Create("Get-Partition -DiskNumber $($disk.Number)")
+                            $partition = Invoke-PSFCommand -ComputerName $computer -ScriptBlock $command -Credential $Credential
+
+                            $command = [ScriptBlock]::Create("Add-PartitionAccessPath -DiskNumber $($disk.Number) -PartitionNumber $($partition[1].PartitionNumber) -AccessPath $accessPath -ErrorAction Ignore")
+
+                            $null = Invoke-PSFCommand -ComputerName $computer -ScriptBlock $command -Credential $Credential
+                        }
+
+                    }
+                    catch {
+                        Stop-PSFFunction -Message "Couldn't create access path for partition" -ErrorRecord $_ -Target $partition -Continue
+                    }
                 }
 
                 # Get all the files of the database
@@ -439,12 +452,14 @@
                 }
 
                 # Mount the database
-                try {
-                    Write-PSFMessage -Message "Mounting database from clone" -Level Verbose
-                    $null = Mount-DbaDatabase -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database $cloneDatabase -FileStructure $dbFileStructure
-                }
-                catch {
-                    Stop-PSFFunction -Message "Couldn't mount database $cloneDatabase" -Target $SqlInstance -Continue
+                if ($PSCmdlet.ShouldProcess($cloneDatabase, "Mounting database $cloneDatabase")) {
+                    try {
+                        Write-PSFMessage -Message "Mounting database from clone" -Level Verbose
+                        $null = Mount-DbaDatabase -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database $cloneDatabase -FileStructure $dbFileStructure
+                    }
+                    catch {
+                        Stop-PSFFunction -Message "Couldn't mount database $cloneDatabase" -Target $SqlInstance -Continue
+                    }
                 }
 
                 # Write the data to the database
@@ -490,9 +505,10 @@
 
                 # Add the host if the host is known
                 if (-not $result.HostKnown) {
-                    Write-PSFMessage -Message "Adding host $hostname to database" -Level Verbose
+                    if ($PSCmdlet.ShouldProcess($hostname, "Adding hostname to database")) {
+                        Write-PSFMessage -Message "Adding host $hostname to database" -Level Verbose
 
-                    $query = "
+                        $query = "
                                 DECLARE @HostID INT;
                                 EXECUTE dbo.Host_New @HostID = @HostID OUTPUT, -- int
                                                     @HostName = '$hostname',   -- varchar(100)
@@ -502,13 +518,14 @@
                                 SELECT @HostID AS HostID
                             "
 
-                    Write-PSFMessage -Message "Query New Host`n$query" -Level Debug
+                        Write-PSFMessage -Message "Query New Host`n$query" -Level Debug
 
-                    try {
-                        $hostId = (Invoke-DbaSqlQuery -SqlInstance $pdcSqlInstance -SqlCredential $pdcCredential -Database $pdcDatabase -Query $query -EnableException).HostID
-                    }
-                    catch {
-                        Stop-PSFFunction -Message "Couldnt execute query for adding host" -Target $query -ErrorRecord $_ -Continue
+                        try {
+                            $hostId = (Invoke-DbaSqlQuery -SqlInstance $pdcSqlInstance -SqlCredential $pdcCredential -Database $pdcDatabase -Query $query -EnableException).HostID
+                        }
+                        catch {
+                            Stop-PSFFunction -Message "Couldnt execute query for adding host" -Target $query -ErrorRecord $_ -Continue
+                        }
                     }
                 }
                 else {
@@ -534,14 +551,13 @@
                     Stop-PSFFunction -Message "Couldnt execute query for retrieving image id" -Target $query -ErrorRecord $_ -Continue
                 }
 
+                if ($PSCmdlet.ShouldProcess("$Destination\$CloneName.vhdx", "Adding clone to database")) {
+                    if ($null -ne $resultImage.ImageID) {
+                        $cloneLocation = "$Destination\$CloneName.vhdx"
 
-                if ($null -ne $resultImage.ImageID) {
-
-                    $cloneLocation = "$Destination\$CloneName.vhdx"
-
-                    # Setup the query to add the clone to the database
-                    Write-PSFMessage -Message "Adding clone $cloneLocation to database" -Level Verbose
-                    $query = "
+                        # Setup the query to add the clone to the database
+                        Write-PSFMessage -Message "Adding clone $cloneLocation to database" -Level Verbose
+                        $query = "
                                 DECLARE @CloneID INT;
                                 EXECUTE dbo.Clone_New @CloneID = @CloneID OUTPUT,                   -- int
                                                     @ImageID = $($resultImage.ImageID),		        -- int
@@ -555,19 +571,20 @@
                                 SELECT @CloneID AS CloneID
                             "
 
-                    Write-PSFMessage -Message "Query New Clone`n$query" -Level Debug
+                        Write-PSFMessage -Message "Query New Clone`n$query" -Level Debug
 
-                    # execute the query
-                    try {
-                        $result = Invoke-DbaSqlQuery -SqlInstance $pdcSqlInstance -SqlCredential $pdcCredential -Database $pdcDatabase -Query $query -EnableException
-                    }
-                    catch {
-                        Stop-PSFFunction -Message "Couldnt execute query for adding clone" -Target $query -ErrorRecord $_ -Continue
-                    }
+                        # execute the query
+                        try {
+                            $result = Invoke-DbaSqlQuery -SqlInstance $pdcSqlInstance -SqlCredential $pdcCredential -Database $pdcDatabase -Query $query -EnableException
+                        }
+                        catch {
+                            Stop-PSFFunction -Message "Couldnt execute query for adding clone" -Target $query -ErrorRecord $_ -Continue
+                        }
 
-                }
-                else {
-                    Stop-PSFFunction -Message "Image couldn't be found" -Target $imageName -Continue
+                    }
+                    else {
+                        Stop-PSFFunction -Message "Image couldn't be found" -Target $imageName -Continue
+                    }
                 }
 
                 # Add the results to the custom object

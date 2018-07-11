@@ -196,14 +196,15 @@
 
                         # Loop through the results
                         foreach ($result in $results) {
-
-                            # Remove the clones for the host
-                            try {
-                                Write-PSFMessage -Message "Removing clones for host $($result.HostName) and database $($result.DatabaseName)" -Level Verbose
-                                Remove-PSDCClone -HostName $result.HostName -Database $result.DatabaseName -PSDCSqlCredential $pdcCredential -Credential $Credential -Confirm:$false
-                            }
-                            catch {
-                                Stop-PSFFunction -Message "Couldn't remove clones from host $($result.HostName)" -ErrorRecord $_ -Target $result -Continue
+                            if ($PSCmdlet.ShouldProcess($item.CloneID, "Removing clone $($result.CloneLocation) from $($result.HostName)")) {
+                                # Remove the clones for the host
+                                try {
+                                    Write-PSFMessage -Message "Removing clones for host $($result.HostName) and database $($result.DatabaseName)" -Level Verbose
+                                    Remove-PSDCClone -HostName $result.HostName -Database $result.DatabaseName -PSDCSqlCredential $pdcCredential -Credential $Credential -Confirm:$false
+                                }
+                                catch {
+                                    Stop-PSFFunction -Message "Couldn't remove clones from host $($result.HostName)" -ErrorRecord $_ -Target $result -Continue
+                                }
                             }
                         }
                     }
@@ -215,43 +216,47 @@
                     Stop-PSFFunction -Message "Couldn't retrieve clone records for host $($result.HostName)" -ErrorRecord $_  -Target $hst -Continue
                 }
 
-                # Remove the image from the file system
-                try {
-                    if ($computer.IsLocalhost) {
-                        if (Test-Path -Path $item.ImageLocation -Credential $Credential) {
-                            Write-PSFMessage -Message "Removing image '$($item.ImageLocation)' from file system" -Level Verbose
+                if ($PSCmdlet.ShouldProcess($item.ImageLocation, "Removing image '$($item.ImageLocation)' from system")) {
+                    # Remove the image from the file system
+                    try {
+                        if ($computer.IsLocalhost) {
+                            if (Test-Path -Path $item.ImageLocation -Credential $Credential) {
+                                Write-PSFMessage -Message "Removing image '$($item.ImageLocation)' from file system" -Level Verbose
 
-                            $null = Remove-Item -Path $item.ImageLocation -Credential $Credential -Force:$Force
+                                $null = Remove-Item -Path $item.ImageLocation -Credential $Credential -Force:$Force
+                            }
+                            else {
+                                Write-PSFMessage -Message "Couldn't find image $($item.ImageLocation)" -Level Verbose
+                            }
                         }
                         else {
-                            Write-PSFMessage -Message "Couldn't find image $($item.ImageLocation)" -Level Verbose
-                        }
-                    }
-                    else {
-                        $command = [scriptblock]::Create("Test-Path -Path $($item.ImageLocation)")
-                        $result = Invoke-PSFCommand -ComputerName $computer -ScriptBlock $command -Credential $Credential
-
-                        if ($result) {
-                            $command = [scriptblock]::Create("Remove-Item -Path $($item.ImageLocation) -Force")
+                            $command = [scriptblock]::Create("Test-Path -Path $($item.ImageLocation)")
                             $result = Invoke-PSFCommand -ComputerName $computer -ScriptBlock $command -Credential $Credential
-                        }
-                        else {
-                            Write-PSFMessage -Message "Couldn't find image $($item.ImageLocation)" -Level Verbose
+
+                            if ($result) {
+                                $command = [scriptblock]::Create("Remove-Item -Path $($item.ImageLocation) -Force")
+                                $result = Invoke-PSFCommand -ComputerName $computer -ScriptBlock $command -Credential $Credential
+                            }
+                            else {
+                                Write-PSFMessage -Message "Couldn't find image $($item.ImageLocation)" -Level Verbose
+                            }
                         }
                     }
-                }
-                catch {
-                    Stop-PSFFunction -Message "Couldn't remove image '$($item.ImageLocation)' from file system" -ErrorRecord $_ -Target $result
+                    catch {
+                        Stop-PSFFunction -Message "Couldn't remove image '$($item.ImageLocation)' from file system" -ErrorRecord $_ -Target $result
+                    }
                 }
 
-                # Remove the image from the database
-                try {
-                    $query = "DELETE FROM dbo.Image WHERE ImageID = $($item.ImageID)"
+                if ($PSCmdlet.ShouldProcess($item.ImageLocation, "Removing image from system database")) {
+                    # Remove the image from the database
+                    try {
+                        $query = "DELETE FROM dbo.Image WHERE ImageID = $($item.ImageID)"
 
-                    $null = Invoke-DbaSqlQuery -SqlInstance $pdcSqlInstance -SqlCredential $pdcCredential -Database $pdcDatabase -Query $query
-                }
-                catch {
-                    Stop-PSFFunction -Message "Couldn't remove image '$($item.ImageLocation)' from database" -ErrorRecord $_ -Target $query
+                        $null = Invoke-DbaSqlQuery -SqlInstance $pdcSqlInstance -SqlCredential $pdcCredential -Database $pdcDatabase -Query $query
+                    }
+                    catch {
+                        Stop-PSFFunction -Message "Couldn't remove image '$($item.ImageLocation)' from database" -ErrorRecord $_ -Target $query
+                    }
                 }
 
             } # End for each item in group
