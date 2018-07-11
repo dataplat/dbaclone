@@ -67,7 +67,7 @@
         [System.Management.Automation.PSCredential]
         $Credential,
         [System.Management.Automation.PSCredential]
-        $pdcCredential,
+        $PSDCSqlCredential,
         [switch]$EnableException
     )
 
@@ -79,7 +79,7 @@
             $pdcCredential = Get-PSFConfigValue -FullName psdatabaseclone.database.credential -Fallback $null
         }
         else {
-            $pdcCredential = $pdcCredential
+            $pdcCredential = $PSDCSqlCredential
         }
 
         # Test the module database setup
