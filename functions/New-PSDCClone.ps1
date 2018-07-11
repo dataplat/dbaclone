@@ -122,11 +122,13 @@
         }
 
         # Test the module database setup
-        try {
-            Test-PSDCConfiguration -SqlCredential $pdcCredential -EnableException
-        }
-        catch {
-            Stop-PSFFunction -Message "Something is wrong in the module configuration" -ErrorRecord $_ -Continue
+        if ($PSCmdlet.ShouldProcess("Test-PSDCConfiguration", "Testing module setup")) {
+            try {
+                Test-PSDCConfiguration -SqlCredential $pdcCredential -EnableException
+            }
+            catch {
+                Stop-PSFFunction -Message "Something is wrong in the module configuration" -ErrorRecord $_ -Continue
+            }
         }
 
         Write-PSFMessage -Message "Started image creation" -Level Verbose
@@ -262,42 +264,47 @@
                 }
 
                 # Take apart the vhd directory
-                if ($computer.IsLocalhost) {
-                    if (Test-Path -Path $ParentVhd) {
-                        $parentVhdFileName = $ParentVhd.Split("\")[-1]
-                        $parentVhdFile = $parentVhdFileName.Split(".")[0]
+                if ($PSCmdlet.ShouldProcess($ParentVhd, "Setting up parent VHD variables")) {
+                    if ($computer.IsLocalhost) {
+                        if (Test-Path -Path $ParentVhd) {
+                            $parentVhdFileName = $ParentVhd.Split("\")[-1]
+                            $parentVhdFile = $parentVhdFileName.Split(".")[0]
+                        }
+                        else {
+                            Stop-PSFFunction -Message "Parent vhd could not be found" -Target $SqlInstance -Continue
+                        }
                     }
                     else {
-                        Stop-PSFFunction -Message "Parent vhd could not be found" -Target $SqlInstance -Continue
+                        $command = [scriptblock]::Create("Test-Path -Path $ParentVhd")
+                        $result = Invoke-PSFCommand -ComputerName $computer -ScriptBlock $command -Credential $Credential
+                        if ($result) {
+                            $parentVhdFileName = $ParentVhd.Split("\")[-1]
+                            $parentVhdFile = $parentVhdFileName.Split(".")[0]
+                        }
+                        else {
+                            Stop-PSFFunction -Message "Parent vhd could not be found" -Target $SqlInstance -Continue
+                        }
                     }
                 }
-                else {
-                    $command = [scriptblock]::Create("Test-Path -Path $ParentVhd")
-                    $result = Invoke-PSFCommand -ComputerName $computer -ScriptBlock $command -Credential $Credential
-                    if ($result) {
-                        $parentVhdFileName = $ParentVhd.Split("\")[-1]
-                        $parentVhdFile = $parentVhdFileName.Split(".")[0]
-                    }
-                    else {
-                        Stop-PSFFunction -Message "Parent vhd could not be found" -Target $SqlInstance -Continue
-                    }
-                }
-
 
                 # Check clone name parameter
-                if (-not $CloneName) {
-                    $cloneDatabase = $parentVhdFile
-                    $CloneName = $parentVhdFile
-                    $mountDirectory = "$($parentVhdFile)_$($random)"
-                }
-                elseif ($CloneName) {
-                    $cloneDatabase = $CloneName
-                    $mountDirectory = "$($CloneName)_$($random)"
+                if ($PSCmdlet.ShouldProcess($ParentVhd, "Setting up clone variables")) {
+                    if (-not $CloneName) {
+                        $cloneDatabase = $parentVhdFile
+                        $CloneName = $parentVhdFile
+                        $mountDirectory = "$($parentVhdFile)_$($random)"
+                    }
+                    elseif ($CloneName) {
+                        $cloneDatabase = $CloneName
+                        $mountDirectory = "$($CloneName)_$($random)"
+                    }
                 }
 
                 # Check if the database is already present
-                if ($server.Databases.Name -contains $cloneDatabase) {
-                    Stop-PSFFunction -Message "Database $cloneDatabase is already present on $SqlInstance" -Target $SqlInstance
+                if ($PSCmdlet.ShouldProcess($cloneDatabase, "Verifying database existence")) {
+                    if ($server.Databases.Name -contains $cloneDatabase) {
+                        Stop-PSFFunction -Message "Database $cloneDatabase is already present on $SqlInstance" -Target $SqlInstance
+                    }
                 }
 
                 # Setup access path location
