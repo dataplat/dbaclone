@@ -23,6 +23,10 @@
 
     .PARAMETER PSDCSqlCredential
         Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted.
+        This works similar as SqlCredential but is only meant for authentication to the the host
+
+    .PARAMETER PSDCSqlCredential
+        Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted.
         This works similar as SqlCredential but is only meant for authentication to the PSDatabaseClone database server and database.
 
     .PARAMETER EnableException
@@ -61,21 +65,30 @@
         [System.Management.Automation.PSCredential]
         $SqlCredential,
         [System.Management.Automation.PSCredential]
-        $PSDCSqlCredential,
+        $Credential,
+        [System.Management.Automation.PSCredential]
+        $pdcCredential,
         [switch]$EnableException
     )
 
     begin {
+        # Get the module configurations
+        $pdcSqlInstance = Get-PSFConfigValue -FullName psdatabaseclone.database.Server
+        $pdcDatabase = Get-PSFConfigValue -FullName psdatabaseclone.database.name
+        if (-not $pdcCredential) {
+            $pdcCredential = Get-PSFConfigValue -FullName psdatabaseclone.database.credential -Fallback $null
+        }
+        else {
+            $pdcCredential = $pdcCredential
+        }
+
         # Test the module database setup
         try {
-            Test-PSDCConfiguration -SqlCredential $PSDCSqlCredential -EnableException
+            Test-PSDCConfiguration -SqlCredential $pdcCredential -EnableException
         }
         catch {
             Stop-PSFFunction -Message "Something is wrong in the module configuration" -ErrorRecord $_ -Continue
         }
-
-        $pdcSqlInstance = Get-PSFConfigValue -FullName psdatabaseclone.database.server
-        $pdcDatabase = Get-PSFConfigValue -FullName psdatabaseclone.database.name
 
     }
 
@@ -85,6 +98,21 @@
 
         # Loop through each of the hosts
         foreach ($hst in $HostName) {
+
+            # Setup the computer object
+            $computer = [PsfComputer]$hst
+
+            if (-not $computer.IsLocalhost) {
+                $command = [scriptblock]::Create("Import-Module PSDatabaseClone")
+
+                try {
+                    Invoke-PSFCommand -ComputerName $computer -ScriptBlock $command -Credential $Credential
+                }
+                catch {
+                    Stop-PSFFunction -Message "Couldn't import module remotely" -Target $command
+                    return
+                }
+            }
 
             $query = "
                     SELECT i.ImageLocation,
@@ -105,7 +133,7 @@
             # Get the clones registered for the host
             try {
                 Write-PSFMessage -Message "Get the clones for host $hst" -Level Verbose
-                $results = Invoke-DbaSqlQuery -SqlInstance $pdcSqlInstance -SqlCredential $PSDCSqlCredential -Database $pdcDatabase -Query $query
+                $results = Invoke-DbaSqlQuery -SqlInstance $pdcSqlInstance -SqlCredential $pdcCredential -Database $pdcDatabase -Query $query
             }
             catch {
                 Stop-PSFFunction -Message "Couldn't get the clones for $hst" -Target $pdcSqlInstance -ErrorRecord $_ -Continue
@@ -125,7 +153,14 @@
                     try {
                         Write-PSFMessage -Message "Mounting vhd $($result.CloneLocation)" -Level Verbose
 
-                        Mount-VHD -Path $result.CloneLocation -NoDriveLetter -ErrorAction SilentlyContinue
+                        # Check if computer is local
+                        if ($computer.IsLocalhost) {
+                            $null = Mount-VHD -Path $result.CloneLocation -NoDriveLetter -ErrorAction SilentlyContinue
+                        }
+                        else {
+                            $command = [ScriptBlock]::Create("Mount-VHD -Path $($result.CloneLocation) -NoDriveLetter -ErrorAction SilentlyContinue")
+                            $null = Invoke-PSFCommand -ComputerName $computer -ScriptBlock $command -Credential $Credential
+                        }
                     }
                     catch {
                         Stop-PSFFunction -Message "Couldn't mount vhd" -Target $clone -Continue
@@ -139,7 +174,15 @@
                 if ($result.DatabaseName -notin $databases.Name) {
 
                     # Get all the files of the database
-                    $databaseFiles = Get-ChildItem -Path $result.AccessPath -Recurse | Where-Object {-not $_.PSIsContainer}
+                    # Check if computer is local
+                    if ($computer.IsLocalhost) {
+                        $databaseFiles = Get-ChildItem -Path $result.AccessPath -Recurse | Where-Object {-not $_.PSIsContainer}
+                    }
+                    else {
+                        $commandText = "Get-ChildItem -Path $($result.AccessPath) -Recurse | " + 'Where-Object {-not $_.PSIsContainer}'
+                        $command = [ScriptBlock]::Create($commandText)
+                        $databaseFiles = Invoke-PSFCommand -ComputerName $computer -ScriptBlock $command -Credential $Credential
+                    }
 
                     # Setup the database filestructure
                     $dbFileStructure = New-Object System.Collections.Specialized.StringCollection
