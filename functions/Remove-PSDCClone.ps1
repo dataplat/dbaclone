@@ -114,11 +114,13 @@
         }
 
         # Test the module database setup
-        try {
-            Test-PSDCConfiguration -SqlCredential $pdcCredential -EnableException
-        }
-        catch {
-            Stop-PSFFunction -Message "Something is wrong in the module configuration" -ErrorRecord $_ -Continue
+        if ($PSCmdlet.ShouldProcess("Test-PSDCConfiguration", "Testing module setup")) {
+            try {
+                Test-PSDCConfiguration -SqlCredential $pdcCredential -EnableException
+            }
+            catch {
+                Stop-PSFFunction -Message "Something is wrong in the module configuration" -ErrorRecord $_ -Continue
+            }
         }
 
         Write-PSFMessage -Message "Started removing database clones" -Level Verbose
@@ -244,7 +246,7 @@
                     }
                 }
 
-                if ($PSCmdlet.ShouldProcess($item.CloneID, "Deleting clone rom database")) {
+                if ($PSCmdlet.ShouldProcess("Clone ID: $($item.CloneID)", "Deleting clone from database")) {
                     # Removing records from database
                     try {
                         $query = "DELETE FROM dbo.Clone WHERE CloneID = $($item.CloneID);"
