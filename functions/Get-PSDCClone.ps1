@@ -76,7 +76,7 @@
     begin {
 
         # Get the module configurations
-        $pdcSqlInstance = Get-PSFConfigValue -FullName psdatabaseclone.database.Server
+        $pdcSqlInstance = Get-PSFConfigValue -FullName psdatabaseclone.database.server
         $pdcDatabase = Get-PSFConfigValue -FullName psdatabaseclone.database.name
         if (-not $pdcCredential) {
             $pdcCredential = Get-PSFConfigValue -FullName psdatabaseclone.database.credential -Fallback $null
@@ -113,7 +113,7 @@
 
         try {
             $results = @()
-            $results = Invoke-DbaSqlQuery -SqlInstance $pdcSqlInstance -SqlCredential $PSDCSqlCredential -Database $pdcDatabase -Query $query -As PSObject
+            $results = Invoke-DbaSqlQuery -SqlInstance $pdcSqlInstance -SqlCredential $pdcCredential -Database $pdcDatabase -Query $query -As PSObject
         }
         catch {
             Stop-PSFFunction -Message "Could not execute query" -ErrorRecord $_ -Target $query
