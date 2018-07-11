@@ -67,10 +67,11 @@
     Write-PSFMessage -Message "SqlInstance: $SqlInstance, Database: $Database" -Level Debug
 
     # Check if the values for the PSDatabaseClone database are set
-    if (($null -eq $SqlInstance) -or ($null -eq $Database)) {
+    if (($null -eq $SqlInstance) -or ($null -eq $Database) -or ($null -eq $SqlCredential)) {
         # Get the configurations for the program database
         $Database = Get-PSFConfigValue -FullName psdatabaseclone.database.name -Fallback "NotConfigured"
-        $SqlInstance = Get-PSFConfigValue -FullName psdatabaseclone.database.Server -Fallback "NotConfigured"
+        $SqlInstance = Get-PSFConfigValue -FullName psdatabaseclone.database.server -Fallback "NotConfigured"
+        $SqlCredential = Get-PSFConfigValue -FullName psdatabaseclone.database.credential -Fallback $null
     }
 
     Write-PSFMessage -Message "Checking configurations" -Level Verbose
@@ -86,7 +87,7 @@
 
     Write-PSFMessage -Message "Attempting to connect to PSDatabaseClone database server $SqlInstance.." -Level Verbose
     try {
-        $pdcServer = Connect-DbaInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
+        $pdcServer = Connect-DbaInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential -NonPooledConnection
     }
     catch {
         Stop-PSFFunction -Message "Could not connect to Sql Server instance $SqlInstance" -ErrorRecord $_ -Target $pdcServer -Continue
@@ -95,20 +96,6 @@
     # Check if the PSDatabaseClone database is present
     if ($pdcServer.Databases.Name -notcontains $Database) {
         Stop-PSFFunction -Message "PSDatabaseClone database $Database is not present on $SqlInstance" -Target $pdcServer -Continue
-    }
-
-    # Check if the Hyper-V feature is enabled
-    if ($osDetails.Caption -like '*Windows 10*') {
-        $feature = Get-WindowsOptionalFeature -FeatureName 'Microsoft-Hyper-V-All' -Online
-        if ($feature.State -ne "Enabled") {
-            Write-PSFMessage -Message 'Please enable the Hyper-V feature with "Enable-WindowsOptionalFeature -Online -FeatureName Microsoft-Hyper-V -All"' -Level Warning  -FunctionName 'Pre Import'
-        }
-    }
-    elseif ($osDetails.Caption -like '*Windows Server*') {
-        $feature = Get-WindowsFeature -Name 'Hyper-V'
-        if (-not $feature.Installed) {
-            Write-PSFMessage -Message 'Please enable the Hyper-V feature with "Install-WindowsFeature -Name Hyper-V"' -Level Warning  -FunctionName 'Pre Import'
-        }
     }
 
     Write-PSFMessage -Message "Finished checking configurations" -Level Verbose

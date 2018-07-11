@@ -73,12 +73,14 @@
     begin {
         # Check the destination path
         if (-not (Test-Path $Destination)) {
-            try {
-                Write-PSFMessage -Message "Creating destination directory $Destination" -Level Verbose
-                $null = New-Item -Path $Destination -ItemType Directory -Force
-            }
-            catch {
-                Stop-PSFFunction -Message "Couldn't create directory $Destination" -ErrorRecord $_ -Target $Destination -Continue
+            if ($PSCmdlet.ShouldProcess($Destination, "Creating destination directory")) {
+                try {
+                    Write-PSFMessage -Message "Creating destination directory $Destination" -Level Verbose
+                    $null = New-Item -Path $Destination -ItemType Directory -Force
+                }
+                catch {
+                    Stop-PSFFunction -Message "Couldn't create directory $Destination" -ErrorRecord $_ -Target $Destination -Continue
+                }
             }
         }
 
@@ -123,17 +125,19 @@
         # Test if there are any errors
         if (Test-PSFFunctionInterrupt) { return }
 
-        # Check if the file needs to have a fixed size
-        try {
-            if ($FixedSize) {
-                $null = New-VHD -Path $vhdPath -SizeBytes $Size -Fixed
+        if ($PSCmdlet.ShouldProcess($vhdPath, "Creating VHD")) {
+            # Check if the file needs to have a fixed size
+            try {
+                if ($FixedSize) {
+                    $null = New-VHD -Path $vhdPath -SizeBytes $Size -Fixed
+                }
+                else {
+                    $null = New-VHD -Path $vhdPath -SizeBytes $Size -Dynamic
+                }
             }
-            else {
-                $null = New-VHD -Path $vhdPath -SizeBytes $Size -Dynamic
+            catch {
+                Stop-PSFFunction -Message "Something went wrong creating the vhd" -ErrorRecord $_ -Continue
             }
-        }
-        catch {
-            Stop-PSFFunction -Message "Something went wrong creating the vhd" -ErrorRecord $_ -Continue
         }
     }
 
