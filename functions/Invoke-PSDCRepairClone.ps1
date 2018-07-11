@@ -57,7 +57,7 @@
 
     #>
 
-    [CmdLetBinding()]
+    [CmdLetBinding(SupportsShouldProcess = $true)]
 
     param(
         [Parameter(Mandatory = $true)]
@@ -154,12 +154,14 @@
                         Write-PSFMessage -Message "Mounting vhd $($result.CloneLocation)" -Level Verbose
 
                         # Check if computer is local
-                        if ($computer.IsLocalhost) {
-                            $null = Mount-VHD -Path $result.CloneLocation -NoDriveLetter -ErrorAction SilentlyContinue
-                        }
-                        else {
-                            $command = [ScriptBlock]::Create("Mount-VHD -Path $($result.CloneLocation) -NoDriveLetter -ErrorAction SilentlyContinue")
-                            $null = Invoke-PSFCommand -ComputerName $computer -ScriptBlock $command -Credential $Credential
+                        if ($PSCmdlet.ShouldProcess($result.CloneLocation, "Mounting $($result.CloneLocation)")) {
+                            if ($computer.IsLocalhost) {
+                                $null = Mount-VHD -Path $result.CloneLocation -NoDriveLetter -ErrorAction SilentlyContinue
+                            }
+                            else {
+                                $command = [ScriptBlock]::Create("Mount-VHD -Path $($result.CloneLocation) -NoDriveLetter -ErrorAction SilentlyContinue")
+                                $null = Invoke-PSFCommand -ComputerName $computer -ScriptBlock $command -Credential $Credential
+                            }
                         }
                     }
                     catch {
@@ -174,14 +176,16 @@
                 if ($result.DatabaseName -notin $databases.Name) {
 
                     # Get all the files of the database
-                    # Check if computer is local
-                    if ($computer.IsLocalhost) {
-                        $databaseFiles = Get-ChildItem -Path $result.AccessPath -Recurse | Where-Object {-not $_.PSIsContainer}
-                    }
-                    else {
-                        $commandText = "Get-ChildItem -Path $($result.AccessPath) -Recurse | " + 'Where-Object {-not $_.PSIsContainer}'
-                        $command = [ScriptBlock]::Create($commandText)
-                        $databaseFiles = Invoke-PSFCommand -ComputerName $computer -ScriptBlock $command -Credential $Credential
+                    if ($PSCmdlet.ShouldProcess($result.AccessPath, "Retrieving database files from $($result.AccessPath)")) {
+                        # Check if computer is local
+                        if ($computer.IsLocalhost) {
+                            $databaseFiles = Get-ChildItem -Path $result.AccessPath -Recurse | Where-Object {-not $_.PSIsContainer}
+                        }
+                        else {
+                            $commandText = "Get-ChildItem -Path $($result.AccessPath) -Recurse | " + 'Where-Object {-not $_.PSIsContainer}'
+                            $command = [ScriptBlock]::Create($commandText)
+                            $databaseFiles = Invoke-PSFCommand -ComputerName $computer -ScriptBlock $command -Credential $Credential
+                        }
                     }
 
                     # Setup the database filestructure
@@ -195,7 +199,14 @@
                     Write-PSFMessage -Message "Mounting database from clone" -Level Verbose
 
                     # Mount the database using the config file
-                    $null = Mount-DbaDatabase -SqlInstance $result.SQLInstance -Database $result.DatabaseName -FileStructure $dbFileStructure
+                    if ($PSCmdlet.ShouldProcess($result.DatabaseName, "Mounting database $($result.DatabaseName) to $($result.SQLInstance)")) {
+                        try {
+                            $null = Mount-DbaDatabase -SqlInstance $result.SQLInstance -Database $result.DatabaseName -FileStructure $dbFileStructure
+                        }
+                        catch {
+                            Stop-PSFFunction -Message "Couldn't mount database $($result.DatabaseName)" -Target $result.DatabaseName -Continue
+                        }
+                    }
                 }
                 else {
                     Write-PSFMessage -Message "Database $($result.Database) is already attached" -Level Verbose
