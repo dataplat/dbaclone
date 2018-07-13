@@ -48,7 +48,7 @@ If you import the module for the first time you'll be prompted to enter some val
 At the very least, the module needs the value for the SQL Server instance that will hold the database containing all the hosts, images and clones.
 The second prompt to the user is for the database name. The default value is "PSDatabaseClone"
 
-<img src="https://www.sqlstad.nl/wp-content/uploads/2018/07/PSDatabaseClone_Module_InitialSetup.png" align="left" with="2288px" height="393px"/>
+<img src="https://www.sqlstad.nl/wp-content/uploads/2018/07/PSDatabaseClone_Module_InitialSetup.png" align="left" style="max-width: 100%"/>
 
 If you want to reset the configuration you can run the command "Set-PSDCConfiguration".
 
