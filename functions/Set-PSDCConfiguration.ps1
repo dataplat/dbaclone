@@ -27,6 +27,9 @@
     .PARAMETER Database
         Database to use to save all the information in
 
+    .PARAMETER InputPrompt
+        Use this parameter to get a question to put in values using user input
+
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
@@ -59,11 +62,18 @@
         [System.Management.Automation.PSCredential]
         $SqlCredential,
         [string]$Database,
-        [switch]$EnableException
+        [switch]$EnableException,
+        [switch]$InputPrompt
     )
 
     begin {
         Write-PSFMessage -Message "Started PSDatabaseClone Setup" -Level Output
+
+        # Check if the user needs to be asked for user input
+        if ($InputPrompt) {
+            $SqlInstance = Read-Host 'SQL Server instance'
+            $Database = Read-Host 'Database name [PSDatabaseClone]'
+        }
 
         # Try connecting to the instance
         if ($SqlInstance) {
@@ -78,7 +88,7 @@
         }
 
         # Setup the database name
-        if (-not $Database) {
+        if (-not $Database -or $Database -eq '') {
             $Database = "PSDatabaseClone"
         }
 
@@ -86,13 +96,16 @@
         [bool]$newDatabase = $false
 
         # Unregister any configurations
-        try{
+        try {
             Unregister-PSFConfig -Scope SystemDefault -Module psdatabaseclone
         }
-        catch{
+        catch {
             Stop-PSFFunction -Message "Something went wrong unregistering the configurations" -ErrorRecord $_ -Target $SqlInstance
-                return
+            return
         }
+
+        $SqlInstance
+        $Database
     }
 
     process {
@@ -184,6 +197,20 @@
         Get-PSFConfig -FullName psdatabaseclone.database.name | Register-PSFConfig -Scope SystemDefault
         Get-PSFConfig -FullName psdatabaseclone.database.credential | Register-PSFConfig -Scope SystemDefault
         Get-PSFConfig -FullName psdatabaseclone.hyperv.enabled | Register-PSFConfig -Scope SystemDefault
+        Get-PSFConfig -FullName psdatabaseclone.setup.status | Register-PSFConfig -Scope SystemDefault
+
+        # Check if all the settings have been made
+        $dbServer = Get-PSFConfigValue -FullName psdatabaseclone.database.server
+        $dbName = Get-PSFConfigValue -FullName psdatabaseclone.database.name
+
+        if (($false -ne $dbServer) -and ($false -ne $dbName)) {
+            Write-PSFMessage -Message "All mandatory configurations have been made" -Level Host
+            Set-PSFConfig -Module PSDatabaseClone -Name setup.status -Value $true -Validation bool
+        }
+        else {
+            Write-PSFMessage -Message "The mandatory configurations have NOT been made. Please make sure to set at least the sql server instance" -Level Host
+            Set-PSFConfig -Module PSDatabaseClone -Name setup.status -Value $false -Validation bool
+        }
     }
 
     end {
