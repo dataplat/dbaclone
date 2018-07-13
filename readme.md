@@ -57,6 +57,8 @@ Execute the following command to setup the module with a credential
 Set-PSDCConfiguration -SqlInstance SQLDB1 -SqlCredential (Get-Credential)
 ```
 
+<img src="https://www.sqlstad.nl/wp-content/uploads/2018/07/PSDatabaseClone_Module_ManualSetup.png" align="left" style="max-width: 100%"/>
+
 This will setup the module to use "SQLDB1" as the database server to host the PSDatabaseClone database.
 It will also show a window to insert the credentials for the connection. The database will be called "PSDatabaseClone".
 
