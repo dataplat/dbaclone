@@ -103,9 +103,6 @@
             Stop-PSFFunction -Message "Something went wrong unregistering the configurations" -ErrorRecord $_ -Target $SqlInstance
             return
         }
-
-        $SqlInstance
-        $Database
     }
 
     process {
