@@ -35,10 +35,49 @@ As with every piece of software we need to set some prerequisites to make this m
 
 The process consists of the following steps:
 
-1. Create an image of the database
-2. Create a clone based on an image
+1. Setup the module
+2. Create an image of the database
+3. Create a clone based on an image
 
 It's that easy.
+
+## Setup
+
+### Step 1 - Setting up the module
+The module needs a central place to save all information about the hosts, images and clones
+
+Execute the following command to setup the module
+```powershell
+Set-PSDCConfiguration -SqlInstance SQLDB1 -SqlCredential (Get-Credential)
+```
+
+This will setup the module to use "SQLDB1" as the database server to host the PSDatabaseClone database.
+It will also show a window to insert the credentials for the connection. The database will be called "PSDatabaseClone".
+
+### Step 2 - Create your first image
+This is where it gets exciting, you're going to create your image of a database.
+
+For the clones to be able to connect you need to have a share that's accessible for users that will have the clones and the administrators that create the images.
+
+Execute the following command to create an image for the database "DB1" from instance SQLDB1. Instance SQLDB2 is used to create the image.
+During the process a new backup will be generated.
+
+```powershell
+New-PDCImage -SourceSqlInstance SQLDB1 -DestinationSqlInstance SQLDB2 -ImageNetworkPath \\fileserver\psdatabaseclone\images -Database DB1 -CreateFullBackup
+```
+
+### Step 3 - Create a clone
+You have done the hard work of creating the image and make sure it's accessible for everyone.
+
+Now it's time to create a clone.
+
+Execute the following command to create a clone
+
+```powershell
+New-PDCClone -SqlInstance SQLDB3 -Destination C:\PSDatabaseClone\clones -CloneName DB1_Clone1 -Database DB1 -LatestImage
+```
+
+This will look into the central database if there is an image for database "DB1". The clone will be called "DB1_Clone1" and will be placed on the instance SQLDB3.
 
 ## Examples
 
