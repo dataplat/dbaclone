@@ -44,9 +44,13 @@ It's that easy.
 ## Setup
 
 ### Step 1 - Setting up the module
-The module needs a central place to save all information about the hosts, images and clones
+If you import the module for the first time you'll be prompted to enter some values the configuration.
+At the very least, the module needs the value for the SQL Server instance that will hold the database containing all the hosts, images and clones.
+The second prompt to the user is for the database name. The default value is "PSDatabaseClone"
 
-Execute the following command to setup the module
+If you want to reset the configuration you can run the command "Set-PSDCConfiguration".
+
+Execute the following command to setup the module with a credential
 ```powershell
 Set-PSDCConfiguration -SqlInstance SQLDB1 -SqlCredential (Get-Credential)
 ```
