@@ -63,7 +63,7 @@ Execute the following command to create an image for the database "DB1" from ins
 During the process a new backup will be generated.
 
 ```powershell
-New-PDCImage -SourceSqlInstance SQLDB1 -DestinationSqlInstance SQLDB2 -ImageNetworkPath \\fileserver\psdatabaseclone\images -Database DB1 -CreateFullBackup
+New-PSDCImage -SourceSqlInstance SQLDB1 -DestinationSqlInstance SQLDB2 -ImageNetworkPath \\fileserver\psdatabaseclone\images -Database DB1 -CreateFullBackup
 ```
 
 ### Step 3 - Create a clone
@@ -74,7 +74,7 @@ Now it's time to create a clone.
 Execute the following command to create a clone
 
 ```powershell
-New-PDCClone -SqlInstance SQLDB3 -Destination C:\PSDatabaseClone\clones -CloneName DB1_Clone1 -Database DB1 -LatestImage
+New-PSDCClone -SqlInstance SQLDB3 -Destination C:\PSDatabaseClone\clones -CloneName DB1_Clone1 -Database DB1 -LatestImage
 ```
 
 This will look into the central database if there is an image for database "DB1". The clone will be called "DB1_Clone1" and will be placed on the instance SQLDB3.
@@ -84,41 +84,41 @@ This will look into the central database if there is an image for database "DB1"
 Create an image creating a full backup
 
 ```powershell
-New-PDCImage -SourceSqlInstance SQLDB1 -DestinationSqlInstance SQLDB2 -ImageNetworkPath \\fileserver\psdatabaseclone\images -Database DB1 -CreateFullBackup
+New-PSDCImage -SourceSqlInstance SQLDB1 -DestinationSqlInstance SQLDB2 -ImageNetworkPath \\fileserver\psdatabaseclone\images -Database DB1 -CreateFullBackup
 ```
 
 Create an image for multiple databases using the latest full backup
 
 ```powershell
-New-PDCImage -SourceSqlInstance SQLDB1 -DestinationSqlInstance SQLDB2 -ImageNetworkPath \\fileserver\psdatabaseclone\images -Database DB1, DB2 -UseLastFullBackup
+New-PSDCImage -SourceSqlInstance SQLDB1 -DestinationSqlInstance SQLDB2 -ImageNetworkPath \\fileserver\psdatabaseclone\images -Database DB1, DB2 -UseLastFullBackup
 ```
 
 Create a clone based on the latest image of database DB1
 
 ```powershell
-New-PDCClone -SqlInstance SQLDB1 -Destination C:\PSDatabaseClone\clones -CloneName DB1_Clone1 -Database DB1 -LatestImage
+New-PSDCClone -SqlInstance SQLDB1 -Destination C:\PSDatabaseClone\clones -CloneName DB1_Clone1 -Database DB1 -LatestImage
 ```
 
 Get the clones for host HOST1
 
 ```powershell
-Get-PDCClone -HostName HOST1
+Get-PSDCClone -HostName HOST1
 ```
 
 Remove the clones
 
 ```powershell
-Remove-PDCClone -HostName HOST1 -Database DB1_Clone1, DB2_Clone1
+Remove-PSDCClone -HostName HOST1 -Database DB1_Clone1, DB2_Clone1
 ```
 
 Remove the clones using the Get-PDCClone
 
 ```powershell
-Get-PDCClone -Database DB1_Clone1, DB2_Clone1 | Remove-PDCClone
+Get-PSDCClone -Database DB1_Clone1, DB2_Clone1 | Remove-PDCClone
 ```
 
 Remove the image
 
 ```powershell
-Remove-PDCImage -ImageLocation \\fileserver\psdatabaseclone\images\DB1_20180703085917.vhdx
+Remove-PSDCImage -ImageLocation \\fileserver\psdatabaseclone\images\DB1_20180703085917.vhdx
 ```
