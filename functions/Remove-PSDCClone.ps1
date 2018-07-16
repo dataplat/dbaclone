@@ -173,14 +173,24 @@
             $computer = [PsfComputer]$server.Name
 
             if (-not $computer.IsLocalhost) {
-                $command = [scriptblock]::Create("Import-Module PSDatabaseClone")
+                # Get the result for the remote test
+                $resultPSRemote = Test-PSDCRemoting -ComputerName $server.Name -Credential $Credential
 
-                try {
-                    Invoke-PSFCommand -ComputerName $computer -ScriptBlock $command -Credential $Credential
+                # Check the result
+                if ($resultPSRemote.Result) {
+
+                    $command = [scriptblock]::Create("Import-Module PSDatabaseClone")
+
+                    try {
+                        Invoke-PSFCommand -ComputerName $computer -ScriptBlock $command -Credential $Credential
+                    }
+                    catch {
+                        Stop-PSFFunction -Message "Couldn't import module remotely" -Target $command
+                        return
+                    }
                 }
-                catch {
-                    Stop-PSFFunction -Message "Couldn't import module remotely" -Target $command
-                    return
+                else {
+                    Stop-PSFFunction -Message "Couldn't connect to host remotely.`nVerify that the specified computer name is valid, that the computer is accessible over the network, and that a firewall exception for the WinRM service is enabled and allows access from this computer" -Target $resultPSRemote -Continue
                 }
             }
 
