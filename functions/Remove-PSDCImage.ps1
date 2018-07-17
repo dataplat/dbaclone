@@ -189,7 +189,9 @@
                     }
                 }
 
-                $query = "
+                if ($informationStore -eq 'SQL') {
+
+                    $query = "
                     SELECT c.CloneLocation,
                             c.AccessPath,
                             c.SqlInstance,
@@ -207,35 +209,38 @@
                     ORDER BY h.HostName;
                 "
 
-                # Try to get the neccesary info from the EasyClone database
-                try {
-                    Write-PSFMessage -Message "Retrieving data for image '$($item.Name)'" -Level Verbose
-                    $results = @()
-                    $results += Invoke-DbaSqlQuery -SqlInstance $pdcSqlInstance -SqlCredential $pdcCredential -Database $pdcDatabase -Query $query
+                    # Try to get the neccesary info from the EasyClone database
+                    try {
+                        Write-PSFMessage -Message "Retrieving data for image '$($item.Name)'" -Level Verbose
+                        $results = @()
+                        $results += Invoke-DbaSqlQuery -SqlInstance $pdcSqlInstance -SqlCredential $pdcCredential -Database $pdcDatabase -Query $query
+                    }
+                    catch {
+                        Stop-PSFFunction -Message "Couldn't retrieve clone records for host $($result.HostName)" -ErrorRecord $_  -Target $hst -Continue
+                    }
+                }
+                elseif ($informationStore -eq 'SQL') {
+                    $results = Get-PSDCImage -ImageID $item.ImageID
+                }
 
-                    # Check the results
-                    if ($results.Count -ge 1) {
-
-                        # Loop through the results
-                        foreach ($result in $results) {
-                            if ($PSCmdlet.ShouldProcess($item.CloneID, "Removing clone $($result.CloneLocation) from $($result.HostName)")) {
-                                # Remove the clones for the host
-                                try {
-                                    Write-PSFMessage -Message "Removing clones for host $($result.HostName) and database $($result.DatabaseName)" -Level Verbose
-                                    Remove-PSDCClone -HostName $result.HostName -Database $result.DatabaseName -PSDCSqlCredential $pdcCredential -Credential $Credential -Confirm:$false
-                                }
-                                catch {
-                                    Stop-PSFFunction -Message "Couldn't remove clones from host $($result.HostName)" -ErrorRecord $_ -Target $result -Continue
-                                }
+                # Check the results
+                if ($results.Count -ge 1) {
+                    # Loop through the results
+                    foreach ($result in $results) {
+                        if ($PSCmdlet.ShouldProcess($item.CloneID, "Removing clone $($result.CloneLocation) from $($result.HostName)")) {
+                            # Remove the clones for the host
+                            try {
+                                Write-PSFMessage -Message "Removing clones for host $($result.HostName) and database $($result.DatabaseName)" -Level Verbose
+                                Remove-PSDCClone -HostName $result.HostName -Database $result.DatabaseName -PSDCSqlCredential $pdcCredential -Credential $Credential -Confirm:$false
+                            }
+                            catch {
+                                Stop-PSFFunction -Message "Couldn't remove clones from host $($result.HostName)" -ErrorRecord $_ -Target $result -Continue
                             }
                         }
                     }
-                    else {
-                        Write-PSFMessage -Message "No clones were found created with image $($image.Name)" -Level Verbose
-                    }
                 }
-                catch {
-                    Stop-PSFFunction -Message "Couldn't retrieve clone records for host $($result.HostName)" -ErrorRecord $_  -Target $hst -Continue
+                else {
+                    Write-PSFMessage -Message "No clones were found created with image $($image.Name)" -Level Verbose
                 }
 
                 if ($PSCmdlet.ShouldProcess($item.ImageLocation, "Removing image from system")) {
@@ -270,14 +275,28 @@
                 }
 
                 if ($PSCmdlet.ShouldProcess($item.ImageLocation, "Removing image from database")) {
-                    # Remove the image from the database
-                    try {
-                        $query = "DELETE FROM dbo.Image WHERE ImageID = $($item.ImageID)"
+                    if ($informationStore -eq 'SQL') {
+                        # Remove the image from the database
+                        try {
+                            $query = "DELETE FROM dbo.Image WHERE ImageID = $($item.ImageID)"
 
-                        $null = Invoke-DbaSqlQuery -SqlInstance $pdcSqlInstance -SqlCredential $pdcCredential -Database $pdcDatabase -Query $query
+                            $null = Invoke-DbaSqlQuery -SqlInstance $pdcSqlInstance -SqlCredential $pdcCredential -Database $pdcDatabase -Query $query
+                        }
+                        catch {
+                            Stop-PSFFunction -Message "Couldn't remove image '$($item.ImageLocation)' from database" -ErrorRecord $_ -Target $query
+                        }
                     }
-                    catch {
-                        Stop-PSFFunction -Message "Couldn't remove image '$($item.ImageLocation)' from database" -ErrorRecord $_ -Target $query
+                    elseif ($informationStore -eq 'File') {
+                        $images = Get-PSDCImage
+
+                        $images -= $images | Where-Object {$_.ImageID -eq $item.ImageID}
+
+                        # Get the json file
+                        $jsonFolder = Get-PSFConfigValue -FullName psdatabaseclone.informationstore.path
+                        $jsonImageFile = "$jsonFolder\images.json"
+
+                        # Convert the data back to JSON
+                        $images | ConvertTo-Json | Set-Content $jsonImageFile
                     }
                 }
 

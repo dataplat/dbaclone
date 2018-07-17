@@ -102,24 +102,28 @@
     )
 
     begin {
+        # Get the information store
+        $informationStore = Get-PSFConfigValue -FullName psdatabaseclone.informationstore.mode
 
-        # Get the module configurations
-        $pdcSqlInstance = Get-PSFConfigValue -FullName psdatabaseclone.database.Server
-        $pdcDatabase = Get-PSFConfigValue -FullName psdatabaseclone.database.name
-        if (-not $PSDCSqlCredential) {
-            $pdcCredential = Get-PSFConfigValue -FullName psdatabaseclone.database.credential -Fallback $null
-        }
-        else {
-            $pdcCredential = $PSDCSqlCredential
-        }
-
-        # Test the module database setup
-        if ($PSCmdlet.ShouldProcess("Test-PSDCConfiguration", "Testing module setup")) {
-            try {
-                Test-PSDCConfiguration -SqlCredential $pdcCredential -EnableException
+        if ($informationStore -eq 'SQL') {
+            # Get the module configurations
+            $pdcSqlInstance = Get-PSFConfigValue -FullName psdatabaseclone.database.Server
+            $pdcDatabase = Get-PSFConfigValue -FullName psdatabaseclone.database.name
+            if (-not $PSDCSqlCredential) {
+                $pdcCredential = Get-PSFConfigValue -FullName psdatabaseclone.database.credential -Fallback $null
             }
-            catch {
-                Stop-PSFFunction -Message "Something is wrong in the module configuration" -ErrorRecord $_ -Continue
+            else {
+                $pdcCredential = $PSDCSqlCredential
+            }
+
+            # Test the module database setup
+            if ($PSCmdlet.ShouldProcess("Test-PSDCConfiguration", "Testing module setup")) {
+                try {
+                    Test-PSDCConfiguration -SqlCredential $pdcCredential -EnableException
+                }
+                catch {
+                    Stop-PSFFunction -Message "Something is wrong in the module configuration" -ErrorRecord $_ -Continue
+                }
             }
         }
 
@@ -257,14 +261,28 @@
                 }
 
                 if ($PSCmdlet.ShouldProcess("Clone ID: $($item.CloneID)", "Deleting clone from database")) {
-                    # Removing records from database
-                    try {
-                        $query = "DELETE FROM dbo.Clone WHERE CloneID = $($item.CloneID);"
+                    if ($informationStore -eq 'SQL') {
+                        # Removing records from database
+                        try {
+                            $query = "DELETE FROM dbo.Clone WHERE CloneID = $($item.CloneID);"
 
-                        $null = Invoke-DbaSqlQuery -SqlInstance $pdcSqlInstance -SqlCredential $pdcCredential -Database $pdcDatabase -Query $query -EnableException
+                            $null = Invoke-DbaSqlQuery -SqlInstance $pdcSqlInstance -SqlCredential $pdcCredential -Database $pdcDatabase -Query $query -EnableException
+                        }
+                        catch {
+                            Stop-PSFFunction -Message "Could not remove clone record from database" -ErrorRecord $_ -Target $query -Continue
+                        }
                     }
-                    catch {
-                        Stop-PSFFunction -Message "Could not remove clone record from database" -ErrorRecord $_ -Target $query -Continue
+                    elseif ($informationStore -eq 'File') {
+                        $clones = Get-PSDCClone
+
+                        $clones -= $clones | Where-Object {$_.CloneID -eq $item.CloneID}
+
+                        # Get the json file
+                        $jsonFolder = Get-PSFConfigValue -FullName psdatabaseclone.informationstore.path
+                        $jsonCloneFile = "$jsonFolder\clones.json"
+
+                        # Convert the data back to JSON
+                        $clones | ConvertTo-Json | Set-Content $jsonCloneFile
                     }
                 }
 

@@ -125,24 +125,28 @@
     )
 
     begin {
+        # Get the information store
+        $informationStore = Get-PSFConfigValue -FullName psdatabaseclone.informationstore.mode
 
-        # Get the module configurations
-        $pdcSqlInstance = Get-PSFConfigValue -FullName psdatabaseclone.database.Server
-        $pdcDatabase = Get-PSFConfigValue -FullName psdatabaseclone.database.name
-        if (-not $PSDCSqlCredential) {
-            $pdcCredential = Get-PSFConfigValue -FullName psdatabaseclone.database.credential -Fallback $null
-        }
-        else {
-            $pdcCredential = $PSDCSqlCredential
-        }
-
-        # Test the module database setup
-        if ($PSCmdlet.ShouldProcess("Test-PSDCConfiguration", "Testing module setup")) {
-            try {
-                Test-PSDCConfiguration -SqlCredential $pdcCredential -EnableException
+        if ($informationStore -eq 'SQL') {
+            # Get the module configurations
+            $pdcSqlInstance = Get-PSFConfigValue -FullName psdatabaseclone.database.Server
+            $pdcDatabase = Get-PSFConfigValue -FullName psdatabaseclone.database.name
+            if (-not $PSDCSqlCredential) {
+                $pdcCredential = Get-PSFConfigValue -FullName psdatabaseclone.database.credential -Fallback $null
             }
-            catch {
-                Stop-PSFFunction -Message "Something is wrong in the module configuration" -ErrorRecord $_ -Continue
+            else {
+                $pdcCredential = $PSDCSqlCredential
+            }
+
+            # Test the module database setup
+            if ($PSCmdlet.ShouldProcess("Test-PSDCConfiguration", "Testing module setup")) {
+                try {
+                    Test-PSDCConfiguration -SqlCredential $pdcCredential -EnableException
+                }
+                catch {
+                    Stop-PSFFunction -Message "Something is wrong in the module configuration" -ErrorRecord $_ -Continue
+                }
             }
         }
 
@@ -204,18 +208,12 @@
 
         # Check if the computer is localhost and import the neccesary modules... just in case
         if (-not $computer.IsLocalhost) {
-            <# $command = [ScriptBlock]::Create("Import-Module dbatools")
-            Invoke-PSFCommand -ComputerName $computer -ScriptBlock $command -Credential $DestinationCredential
-
-            $command = [ScriptBlock]::Create("Import-Module PSFramework")
-            Invoke-PSFCommand -ComputerName $computer -ScriptBlock $command -Credential $DestinationCredential #>
-
             $command = [ScriptBlock]::Create("Import-Module PSDatabaseClone")
 
-            try{
+            try {
                 Invoke-PSFCommand -ComputerName $computer -ScriptBlock $command -Credential $DestinationCredential
             }
-            catch{
+            catch {
                 Stop-PSFFunction -Message "Somthing went wrong executing the command remotely on $computer." -ErrorRecord $_ -Target $computer
             }
 
@@ -523,7 +521,8 @@
             $databaseName = $db.Name
             $databaseTS = $lastFullBackup.Start
 
-            $query = "
+            if ($informationStore -eq 'SQL') {
+                $query = "
                 DECLARE @ImageID INT;
                 EXECUTE dbo.Image_New @ImageID = @ImageID OUTPUT,				  -- int
                                     @ImageName = '$imageName',                    -- varchar(100)
@@ -535,24 +534,49 @@
                 SELECT @ImageID as ImageID
             "
 
-            Write-PSFMessage -Message "Query New Image`n$query" -Level Debug
+                # Add image to database
+                if ($PSCmdlet.ShouldProcess($imageName, "Adding image to database")) {
+                    try {
+                        Write-PSFMessage -Message "Saving image information in database" -Level Verbose
 
-            # Add image to database
-            if ($PSCmdlet.ShouldProcess($imageName, "Adding image to database")) {
-                try {
-                    Write-PSFMessage -Message "Saving image information in database" -Level Verbose
+                        $result += Invoke-DbaSqlQuery -SqlInstance $pdcSqlInstance -SqlCredential $pdcCredential -Database $pdcDatabase -Query $query -EnableException
+                        $imageID = $result.ImageID
+                    }
+                    catch {
+                        Stop-PSFFunction -Message "Couldn't add image to database" -Target $imageName -ErrorRecord $_
+                    }
+                }
+            }
+            elseif ($informationStore -eq 'File') {
+                # Get all the images
+                $images = Get-PSDCImage
 
-                    $result += Invoke-DbaSqlQuery -SqlInstance $pdcSqlInstance -SqlCredential $pdcCredential -Database $pdcDatabase -Query $query -EnableException
+                # Setup the new image id
+                $imageID = ($images[-1].ImageID | Sort-Object ImageID) + 1
+
+                # Add the new information to the array
+                $images += [PSCustomObject]@{
+                    ImageID           = $imageID
+                    ImageName         = $imageName
+                    ImageLocation     = $imageLocation
+                    SizeMB            = $sizeMB
+                    DatabaseName      = $databaseName
+                    DatabaseTimestamp = $databaseTS
+                    CreatedOn         = (Get-Date -format "yyyyMMddHHmmss")
                 }
-                catch {
-                    Stop-PSFFunction -Message "Couldn't add image to database" -Target $imageName -ErrorRecord $_
-                }
+
+                # Get the json file
+                $jsonFolder = Get-PSFConfigValue -FullName psdatabaseclone.informationstore.path
+                $jsonImageFile = "$jsonFolder\images.json"
+
+                # Convert the data back to JSON
+                $images | ConvertTo-Json | Set-Content $jsonImageFile
             }
 
             # Add the results to the custom object
             [PSDCImage]$image = New-Object PSDCImage
 
-            $image.ImageID = $result.ImageID
+            $image.ImageID = $imageID
             $image.ImageName = $imageName
             $image.ImageLocation = $imageLocation
             $image.SizeMB = $sizeMB
