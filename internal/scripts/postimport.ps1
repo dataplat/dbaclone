@@ -25,15 +25,12 @@ if(-not $setupStatus){
     Set-PSDCConfiguration -InputPrompt
 }
 
-
 # Check if the configuration has been set
-$server = Get-PSFConfigValue psdatabaseclone.database.server
-$database = Get-PSFConfigValue psdatabaseclone.database.name
-
-if (($server -eq $null) -or ($database -eq $null)) {
+if (-not (Get-PSFConfigValue -FullName psdatabaseclone.setup.status)) {
     Write-PSFMessage -Message "The module is not yet configured. Please run Set-PSDCConfiguration to make the neccesary changes" -Level Warning
 }
 
+# Import the types
 $TypeAliasTable = @{
     PSDCClone = "PSDatabaseClone.Parameter.Clone"
     PSDCImage = "PSDatabaseClone.Parameter.Image"
