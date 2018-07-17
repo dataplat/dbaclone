@@ -186,10 +186,33 @@
                     $filePath = $filePath.Substring(0, $filePath.Length - 1)
                 }
 
-                # Check if the path is reachable
-                $command = [scriptblock]::Create("Test-Path -Path $filePath")
-                $result = Invoke-PSFCommand -ScriptBlock $command -Credential $Credential
-                if (-not $result) {
+                # Check the file path
+                if ($filePath.StartsWith("\\")) {
+                    # Make up the data from the network path
+                    try {
+                        # Convert to uri
+                        [uri]$uri = New-Object System.Uri($filePath)
+                        $uriHost = $uri.Host
+
+                        # Setup the computer object
+                        $computer = [PsfComputer]$uriHost
+
+                        # Check if the path is reachable
+                        $command = [scriptblock]::Create("Test-Path -Path $filePath")
+
+                        $resultTestFilePath = Invoke-PSFCommand -ComputerName $computer -ScriptBlock $command -Credential $Credential
+                    }
+                    catch {
+                        Stop-PSFFunction -Message "The file path $filePath is not valid" -ErrorRecord $_ -Target $filePath
+                        return
+                    }
+                }
+                else {
+                    $resultTestFilePath = Test-Path -Path $filePath
+                }
+
+                # Check the result
+                if (-not $resultTestFilePath) {
                     Stop-PSFFunction -Message "Could not access the path $filePath" -Target $filePath
                     return
                 }
@@ -283,29 +306,42 @@
         }
         else {
             # Create the JSON files
+
+            # Create the PSDrive to be able to use credentials
+            $null = New-PSDrive -Name PSDatabaseClone -PSProvider FileSystem -Root $filePath -Credential $Credential
+
+            # Create the files
             try {
-                $command = [scriptblock]::Create("Get-ChildItem -Path $filePath -Filter `"*.json`"")
-                $files = Invoke-PSFCommand -ScriptBlock $command -Credential $Credential
+                # Get the files
+                $files = Get-ChildItem -Path PSDatabaseClone:\
 
-                if (-not $Force -and ("$filePath\hosts.json" -in $files.FullName)) {
-                    Stop-PSFFunction -Message "File 'hosts.json' already exists" -Target $filePath
+                # Check if we have any files
+                if ($files.Count -eq 0) {
+                    $null = New-Item -Path PSDatabaseClone:\hosts.json -Force:$Force
+                    $null = New-Item -Path PSDatabaseClone:\images.json -Force:$Force
+                    $null = New-Item -Path PSDatabaseClone:\clones.json -Force:$Force
                 }
                 else {
-                    $null = New-Item -Path "$filePath\hosts.json" -Force:$Force
-                }
+                    if (-not $Force -and ("$filePath\hosts.json" -in $files.FullName)) {
+                        Stop-PSFFunction -Message "File 'hosts.json' already exists" -Target $filePath
+                    }
+                    else {
+                        $null = New-Item -Path PSDatabaseClone:\hosts.json -Force:$Force
+                    }
 
-                if (-not $Force -and ("$filePath\images.json" -in $files.FullName)) {
-                    Stop-PSFFunction -Message "File 'images.json' already exists" -Target $filePath
-                }
-                else {
-                    $null = New-Item -Path "$filePath\images.json" -Force:$Force
-                }
+                    if (-not $Force -and ("$filePath\images.json" -in $files.FullName)) {
+                        Stop-PSFFunction -Message "File 'images.json' already exists" -Target $filePath
+                    }
+                    else {
+                        $null = New-Item -Path PSDatabaseClone:\images.json -Force:$Force
+                    }
 
-                if (-not $Force -and ("$filePath\clones.json" -in $files.FullName)) {
-                    Stop-PSFFunction -Message "File 'clones.json' already exists" -Target $filePath
-                }
-                else {
-                    $null = New-Item -Path "$filePath\clones.json" -Force:$Force
+                    if (-not $Force -and ("$filePath\clones.json" -in $files.FullName)) {
+                        Stop-PSFFunction -Message "File 'clones.json' already exists" -Target $filePath
+                    }
+                    else {
+                        $null = New-Item -Path PSDatabaseClone:\clones.json -Force:$Force
+                    }
                 }
             }
             catch {
