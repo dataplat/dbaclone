@@ -206,19 +206,6 @@
             return
         }
 
-        # Check if the computer is localhost and import the neccesary modules... just in case
-        if (-not $computer.IsLocalhost) {
-            $command = [ScriptBlock]::Create("Import-Module PSDatabaseClone")
-
-            try {
-                Invoke-PSFCommand -ComputerName $computer -ScriptBlock $command -Credential $DestinationCredential
-            }
-            catch {
-                Stop-PSFFunction -Message "Somthing went wrong executing the command remotely on $computer." -ErrorRecord $_ -Target $computer
-            }
-
-        }
-
         # Check if Hyper-V is enabled
         if (-not (Test-PSDCHyperVEnabled -HostName $uriHost -Credential $DestinationCredential)) {
             Stop-PSFFunction -Message "Hyper-V is not enabled on the remote host." -ErrorRecord $_ -Target $uriHost
@@ -226,8 +213,8 @@
         }
 
         # Get the local path from the network path
-        if ($PSCmdlet.ShouldProcess($ImageNetworkPath, "Converting UNC path to local path")) {
-            if (-not $ImageLocalPath) {
+        if (-not $ImageLocalPath) {
+            if ($PSCmdlet.ShouldProcess($ImageNetworkPath, "Converting UNC path to local path")) {
                 try {
                     # Check if computer is local
                     if ($computer.IsLocalhost) {
