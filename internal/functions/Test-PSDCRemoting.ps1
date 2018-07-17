@@ -1,4 +1,4 @@
-function Test-PSDCRemoting {
+﻿function Test-PSDCRemoting {
 
     <#
     .SYNOPSIS
