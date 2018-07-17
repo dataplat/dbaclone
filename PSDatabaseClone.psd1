@@ -72,8 +72,7 @@
     'Set-PSDCConfiguration',
     'Get-PSDCClone',
     'Get-PSDCImage',
-    'Convert-PSDCLocalUncPathToLocalPath',
-    'Test-PSDCRemoting'
+    'Convert-PSDCLocalUncPathToLocalPath'
 
     # Cmdlets to export from this module
     CmdletsToExport    = ''

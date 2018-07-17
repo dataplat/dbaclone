@@ -74,26 +74,30 @@
     )
 
     begin {
+        # Get the information store
+        $informationStore = Get-PSFConfigValue -FullName psdatabaseclone.informationstore.mode
 
-        # Get the module configurations
-        $pdcSqlInstance = Get-PSFConfigValue -FullName psdatabaseclone.database.server
-        $pdcDatabase = Get-PSFConfigValue -FullName psdatabaseclone.database.name
-        if (-not $pdcCredential) {
-            $pdcCredential = Get-PSFConfigValue -FullName psdatabaseclone.database.credential -Fallback $null
-        }
-        else {
-            $pdcCredential = $PSDCSqlCredential
-        }
+        if ($informationStore -eq 'SQL') {
 
-        # Test the module database setup
-        try {
-            Test-PSDCConfiguration -SqlCredential $pdcCredential -EnableException
-        }
-        catch {
-            Stop-PSFFunction -Message "Something is wrong in the module configuration" -ErrorRecord $_ -Continue
-        }
+            # Get the module configurations
+            $pdcSqlInstance = Get-PSFConfigValue -FullName psdatabaseclone.database.server
+            $pdcDatabase = Get-PSFConfigValue -FullName psdatabaseclone.database.name
+            if (-not $pdcCredential) {
+                $pdcCredential = Get-PSFConfigValue -FullName psdatabaseclone.database.credential -Fallback $null
+            }
+            else {
+                $pdcCredential = $PSDCSqlCredential
+            }
 
-        $query = "
+            # Test the module database setup
+            try {
+                Test-PSDCConfiguration -SqlCredential $pdcCredential -EnableException
+            }
+            catch {
+                Stop-PSFFunction -Message "Something is wrong in the module configuration" -ErrorRecord $_ -Continue
+            }
+
+            $query = "
             SELECT c.CloneID,
                 c.CloneLocation,
                 c.AccessPath,
@@ -111,12 +115,17 @@
                     ON i.ImageID = c.ImageID;
             "
 
-        try {
-            $results = @()
-            $results = Invoke-DbaSqlQuery -SqlInstance $pdcSqlInstance -SqlCredential $pdcCredential -Database $pdcDatabase -Query $query -As PSObject
+            try {
+                $results = @()
+                $results = Invoke-DbaSqlQuery -SqlInstance $pdcSqlInstance -SqlCredential $pdcCredential -Database $pdcDatabase -Query $query -As PSObject
+            }
+            catch {
+                Stop-PSFFunction -Message "Could not execute query" -ErrorRecord $_ -Target $query
+            }
         }
-        catch {
-            Stop-PSFFunction -Message "Could not execute query" -ErrorRecord $_ -Target $query
+        elseif($informationStore -eq 'File'){
+
+            $results = Get-ChildItem -Path (Get-PSFConfigValue -FullName 'psdatabaseclone.informationstore.path') -Filter *clones.json | ForEach-Object { Get-Content $_.FullName | ConvertFrom-Json }
         }
 
         # Filter host name
