@@ -382,7 +382,6 @@
         Get-PSFConfig -FullName psdatabaseclone.database.name | Register-PSFConfig -Scope SystemDefault
 
         Get-PSFConfig -FullName psdatabaseclone.hyperv.enabled | Register-PSFConfig -Scope SystemDefault
-        Get-PSFConfig -FullName psdatabaseclone.setup.status | Register-PSFConfig -Scope SystemDefault
 
         #Get-PSFConfig -FullName psdatabaseclone.database.credential | Register-PSFConfig -Scope SystemDefault
 
@@ -412,6 +411,9 @@
                 Set-PSFConfig -Module PSDatabaseClone -Name setup.status -Value $false -Validation bool
             }
         }
+
+        # Set the overall status in the configurations
+        Get-PSFConfig -FullName psdatabaseclone.setup.status | Register-PSFConfig -Scope SystemDefault
     }
 
     end {
