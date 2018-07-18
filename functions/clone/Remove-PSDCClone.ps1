@@ -180,11 +180,11 @@
             }
 
             # Setup the computer object
-            $computer = [PsfComputer]$server.Name
+            $computer = [PsfComputer]$clone.Name
 
             if (-not $computer.IsLocalhost) {
                 # Get the result for the remote test
-                $resultPSRemote = Test-PSDCRemoting -ComputerName $server.Name -Credential $Credential
+                $resultPSRemote = Test-PSDCRemoting -ComputerName $clone.Name -Credential $Credential
 
                 # Check the result
                 if ($resultPSRemote.Result) {
@@ -279,16 +279,35 @@
                         }
                     }
                     elseif ($informationStore -eq 'File') {
-                        $clones = Get-PSDCClone
+                        [array]$cloneData = $null
+                        [array]$newCloneData = $null
 
-                        $clones -= $clones | Where-Object {$_.CloneID -eq $item.CloneID}
+                        $cloneData = Get-PSDCClone
+
+                        $newCloneData = $cloneData | Where-Object {$_.CloneID -ne $item.CloneID}
 
                         # Get the json file
                         $jsonFolder = Get-PSFConfigValue -FullName psdatabaseclone.informationstore.path
-                        $jsonCloneFile = "$jsonFolder\clones.json"
+
+                        # Create a PS Drive
+                        $null = New-PSDrive -Name JSONFolder -Root $jsonFolder -Credential $Credential -PSProvider FileSystem
+
+                        # Set the clone file
+                        $jsonCloneFile = JSONFolder:\clones.json
 
                         # Convert the data back to JSON
-                        $clones | ConvertTo-Json | Set-Content $jsonCloneFile
+                        "Count clones new: $($newCloneData.Count)"
+                        if($newCloneData.Count -ge 1){
+                            $newCloneData | ConvertTo-Json | Set-Content $jsonCloneFile
+                        }
+                        else{
+                            "Clearing data"
+                            Clear-Content -Path $jsonCloneFile
+                        }
+
+                        # Remove the PS Drive
+                        $null = Remove-PSDrive -Name JSONFolder
+
                     }
                 }
 
