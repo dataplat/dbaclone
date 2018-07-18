@@ -95,7 +95,7 @@
             # Get the module configurations
             $pdcSqlInstance = Get-PSFConfigValue -FullName psdatabaseclone.database.server
             $pdcDatabase = Get-PSFConfigValue -FullName psdatabaseclone.database.name
-            if (-not $pdcCredential) {
+            if (-not $PSDCSqlCredential) {
                 $pdcCredential = Get-PSFConfigValue -FullName psdatabaseclone.database.credential -Fallback $null
             }
             else {
@@ -111,21 +111,21 @@
             }
 
             $query = "
-            SELECT c.CloneID,
-                c.CloneLocation,
-                c.AccessPath,
-                c.SqlInstance,
-                c.DatabaseName,
-                c.IsEnabled,
-                i.ImageID,
-                i.ImageName,
-                i.ImageLocation,
-                h.HostName
-            FROM dbo.Clone AS c
-                INNER JOIN dbo.Host AS h
-                    ON h.HostID = c.HostID
-                INNER JOIN dbo.Image AS i
-                    ON i.ImageID = c.ImageID;
+                SELECT c.CloneID,
+                    c.CloneLocation,
+                    c.AccessPath,
+                    c.SqlInstance,
+                    c.DatabaseName,
+                    c.IsEnabled,
+                    i.ImageID,
+                    i.ImageName,
+                    i.ImageLocation,
+                    h.HostName
+                FROM dbo.Clone AS c
+                    INNER JOIN dbo.Host AS h
+                        ON h.HostID = c.HostID
+                    INNER JOIN dbo.Image AS i
+                        ON i.ImageID = c.ImageID;
             "
 
             try {
@@ -140,24 +140,24 @@
             # Get the path
             $informationPath = Get-PSFConfigValue -FullName 'psdatabaseclone.informationstore.path'
 
-            if (Test-Path -Path $informationPath -Credential $Credential) {
-                # Create the PS Drive and get the results
-                try {
-                    $null = New-PSDrive -Name InformationPath -Root $informationPath -Credential $Credential -PSProvider FileSystem
+            # Create the PS Drive and get the results
+            try {
+                $null = New-PSDrive -Name InformationPath -Root $informationPath -Credential $Credential -PSProvider FileSystem
 
+                if (Test-Path -Path "InformationPath:\") {
                     # Get the clones
-                    $results = Get-ChildItem -Path InformationPath:\ -Filter "*clones.json" | ForEach-Object { Get-Content $_.FullName | ConvertFrom-Json }
-
-                    # Remove the PS Drive
-                    Remove-PSDrive -Name InformationPath
+                    $results = Get-ChildItem -Path "InformationPath:\" -Filter "*clones.json" | ForEach-Object { Get-Content $_.FullName | ConvertFrom-Json }
                 }
-                catch {
-                    Stop-PSFFunction -Message "Could not retrieve clone information from files" -ErrorRecord $_ -Target $informationPath
+                else {
+                    Stop-PSFFunction -Message "Could not reach image information location '$informationPath'" -ErrorRecord $_ -Target $informationPath
                     return
                 }
+
+                # Remove the PS Drive
+                Remove-PSDrive -Name InformationPath
             }
-            else {
-                Stop-PSFFunction -Message "Could not reach clone information location '$informationPath'" -ErrorRecord $_ -Target $informationPath
+            catch {
+                Stop-PSFFunction -Message "Could not retrieve image information from files" -ErrorRecord $_ -Target $informationPath
                 return
             }
         }
