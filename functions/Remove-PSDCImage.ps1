@@ -89,26 +89,34 @@
     )
 
     begin {
-
-        # Get the module configurations
-        $pdcSqlInstance = Get-PSFConfigValue -FullName psdatabaseclone.database.Server
-        $pdcDatabase = Get-PSFConfigValue -FullName psdatabaseclone.database.name
-        if (-not $pdcCredential) {
-            $pdcCredential = Get-PSFConfigValue -FullName psdatabaseclone.database.credential -Fallback $null
-        }
-        else {
-            $pdcCredential = $PSDCSqlCredential
+        # Check if the setup has ran
+        if (-not (Get-PSFConfigValue -FullName psdatabaseclone.setup.status)) {
+            Stop-PSFFunction -Message "The module setup has NOT yet successfully run. Please run 'Set-PSDCConfiguration'"
+            return
         }
 
-        # Test the module database setup
-        try {
-            Test-PSDCConfiguration -SqlCredential $pdcCredential -EnableException
-        }
-        catch {
-            Stop-PSFFunction -Message "Something is wrong in the module configuration" -ErrorRecord $_ -Continue
-        }
+        # Get the information store
+        $informationStore = Get-PSFConfigValue -FullName psdatabaseclone.informationstore.mode
 
-        Write-PSFMessage -Message "Started removing database images" -Level Verbose
+        if ($informationStore -eq 'SQL') {
+            # Get the module configurations
+            $pdcSqlInstance = Get-PSFConfigValue -FullName psdatabaseclone.database.Server
+            $pdcDatabase = Get-PSFConfigValue -FullName psdatabaseclone.database.name
+            if (-not $pdcCredential) {
+                $pdcCredential = Get-PSFConfigValue -FullName psdatabaseclone.database.credential -Fallback $null
+            }
+            else {
+                $pdcCredential = $PSDCSqlCredential
+            }
+
+            # Test the module database setup
+            try {
+                Test-PSDCConfiguration -SqlCredential $pdcCredential -EnableException
+            }
+            catch {
+                Stop-PSFFunction -Message "Something is wrong in the module configuration" -ErrorRecord $_ -Continue
+            }
+        }
 
         # Get all the items
         $items = Get-PSDCImage
@@ -145,6 +153,8 @@
     process {
         # Test if there are any errors
         if (Test-PSFFunctionInterrupt) { return }
+
+        Write-PSFMessage -Message "Started removing database images" -Level Verbose
 
         # Group the objects to make it easier to go through
         $images = $InputObject | Group-Object ImageID
