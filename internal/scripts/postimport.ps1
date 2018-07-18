@@ -17,9 +17,7 @@ foreach ($file in (Get-ChildItem "$ModuleRoot\internal\tepp\*.tepp.ps1" -ErrorAc
 . Import-ModuleFile -Path "$ModuleRoot\internal\scripts\license.ps1"
 
 # Check if the setup has run successfully
-$setupStatus = Get-PSFConfigValue -FullName psdatabaseclone.setup.status -Fallback $false
-
-if(-not $setupStatus){
+if(-not (Get-PSFConfigValue -FullName psdatabaseclone.setup.status -Fallback $false)){
     Write-PSFMessage -Message "Setup for the module has not yet run. Starting" -Level Host
 
     Set-PSDCConfiguration -InputPrompt
