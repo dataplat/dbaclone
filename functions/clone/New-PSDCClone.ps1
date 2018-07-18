@@ -507,8 +507,9 @@
                         $computerinfo = Invoke-PSFCommand -ComputerName $computer -ScriptBlock $command -Credential $Credential
 
                         $command = [scriptblock]::Create('$env:COMPUTERNAME')
+                        $result = Invoke-PSFCommand -ComputerName $computer -ScriptBlock $command -Credential $Credential
 
-                        $hostname = Invoke-PSFCommand -ComputerName $computer -ScriptBlock $command -Credential $Credential
+                        $hostname = $result.ToString()
                         $ipAddress = $computerinfo.AddressList[0]
                         $fqdn = $computerinfo.HostName
                     }
@@ -565,17 +566,24 @@
                             }
                         }
                         elseif ($informationStore -eq 'File') {
+                            [array]$hosts = $null
+
                             # Get all the images
                             $hosts = Get-ChildItem -Path (Get-PSFConfigValue -FullName 'psdatabaseclone.informationstore.path') -Filter *hosts.json | ForEach-Object { Get-Content $_.FullName | ConvertFrom-Json}
 
-                            # Setup the new image id
-                            $hostID = ($hosts[-1].HostID | Sort-Object HostID) + 1
+                            # Setup the new host id
+                            if ($hosts.Count -ge 1) {
+                                $hostID = ($hosts[-1].HostID | Sort-Object HostID) + 1
+                            }
+                            else {
+                                $hostID = 1
+                            }
 
                             # Add the new information to the array
                             $hosts += [PSCustomObject]@{
                                 HostID    = $hostID
                                 HostName  = $hostname
-                                IPAddress = $ipAddress
+                                IPAddress = $ipAddress.IPAddressToString
                                 FQDN      = $fqdn
                             }
 
@@ -601,17 +609,19 @@
                         }
                     }
                     elseif ($informationStore -eq 'File') {
-                        $hostID = $hosts | Where-Object {$_.Hostname -eq $hostname} | Select-Object HostID -Unique
+                        $hostID = ($hosts | Where-Object {$_.Hostname -eq $hostname} | Select-Object HostID -Unique).HostID
                     }
                 }
 
+                # Setup the clone location
+                $cloneLocation = "$Destination\$CloneName.vhdx"
 
                 if ($informationStore -eq 'SQL') {
                     # Get the image id from the database
                     Write-PSFMessage -Message "Selecting image from database" -Level Verbose
                     try {
                         $query = "SELECT ImageID, ImageName FROM dbo.Image WHERE ImageLocation = '$ParentVhd'"
-                        $resultImage = Invoke-DbaSqlQuery -SqlInstance $pdcSqlInstance -SqlCredential $pdcCredential -Database $pdcDatabase -Query $query -EnableException
+                        $image = Invoke-DbaSqlQuery -SqlInstance $pdcSqlInstance -SqlCredential $pdcCredential -Database $pdcDatabase -Query $query -EnableException
                     }
                     catch {
                         Stop-PSFFunction -Message "Couldnt execute query for retrieving image id" -Target $query -ErrorRecord $_ -Continue
@@ -619,8 +629,6 @@
 
                     if ($PSCmdlet.ShouldProcess("$Destination\$CloneName.vhdx", "Adding clone to database")) {
                         if ($null -ne $resultImage.ImageID) {
-                            $cloneLocation = "$Destination\$CloneName.vhdx"
-
                             # Setup the query to add the clone to the database
                             Write-PSFMessage -Message "Adding clone $cloneLocation to database" -Level Verbose
                             $query = "
@@ -654,17 +662,27 @@
                     }
                 }
                 elseif ($informationStore -eq 'File') {
+                    # Get the image
+                    $image = Get-PSDCImage -ImageLocation $ParentVhd
+
+                    [array]$clones = $null
+
                     # Get all the images
-                    $clones = Get-PSDCImage
+                    $clones = Get-PSDCClone
 
                     # Setup the new image id
-                    $cloneID = ($clones[-1].CloneID | Sort-Object CloneID) + 1
+                    if ($clones.Count -ge 1) {
+                        $cloneID = ($clones[-1].CloneID | Sort-Object CloneID) + 1
+                    }
+                    else {
+                        $cloneID = 1
+                    }
 
                     # Add the new information to the array
                     $clones += [PSCustomObject]@{
                         CloneID       = $cloneID
-                        ImageID       = $($resultImage.ImageID)
-                        ImageName     = $($resultImage.ImageName)
+                        ImageID       = $image.ImageID
+                        ImageName     = $image.ImageName
                         HostID        = $hostId
                         HostName      = $hostname
                         CloneLocation = $cloneLocation
@@ -676,10 +694,18 @@
 
                     # Get the json file
                     $jsonFolder = Get-PSFConfigValue -FullName psdatabaseclone.informationstore.path
-                    $jsonCloneFile = "$jsonFolder\clones.json"
+
+                    # Create a PS Drive
+                    $null = New-PSDrive -Name JSONFolder -Root $jsonFolder -Credential $Credential -PSProvider FileSystem
+
+                    # Set the clone file
+                    $jsonCloneFile = JSONFolder:\clones.json
 
                     # Convert the data back to JSON
                     $clones | ConvertTo-Json | Set-Content $jsonCloneFile
+
+                    # Remove the PS Drive
+                    $null = Remove-PSDrive -Name JSONFolder
                 }
 
                 # Add the results to the custom object
@@ -691,8 +717,8 @@
                 $clone.SqlInstance = $server.DomainInstanceName
                 $clone.DatabaseName = $cloneDatabase
                 $clone.IsEnabled = $active
-                $clone.ImageID = $imageID
-                $clone.ImageName = $resultImage.ImageName
+                $clone.ImageID = $image.ImageID
+                $clone.ImageName = $image.ImageName
                 $clone.ImageLocation = $ParentVhd
                 $clone.HostName = $hostname
 
