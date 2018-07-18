@@ -100,7 +100,7 @@
                 # Test if the WSMan service is running
                 try {
                     if ($Credential) {
-                        $resultWSManService = [bool](Test-WSMan -ComputerName $comp -Credential $Credential -ErrorAction SilentlyContinue)
+                        $resultWSManService = [bool](Test-WSMan -ComputerName $comp -Credential $Credential -Authentication Default -ErrorAction SilentlyContinue)
                     }
                     else {
                         $resultWSManService = [bool](Test-WSMan -ComputerName $comp -ErrorAction SilentlyContinue)
