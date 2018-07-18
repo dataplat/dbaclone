@@ -72,24 +72,35 @@
     )
 
     begin {
-        # Get the module configurations
-        $pdcSqlInstance = Get-PSFConfigValue -FullName psdatabaseclone.database.Server
-        $pdcDatabase = Get-PSFConfigValue -FullName psdatabaseclone.database.name
-        if (-not $pdcCredential) {
-            $pdcCredential = Get-PSFConfigValue -FullName psdatabaseclone.database.credential -Fallback $null
-        }
-        else {
-            $pdcCredential = $PSDCSqlCredential
+
+        # Check if the setup has ran
+        if (-not (Get-PSFConfigValue -FullName psdatabaseclone.setup.status)) {
+            Stop-PSFFunction -Message "The module setup has NOT yet successfully run. Please run 'Set-PSDCConfiguration'"
+            return
         }
 
-        # Test the module database setup
-        try {
-            #Test-PSDCConfiguration -SqlCredential $pdcCredential -EnableException
-        }
-        catch {
-            Stop-PSFFunction -Message "Something is wrong in the module configuration" -ErrorRecord $_ -Continue
-        }
+        # Get the information store
+        $informationStore = Get-PSFConfigValue -FullName psdatabaseclone.informationstore.mode
 
+        if ($informationStore -eq 'SQL') {
+            # Get the module configurations
+            $pdcSqlInstance = Get-PSFConfigValue -FullName psdatabaseclone.database.Server
+            $pdcDatabase = Get-PSFConfigValue -FullName psdatabaseclone.database.name
+            if (-not $PSDCSqlCredential) {
+                $pdcCredential = Get-PSFConfigValue -FullName psdatabaseclone.database.credential -Fallback $null
+            }
+            else {
+                $pdcCredential = $PSDCSqlCredential
+            }
+
+            # Test the module database setup
+            try {
+                Test-PSDCConfiguration -SqlCredential $pdcCredential -EnableException
+            }
+            catch {
+                Stop-PSFFunction -Message "Something is wrong in the module configuration" -ErrorRecord $_ -Continue
+            }
+        }
     }
 
     process {
@@ -124,8 +135,10 @@
                 }
             }
 
-            $query = "
-                    SELECT i.ImageLocation,
+            if ($informationStore -eq 'SQL') {
+                $query = "
+                    SELECT  i.ImageID,
+                            i.ImageLocation,
                             c.CloneLocation,
                             c.SqlInstance,
                             c.DatabaseName,
@@ -138,15 +151,23 @@
                     WHERE h.HostName = '$hst';
                 "
 
-            Write-PSFMessage -Message "Query Host Clones`n$query" -Level Debug
+                Write-PSFMessage -Message "Query Host Clones`n$query" -Level Debug
 
-            # Get the clones registered for the host
-            try {
-                Write-PSFMessage -Message "Get the clones for host $hst" -Level Verbose
-                $results = Invoke-DbaSqlQuery -SqlInstance $pdcSqlInstance -SqlCredential $pdcCredential -Database $pdcDatabase -Query $query
+                # Get the clones registered for the host
+                try {
+                    Write-PSFMessage -Message "Get the clones for host $hst" -Level Verbose
+                    $results = Invoke-DbaSqlQuery -SqlInstance $pdcSqlInstance -SqlCredential $pdcCredential -Database $pdcDatabase -Query $query
+                }
+                catch {
+                    Stop-PSFFunction -Message "Couldn't get the clones for $hst" -Target $pdcSqlInstance -ErrorRecord $_ -Continue
+                }
             }
-            catch {
-                Stop-PSFFunction -Message "Couldn't get the clones for $hst" -Target $pdcSqlInstance -ErrorRecord $_ -Continue
+            elseif ($informationStore -eq 'File') {
+                # Get the path
+                $informationPath = Get-PSFConfigValue -FullName 'psdatabaseclone.informationstore.path'
+
+                # Get the clones
+                $results = Get-PSDCClone -HostName SQLDB1
             }
 
             # Loop through the results
@@ -156,8 +177,12 @@
                 Write-PSFMessage -Message "Retrieve the databases for $($result.SqlInstance)" -Level Verbose
                 $databases = Get-DbaDatabase -SqlInstance $result.SqlInstance -SqlCredential $SqlCredential
 
+                $image = Get-PSDCImage -ImageID $result.ImageID
+
                 # Check if the parent of the clone can be reached
-                if (Test-Path -Path $result.ImageLocation) {
+                $null = New-PSDrive -Name ImagePath -Root (Split-Path $image.ImageLocation) -Credential $Credential -PSProvider FileSystem
+
+                if (Test-Path -Path "ImagePath:\$($image.Name).vhdx") {
 
                     # Mount the clone
                     try {
@@ -181,6 +206,9 @@
                 else {
                     Stop-PSFFunction -Message "Vhd $($result.CloneLocation) cannot be mounted because parent path cannot be reached" -Target $clone -Continue
                 }
+
+                # Remove the PS Drive
+                $null = Remove-PSDrive -Name ImagePath
 
                 # Check if the database is already attached
                 if ($result.DatabaseName -notin $databases.Name) {
