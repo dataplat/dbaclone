@@ -191,7 +191,7 @@
 
             # Check the result
             if ($resultPSRemote.Result) {
-                $command = [scriptblock]::Create("Import-Module PSDatabaseClone")
+                $command = [scriptblock]::Create("Import-Module PSDatabaseClone -Force")
 
                 try {
                     Invoke-PSFCommand -ComputerName $computer -ScriptBlock $command -Credential $Credential
@@ -331,9 +331,7 @@
                         $null = New-PSDCVhdDisk -Destination $imagePath -FileName "$imageName.vhdx"
                     }
                     else {
-                        "Creating disk remotely"
                         $command = [ScriptBlock]::Create("New-PSDCVhdDisk -Destination $imagePath -FileName '$imageName.vhdx'")
-                        $command
                         $null = Invoke-PSFCommand -ComputerName $computer -ScriptBlock $command -Credential $DestinationCredential
                     }
 
@@ -537,11 +535,18 @@
                 }
             }
             elseif ($informationStore -eq 'File') {
+                [array]$images = $null
+
                 # Get all the images
                 $images = Get-PSDCImage
 
                 # Setup the new image id
-                $imageID = ($images[-1].ImageID | Sort-Object ImageID) + 1
+                if ($images.Count -ge 1) {
+                    $imageID = ($images[-1].ImageID | Sort-Object ImageID) + 1
+                }
+                else {
+                    $imageID = 1
+                }
 
                 # Add the new information to the array
                 $images += [PSCustomObject]@{
@@ -556,10 +561,18 @@
 
                 # Get the json file
                 $jsonFolder = Get-PSFConfigValue -FullName psdatabaseclone.informationstore.path
-                $jsonImageFile = "$jsonFolder\images.json"
+
+                # Create a PS Drive
+                $null = New-PSDrive -Name JSONFolder -Root $jsonFolder -Credential $Credential -PSProvider FileSystem
+
+                # Set the image file
+                $jsonImageFile = "JSONFolder:\images.json"
 
                 # Convert the data back to JSON
                 $images | ConvertTo-Json | Set-Content $jsonImageFile
+
+                # Remove the PS Drive
+                $null = Remove-PSDrive -Name JSONFolder
             }
 
             # Add the results to the custom object
