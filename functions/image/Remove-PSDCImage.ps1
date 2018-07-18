@@ -102,7 +102,7 @@
             # Get the module configurations
             $pdcSqlInstance = Get-PSFConfigValue -FullName psdatabaseclone.database.Server
             $pdcDatabase = Get-PSFConfigValue -FullName psdatabaseclone.database.name
-            if (-not $pdcCredential) {
+            if (-not $PSDCSqlCredential) {
                 $pdcCredential = Get-PSFConfigValue -FullName psdatabaseclone.database.credential -Fallback $null
             }
             else {
@@ -229,8 +229,9 @@
                         Stop-PSFFunction -Message "Couldn't retrieve clone records for host $($result.HostName)" -ErrorRecord $_  -Target $hst -Continue
                     }
                 }
-                elseif ($informationStore -eq 'SQL') {
-                    $results = Get-PSDCImage -ImageID $item.ImageID
+                elseif ($informationStore -eq 'File') {
+                    $results = @()
+                    $results = Get-PSDCClone -ImageID $item.ImageID
                 }
 
                 # Check the results
@@ -297,16 +298,31 @@
                         }
                     }
                     elseif ($informationStore -eq 'File') {
-                        $images = Get-PSDCImage
+                        $imageData = Get-PSDCImage
+                        [array]$newImageData = $null
 
-                        $images -= $images | Where-Object {$_.ImageID -eq $item.ImageID}
+                        $imageData = $imageData | Where-Object {$_.ImageID -ne $item.ImageID}
 
                         # Get the json file
                         $jsonFolder = Get-PSFConfigValue -FullName psdatabaseclone.informationstore.path
-                        $jsonImageFile = "$jsonFolder\images.json"
+
+                        # Create a PS Drive
+                        $null = New-PSDrive -Name JSONFolder -Root $jsonFolder -Credential $Credential -PSProvider FileSystem
+
+                        # Set the image file
+                        $jsonImageFile = JSONFolder:\images.json
 
                         # Convert the data back to JSON
-                        $images | ConvertTo-Json | Set-Content $jsonImageFile
+                        if($newImageData.Count -ge 1){
+                            $imageData | ConvertTo-Json | Set-Content $jsonImageFile
+                        }
+                        else{
+                            Clear-Content -Path $jsonImageFile
+                        }
+
+                        # Remove the PS Drive
+                        $null = Remove-PSDrive -Name JSONFolder
+
                     }
                 }
 
