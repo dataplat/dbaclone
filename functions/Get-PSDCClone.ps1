@@ -19,6 +19,11 @@
         Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted.
         This works similar as SqlCredential but is only meant for authentication to the PSDatabaseClone database server and database.
 
+    .PARAMETER Credential
+        Allows you to login to servers or use authentication to access files and folder/shares
+
+        $scred = Get-Credential, then pass $scred object to the -Credential parameter.
+
     .PARAMETER HostName
         Filter based on the hostname
 
@@ -66,6 +71,8 @@
         [System.Management.Automation.PSCredential]$SqlCredential,
         [System.Management.Automation.PSCredential]
         $PSDCSqlCredential,
+        [System.Management.Automation.PSCredential]
+        $Credential,
         [string[]]$HostName,
         [string[]]$Database,
         [int[]]$ImageID,
@@ -74,6 +81,12 @@
     )
 
     begin {
+        # Check if the setup has ran
+        if (-not (Get-PSFConfigValue -FullName psdatabaseclone.setup.status)) {
+            Stop-PSFFunction -Message "The module setup has NOT yet successfully run. Please run Set-PSDCConfiguration"
+            return
+        }
+
         # Get the information store
         $informationStore = Get-PSFConfigValue -FullName psdatabaseclone.informationstore.mode
 
@@ -123,9 +136,30 @@
                 Stop-PSFFunction -Message "Could not execute query" -ErrorRecord $_ -Target $query
             }
         }
-        elseif($informationStore -eq 'File'){
+        elseif ($informationStore -eq 'File') {
+            # Get the path
+            $informationPath = Get-PSFConfigValue -FullName 'psdatabaseclone.informationstore.path'
 
-            $results = Get-ChildItem -Path (Get-PSFConfigValue -FullName 'psdatabaseclone.informationstore.path') -Filter *clones.json | ForEach-Object { Get-Content $_.FullName | ConvertFrom-Json }
+            if (Test-Path -Path $informationPath -Credential $Credential) {
+                # Create the PS Drive and get the results
+                try {
+                    $null = New-PSDrive -Name InformationPath -Root $informationPath -Credential $Credential -PSProvider FileSystem
+
+                    # Get the clones
+                    $results = Get-ChildItem -Path InformationPath:\ -Filter "*clones.json" | ForEach-Object { Get-Content $_.FullName | ConvertFrom-Json }
+
+                    # Remove the PS Drive
+                    Remove-PSDrive -Name InformationPath
+                }
+                catch {
+                    Stop-PSFFunction -Message "Could not retrieve clone information from files" -ErrorRecord $_ -Target $informationPath
+                    return
+                }
+            }
+            else {
+                Stop-PSFFunction -Message "Could not reach clone information location '$informationPath'" -ErrorRecord $_ -Target $informationPath
+                return
+            }
         }
 
         # Filter host name
