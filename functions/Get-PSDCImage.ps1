@@ -19,6 +19,11 @@
         Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted.
         This works similar as SqlCredential but is only meant for authentication to the PSDatabaseClone database server and database.
 
+    .PARAMETER Credential
+        Allows you to login to servers or use authentication to access files and folder/shares
+
+        $scred = Get-Credential, then pass $scred object to the -Credential parameter.
+
     .PARAMETER ImageID
         Filter based on the image id
 
@@ -63,6 +68,8 @@
         [System.Management.Automation.PSCredential]$SqlCredential,
         [System.Management.Automation.PSCredential]
         $PSDCSqlCredential,
+        [System.Management.Automation.PSCredential]
+        $Credential,
         [int[]]$ImageID,
         [string[]]$ImageName,
         [string[]]$ImageLocation,
@@ -112,8 +119,30 @@
                 Stop-PSFFunction -Message "Could retrieve images from database $pdcDatabase" -ErrorRecord $_ -Target $query
             }
         }
-        elseif($informationStore -eq 'File'){
-            $results = Get-ChildItem -Path (Get-PSFConfigValue -FullName 'psdatabaseclone.informationstore.path') -Filter *images.json | ForEach-Object { Get-Content $_.FullName | ConvertFrom-Json }
+        elseif ($informationStore -eq 'File') {
+            # Get the path
+            $informationPath = Get-PSFConfigValue -FullName 'psdatabaseclone.informationstore.path'
+
+            if (Test-Path -Path $informationPath -Credential $Credential) {
+                # Create the PS Drive and get the results
+                try {
+                    $null = New-PSDrive -Name InformationPath -Root $informationPath -Credential $Credential -PSProvider FileSystem
+
+                    # Get the clones
+                    $results = Get-ChildItem -Path InformationPath:\ -Filter "*images.json" | ForEach-Object { Get-Content $_.FullName | ConvertFrom-Json }
+
+                    # Remove the PS Drive
+                    Remove-PSDrive -Name InformationPath
+                }
+                catch {
+                    Stop-PSFFunction -Message "Could not retrieve image information from files" -ErrorRecord $_ -Target $informationPath
+                    return
+                }
+            }
+            else {
+                Stop-PSFFunction -Message "Could not reach image information location '$informationPath'" -ErrorRecord $_ -Target $informationPath
+                return
+            }
         }
 
         # Filter image id
