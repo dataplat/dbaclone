@@ -125,6 +125,12 @@
     )
 
     begin {
+        # Check if the setup has ran
+        if (-not (Get-PSFConfigValue -FullName psdatabaseclone.setup.status)) {
+            Stop-PSFFunction -Message "The module setup has NOT yet successfully run. Please run 'Set-PSDCConfiguration'"
+            return
+        }
+
         # Get the information store
         $informationStore = Get-PSFConfigValue -FullName psdatabaseclone.informationstore.mode
 
@@ -331,7 +337,9 @@
                         $null = New-PSDCVhdDisk -Destination $imagePath -FileName "$imageName.vhdx"
                     }
                     else {
+                        "Creating disk remotely"
                         $command = [ScriptBlock]::Create("New-PSDCVhdDisk -Destination $imagePath -FileName '$imageName.vhdx'")
+                        $command
                         $null = Invoke-PSFCommand -ComputerName $computer -ScriptBlock $command -Credential $DestinationCredential
                     }
 
