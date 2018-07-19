@@ -28,6 +28,22 @@ if (-not (Get-PSFConfigValue -FullName psdatabaseclone.setup.status)) {
     Write-PSFMessage -Message "The module is not yet configured. Please run Set-PSDCConfiguration to make the neccesary changes" -Level Warning
 }
 
+# Check the information mode
+if((Get-PSFConfigValue -FullName psdatabaseclone.informationstore.mode) -eq 'File'){
+    # Get the json file
+    $jsonFolder = Get-PSFConfigValue -FullName psdatabaseclone.informationstore.path
+
+    # Create a PS Drive
+    if (-not [bool](Get-PSDrive -Name PSDCJSONFolder -Scope Script)) {
+        try {
+            $null = New-PSDrive -Name PSDCJSONFolder -Root $jsonFolder -Credential $Credential -PSProvider FileSystem -Scope Script
+        }
+        catch {
+            Stop-PSFFunction -Message "Couldn't create PS Drive" -Target $jsonFolder -ErrorRecord $_
+        }
+    }
+}
+
 # Import the types
 $TypeAliasTable = @{
     PSDCClone = "PSDatabaseClone.Parameter.Clone"
