@@ -303,6 +303,10 @@
             else {
                 Write-PSFMessage -Message "Database already contains objects" -Level Verbose
             }
+
+            # Set the database server and database values
+            Set-PSFConfig -Module PSDatabaseClone -Name database.server -Value $SqlInstance -Validation string
+            Set-PSFConfig -Module PSDatabaseClone -Name database.name -Value $Database -Validation string
         }
         else {
             # Create the JSON files
@@ -352,10 +356,6 @@
                 return
             }
         }
-
-        # Set the database server and database values
-        Set-PSFConfig -Module PSDatabaseClone -Name database.server -Value $SqlInstance -Validation string
-        Set-PSFConfig -Module PSDatabaseClone -Name database.name -Value $Database -Validation string
 
         # Set the credential for the database if needed
         if ($SqlCredential) {
