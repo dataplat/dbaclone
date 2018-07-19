@@ -113,7 +113,7 @@
         Write-PSFMessage -Message "Started PSDatabaseClone Setup" -Level Output
 
         # Check if the user needs to be asked for user input
-        if ($InputPrompt -or (-not $SqlInstance -and -not $SqlInstance -and -not $Credential -and -not $Database)) {
+        if ($InputPrompt -or ($InformationStore -notin 'SQL', 'File') -or (-not $SqlInstance -and -not $SqlInstance -and -not $Credential -and -not $Database)) {
             # Setup the choices for the user
             $choiceDatabase = New-Object System.Management.Automation.Host.ChoiceDescription '&Database', 'Save the information in a database'
             $choiceDatabase.HelpMessage = "Choose to have the information saved in a database. This is reliable and is the default choice"
@@ -140,23 +140,6 @@
                 # If the credentials are entered create the credential object
                 if (($DatabaseUser -ne '') -and (($databasePass -ne '') -or ($null -ne $databasePass))) {
                     $SqlCredential = New-Object System.Management.Automation.PSCredential ($databaseUser, $databasePass)
-                }
-
-                # Try connecting to the instance
-                if ($SqlInstance) {
-                    Write-PSFMessage -Message "Attempting to connect to Sql Server $SqlInstance.." -Level Verbose
-                    try {
-                        $server = Connect-DbaInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
-                    }
-                    catch {
-                        Stop-PSFFunction -Message "Could not connect to Sql Server instance $SqlInstance" -ErrorRecord $_ -Target $SqlInstance
-                        return
-                    }
-                }
-
-                # Setup the database name
-                if (-not $Database -or $Database -eq '') {
-                    $Database = "PSDatabaseClone"
                 }
 
                 # Set the flag for the new database
@@ -239,6 +222,23 @@
 
 
         if ($InformationStore -eq 'SQL') {
+            # Setup the database name
+            if (-not $Database -or $Database -eq '') {
+                $Database = "PSDatabaseClone"
+            }
+
+            # Try connecting to the instance
+            if ($SqlInstance) {
+                Write-PSFMessage -Message "Attempting to connect to Sql Server $SqlInstance.." -Level Verbose
+                try {
+                    $server = Connect-DbaInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
+                }
+                catch {
+                    Stop-PSFFunction -Message "Could not connect to Sql Server instance $SqlInstance" -ErrorRecord $_ -Target $SqlInstance
+                    return
+                }
+            }
+
             # Check if the database is already present
             if (($server.Databases.Name -contains $Database) -or ($server.Databases[$Database].Tables.Count -ge 1)) {
                 if ($Force) {
@@ -343,6 +343,9 @@
                         $null = New-Item -Path PSDatabaseClone:\clones.json -Force:$Force
                     }
                 }
+
+                # Set the path in case it's set for file store mode
+                Set-PSFConfig -Module PSDatabaseClone -Name informationstore.path -Value "$filePath" -Validation string
             }
             catch {
                 Stop-PSFFunction -Message "Could not create the JSON files in path $filePath" -Target $filePath -ErrorRecord $_
@@ -351,27 +354,24 @@
         }
 
         # Set the database server and database values
-        Set-PSFConfig -Module PSDatabaseClone -Name database.server -Value $SqlInstance -Initialize -Validation string
-        Set-PSFConfig -Module PSDatabaseClone -Name database.name -Value $Database -Initialize -Validation string
+        Set-PSFConfig -Module PSDatabaseClone -Name database.server -Value $SqlInstance -Validation string
+        Set-PSFConfig -Module PSDatabaseClone -Name database.name -Value $Database -Validation string
 
         # Set the credential for the database if needed
         if ($SqlCredential) {
-            Set-PSFConfig -Module PSDatabaseClone -Name informationstore.credential -Value $SqlCredential -Initialize
+            Set-PSFConfig -Module PSDatabaseClone -Name informationstore.credential -Value $SqlCredential
         }
 
         # Set the credential for files and folders if needed
         if ($Credential) {
-            Set-PSFConfig -Module PSDatabaseClone -Name informationstore.credential -Value $Credential -Initialize
+            Set-PSFConfig -Module PSDatabaseClone -Name informationstore.credential -Value $Credential
         }
 
         # Set if Hyper-V is enabled
         Set-PSFConfig -Module PSDatabaseClone -Name hyperv.enabled -Value (Test-PSDCHyperVEnabled) -Validation bool
 
         # Set the information store mode
-        Set-PSFConfig -Module PSDatabaseClone -Name informationstore.mode -Value $InformationStore -Initialize
-
-        # Set the path in case it's set for file store mode
-        Set-PSFConfig -Module PSDatabaseClone -Name informationstore.path -Value "$filePath" -Validation string
+        Set-PSFConfig -Module PSDatabaseClone -Name informationstore.mode -Value $InformationStore
 
         # Register the configurations in the system for all users
         Get-PSFConfig -FullName psdatabaseclone.informationstore.mode | Register-PSFConfig -Scope SystemDefault
