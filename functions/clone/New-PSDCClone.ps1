@@ -663,20 +663,11 @@
                         IsEnabled     = $active
                     }
 
-                    # Get the json file
-                    $jsonFolder = Get-PSFConfigValue -FullName psdatabaseclone.informationstore.path
-
-                    # Create a PS Drive
-                    $null = New-PSDrive -Name JSONFolder -Root $jsonFolder -Credential $Credential -PSProvider FileSystem
-
                     # Set the clone file
                     $jsonCloneFile = "JSONFolder:\clones.json"
 
                     # Convert the data back to JSON
                     $clones | ConvertTo-Json | Set-Content $jsonCloneFile
-
-                    # Remove the PS Drive
-                    $null = Remove-PSDrive -Name JSONFolder -Force
                 }
 
                 # Add the results to the custom object

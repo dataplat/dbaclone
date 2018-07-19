@@ -559,33 +559,11 @@
                     CreatedOn         = (Get-Date -format "yyyyMMddHHmmss")
                 }
 
-# Get the json file
-$jsonFolder = Get-PSFConfigValue -FullName psdatabaseclone.informationstore.path
+                # Set the image file
+                $jsonImageFile = "PSDCJSONFolder:\images.json"
 
-# Create a PS Drive
-if (-not [bool](Get-PSDrive -Name PSDCJSONFolder -ErrorAction SilentlyContinue -Scope Script)) {
-    try {
-        $null = New-PSDrive -Name PSDCJSONFolder -Root $jsonFolder -Credential $Credential -PSProvider FileSystem -Scope Script
-    }
-    catch {
-        Stop-PSFFunction -Message "Couldn't create PS Drive" -Target $jsonFolder -ErrorRecord $_
-    }
-}
-
-# Set the image file
-$jsonImageFile = "PSDCJSONFolder:\images.json"
-
-# Convert the data back to JSON
-$images | ConvertTo-Json | Set-Content $jsonImageFile
-
-# Remove the PS Drive
-try {
-    Remove-PSDrive -Name PSDCJSONFolder -Force -PSProvider FileSystem -Scope Script
-}
-catch {
-    Stop-PSFFunction -Message "Couldn't create PS Drive" -Target $jsonFolder -ErrorRecord $_
-}
-
+                # Convert the data back to JSON
+                $images | ConvertTo-Json | Set-Content $jsonImageFile
             }
 
             # Add the results to the custom object

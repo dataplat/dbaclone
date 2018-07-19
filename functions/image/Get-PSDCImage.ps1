@@ -131,33 +131,18 @@
             }
         }
         elseif ($informationStore -eq 'File') {
-            # Get the path
-            $informationPath = Get-PSFConfigValue -FullName 'psdatabaseclone.informationstore.path'
-
-            # Create the PS Drive and get the results
-            if (-not [bool](Get-PSDrive -Name InformationPath -ErrorAction SilentlyContinue -Scope Script)) {
-                try {
-                    $null = New-PSDrive -Name InformationPath -Root $informationPath -Credential $Credential -PSProvider FileSystem -Scope Script
-
-                    if (Test-Path -Path "InformationPath:\") {
-                        # Get the clones
-                        $results = Get-ChildItem -Path "InformationPath:\" -Filter "*images.json" | ForEach-Object { Get-Content $_.FullName | ConvertFrom-Json }
-                    }
-                    else {
-                        Stop-PSFFunction -Message "Could not reach image information location '$informationPath'" -ErrorRecord $_ -Target $informationPath
-                        return
-                    }
-
-                    # Remove the PS Drive
-                    Remove-PSDrive -Name InformationPath -Scope Script
+            try {
+                if (Test-Path -Path "PSDCJSONFolder:\") {
+                    # Get the clones
+                    $results = Get-ChildItem -Path "PSDCJSONFolder:\" -Filter "*images.json" | ForEach-Object { Get-Content $_.FullName | ConvertFrom-Json }
                 }
-                catch {
-                    Stop-PSFFunction -Message "Couldn't create PS Drive" -Target $jsonFolder -ErrorRecord $_
+                else {
+                    Stop-PSFFunction -Message "Could not reach image information location 'PSDCJSONFolder:\'" -ErrorRecord $_ -Target "PSDCJSONFolder:\"
+                    return
                 }
             }
             catch {
-                Stop-PSFFunction -Message "Could not retrieve image information from files" -ErrorRecord $_ -Target $informationPath
-                return
+                Stop-PSFFunction -Message "Couldn't get results from JSN folder" -Target "PSDCJSONFolder:\" -ErrorRecord $_
             }
         }
 

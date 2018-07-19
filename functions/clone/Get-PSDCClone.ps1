@@ -142,27 +142,19 @@
             }
         }
         elseif ($informationStore -eq 'File') {
-            # Get the path
-            $informationPath = Get-PSFConfigValue -FullName 'psdatabaseclone.informationstore.path'
-
             # Create the PS Drive and get the results
             try {
-                $null = New-PSDrive -Name InformationPath -Root $informationPath -Credential $Credential -PSProvider FileSystem
-
-                if (Test-Path -Path "InformationPath:\") {
+                if (Test-Path -Path "PSDCJSONFolder:\") {
                     # Get the clones
-                    $results = Get-ChildItem -Path "InformationPath:\" -Filter "*clones.json" | ForEach-Object { Get-Content $_.FullName | ConvertFrom-Json }
+                    $results = Get-ChildItem -Path "PSDCJSONFolder:\" -Filter "*clones.json" | ForEach-Object { Get-Content $_.FullName | ConvertFrom-Json }
                 }
                 else {
-                    Stop-PSFFunction -Message "Could not reach image information location '$informationPath'" -ErrorRecord $_ -Target $informationPath
+                    Stop-PSFFunction -Message "Could not reach clone information location 'PSDCJSONFolder:\'" -ErrorRecord $_ -Target "PSDCJSONFolder:\"
                     return
                 }
-
-                # Remove the PS Drive
-                Remove-PSDrive -Name InformationPath
             }
             catch {
-                Stop-PSFFunction -Message "Could not retrieve image information from files" -ErrorRecord $_ -Target $informationPath
+                Stop-PSFFunction -Message "Couldn't get results from JSN folder" -ErrorRecord $_ -Target "PSDCJSONFolder:\"
                 return
             }
         }
