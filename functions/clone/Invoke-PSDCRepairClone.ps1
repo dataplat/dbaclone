@@ -78,29 +78,6 @@
             Stop-PSFFunction -Message "The module setup has NOT yet successfully run. Please run 'Set-PSDCConfiguration'"
             return
         }
-
-        # Get the information store
-        $informationStore = Get-PSFConfigValue -FullName psdatabaseclone.informationstore.mode
-
-        if ($informationStore -eq 'SQL') {
-            # Get the module configurations
-            $pdcSqlInstance = Get-PSFConfigValue -FullName psdatabaseclone.database.Server
-            $pdcDatabase = Get-PSFConfigValue -FullName psdatabaseclone.database.name
-            if (-not $PSDCSqlCredential) {
-                $pdcCredential = Get-PSFConfigValue -FullName psdatabaseclone.informationstore.credential -Fallback $null
-            }
-            else {
-                $pdcCredential = $PSDCSqlCredential
-            }
-
-            # Test the module database setup
-            try {
-                Test-PSDCConfiguration -SqlCredential $pdcCredential -EnableException
-            }
-            catch {
-                Stop-PSFFunction -Message "Something is wrong in the module configuration" -ErrorRecord $_ -Continue
-            }
-        }
     }
 
     process {
