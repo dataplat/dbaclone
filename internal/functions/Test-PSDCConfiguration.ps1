@@ -71,7 +71,7 @@
         # Get the configurations for the program database
         $Database = Get-PSFConfigValue -FullName psdatabaseclone.database.name -Fallback "NotConfigured"
         $SqlInstance = Get-PSFConfigValue -FullName psdatabaseclone.database.server -Fallback "NotConfigured"
-        $SqlCredential = Get-PSFConfigValue -FullName psdatabaseclone.database.credential -Fallback $null
+        $SqlCredential = Get-PSFConfigValue -FullName psdatabaseclone.informationstore.credential -Fallback $null
     }
 
     Write-PSFMessage -Message "Checking configurations" -Level Verbose

@@ -103,7 +103,7 @@
             $pdcSqlInstance = Get-PSFConfigValue -FullName psdatabaseclone.database.Server
             $pdcDatabase = Get-PSFConfigValue -FullName psdatabaseclone.database.name
             if (-not $PSDCSqlCredential) {
-                $pdcCredential = Get-PSFConfigValue -FullName psdatabaseclone.database.credential -Fallback $null
+                $pdcCredential = Get-PSFConfigValue -FullName psdatabaseclone.informationstore.credential -Fallback $null
             }
             else {
                 $pdcCredential = $PSDCSqlCredential

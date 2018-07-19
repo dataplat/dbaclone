@@ -43,7 +43,7 @@
         Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted.
         This works similar as SqlCredential but is only meant for authentication to the PSDatabaseClone database server and database.
 
-        By default the script will try to retrieve the configuration value "psdatabaseclone.database.credential"
+        By default the script will try to retrieve the configuration value "psdatabaseclone.informationstore.credential"
 
     .PARAMETER ImageNetworkPath
         Network path where to save the image. This has to be a UNC path
@@ -131,6 +131,9 @@
             return
         }
 
+        # Set the location
+        Set-Location C:\
+
         # Get the information store
         $informationStore = Get-PSFConfigValue -FullName psdatabaseclone.informationstore.mode
 
@@ -139,7 +142,7 @@
             $pdcSqlInstance = Get-PSFConfigValue -FullName psdatabaseclone.database.Server
             $pdcDatabase = Get-PSFConfigValue -FullName psdatabaseclone.database.name
             if (-not $PSDCSqlCredential) {
-                $pdcCredential = Get-PSFConfigValue -FullName psdatabaseclone.database.credential -Fallback $null
+                $pdcCredential = Get-PSFConfigValue -FullName psdatabaseclone.informationstore.credential -Fallback $null
             }
             else {
                 $pdcCredential = $PSDCSqlCredential
@@ -559,20 +562,33 @@
                     CreatedOn         = (Get-Date -format "yyyyMMddHHmmss")
                 }
 
-                # Get the json file
-                $jsonFolder = Get-PSFConfigValue -FullName psdatabaseclone.informationstore.path
+# Get the json file
+$jsonFolder = Get-PSFConfigValue -FullName psdatabaseclone.informationstore.path
 
-                # Create a PS Drive
-                $null = New-PSDrive -Name JSONFolder -Root $jsonFolder -Credential $Credential -PSProvider FileSystem
+# Create a PS Drive
+if (-not [bool](Get-PSDrive -Name PSDCJSONFolder -ErrorAction SilentlyContinue -Scope Script)) {
+    try {
+        $null = New-PSDrive -Name PSDCJSONFolder -Root $jsonFolder -Credential $Credential -PSProvider FileSystem -Scope Script
+    }
+    catch {
+        Stop-PSFFunction -Message "Couldn't create PS Drive" -Target $jsonFolder -ErrorRecord $_
+    }
+}
 
-                # Set the image file
-                $jsonImageFile = "JSONFolder:\images.json"
+# Set the image file
+$jsonImageFile = "PSDCJSONFolder:\images.json"
 
-                # Convert the data back to JSON
-                $images | ConvertTo-Json | Set-Content $jsonImageFile
+# Convert the data back to JSON
+$images | ConvertTo-Json | Set-Content $jsonImageFile
 
-                # Remove the PS Drive
-                Remove-PSDrive -Name JSONFolder -Force
+# Remove the PS Drive
+try {
+    Remove-PSDrive -Name PSDCJSONFolder -Force -PSProvider FileSystem -Scope Script
+}
+catch {
+    Stop-PSFFunction -Message "Couldn't create PS Drive" -Target $jsonFolder -ErrorRecord $_
+}
+
             }
 
             # Add the results to the custom object
