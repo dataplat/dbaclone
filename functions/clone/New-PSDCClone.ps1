@@ -442,7 +442,6 @@
                     $databaseFiles = Invoke-PSFCommand -ComputerName $computer -ScriptBlock $command -Credential $Credential
                 }
 
-
                 # Setup the database filestructure
                 $dbFileStructure = New-Object System.Collections.Specialized.StringCollection
 
@@ -664,7 +663,7 @@
                     }
 
                     # Set the clone file
-                    $jsonCloneFile = "JSONFolder:\clones.json"
+                    $jsonCloneFile = "PSDCJSONFolder:\clones.json"
 
                     # Convert the data back to JSON
                     $clones | ConvertTo-Json | Set-Content $jsonCloneFile
