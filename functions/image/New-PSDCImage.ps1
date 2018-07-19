@@ -77,12 +77,12 @@
     .NOTES
         Author: Sander Stad (@sqlstad, sqlstad.nl)
 
-        Website: https://psdatabaseclone.io
+        Website: https://psdatabaseclone.org
         Copyright: (C) Sander Stad, sander@sqlstad.nl
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://psdatabaseclone.io/
+        https://psdatabaseclone.org/
 
     .EXAMPLE
         New-PSDCImage -SourceSqlInstance SQLDB1 -DestinationSqlInstance SQLDB2 -ImageLocalPath C:\Temp\images\ -Database DB1 -CreateFullBackup
@@ -130,9 +130,6 @@
             Stop-PSFFunction -Message "The module setup has NOT yet successfully run. Please run 'Set-PSDCConfiguration'"
             return
         }
-
-        # Set the location
-        Set-Location C:\
 
         # Get the information store
         $informationStore = Get-PSFConfigValue -FullName psdatabaseclone.informationstore.mode

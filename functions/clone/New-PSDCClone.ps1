@@ -63,12 +63,12 @@
     .NOTES
         Author: Sander Stad (@sqlstad, sqlstad.nl)
 
-        Website: https://psdatabaseclone.io
+        Website: https://psdatabaseclone.org
         Copyright: (C) Sander Stad, sander@sqlstad.nl
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://psdatabaseclone.io/
+        https://psdatabaseclone.org/
 
     .EXAMPLE
         New-PSDCClone -SqlInstance SQLDB1 -ParentVhd C:\Temp\images\DB1_20180623203204.vhdx -Destination C:\Temp\clones\ -CloneName DB1_Clone1
@@ -598,13 +598,13 @@
                     }
 
                     if ($PSCmdlet.ShouldProcess("$Destination\$CloneName.vhdx", "Adding clone to database")) {
-                        if ($null -ne $resultImage.ImageID) {
+                        if ($null -ne $image.ImageID) {
                             # Setup the query to add the clone to the database
                             Write-PSFMessage -Message "Adding clone $cloneLocation to database" -Level Verbose
                             $query = "
                                 DECLARE @CloneID INT;
                                 EXECUTE dbo.Clone_New @CloneID = @CloneID OUTPUT,                   -- int
-                                                    @ImageID = $($resultImage.ImageID),             -- int
+                                                    @ImageID = $($image.ImageID),             -- int
                                                     @HostID = $hostId,			                    -- int
                                                     @CloneLocation = '$cloneLocation',	            -- varchar(255)
                                                     @AccessPath = '$accessPath',                    -- varchar(255)
@@ -620,6 +620,7 @@
                             # execute the query
                             try {
                                 $result = Invoke-DbaSqlQuery -SqlInstance $pdcSqlInstance -SqlCredential $pdcCredential -Database $pdcDatabase -Query $query -EnableException
+                                $cloneID = $result.CloneID
                             }
                             catch {
                                 Stop-PSFFunction -Message "Couldnt execute query for adding clone" -Target $query -ErrorRecord $_ -Continue

@@ -57,12 +57,12 @@
     .NOTES
         Author: Sander Stad (@sqlstad, sqlstad.nl)
 
-        Website: https://psdatabaseclone.io
+        Website: https://psdatabaseclone.org
         Copyright: (C) Sander Stad, sander@sqlstad.nl
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://psdatabaseclone.io/
+        https://psdatabaseclone.org/
 
     .EXAMPLE
         Remove-PSDCClone -HostName Host1 -Database Clone1

@@ -67,12 +67,12 @@
     .NOTES
         Author: Sander Stad (@sqlstad, sqlstad.nl)
 
-        Website: https://psdatabaseclone.io
+        Website: https://psdatabaseclone.org
         Copyright: (C) Sander Stad, sander@sqlstad.nl
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://psdatabaseclone.io/
+        https://psdatabaseclone.org/
 
     .EXAMPLE
         Set-PSDCConfiguration -SqlInstance SQLDB1 -Database PSDatabaseClone
