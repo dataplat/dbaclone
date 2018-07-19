@@ -47,6 +47,11 @@
         https://psdatabaseclone.io/
 
     .EXAMPLE
+        Get-PSDCImage
+
+        Get all the images
+
+    .EXAMPLE
         Get-PSDCImage -ImageName DB1_20180704220944, DB2_20180704221144
 
         Retrieve the images for DB1_20180704220944, DB2_20180704221144
@@ -92,7 +97,7 @@
             $pdcSqlInstance = Get-PSFConfigValue -FullName psdatabaseclone.database.Server
             $pdcDatabase = Get-PSFConfigValue -FullName psdatabaseclone.database.name
             if (-not $PSDCSqlCredential) {
-                $pdcCredential = Get-PSFConfigValue -FullName psdatabaseclone.database.credential -Fallback $null
+                $pdcCredential = Get-PSFConfigValue -FullName psdatabaseclone.informationstore.credential -Fallback $null
             }
             else {
                 $pdcCredential = $PSDCSqlCredential
@@ -130,20 +135,25 @@
             $informationPath = Get-PSFConfigValue -FullName 'psdatabaseclone.informationstore.path'
 
             # Create the PS Drive and get the results
-            try {
-                $null = New-PSDrive -Name InformationPath -Root $informationPath -Credential $Credential -PSProvider FileSystem
+            if (-not [bool](Get-PSDrive -Name InformationPath -ErrorAction SilentlyContinue -Scope Script)) {
+                try {
+                    $null = New-PSDrive -Name InformationPath -Root $informationPath -Credential $Credential -PSProvider FileSystem -Scope Script
 
-                if (Test-Path -Path "InformationPath:\") {
-                    # Get the clones
-                    $results = Get-ChildItem -Path "InformationPath:\" -Filter "*images.json" | ForEach-Object { Get-Content $_.FullName | ConvertFrom-Json }
-                }
-                else {
-                    Stop-PSFFunction -Message "Could not reach image information location '$informationPath'" -ErrorRecord $_ -Target $informationPath
-                    return
-                }
+                    if (Test-Path -Path "InformationPath:\") {
+                        # Get the clones
+                        $results = Get-ChildItem -Path "InformationPath:\" -Filter "*images.json" | ForEach-Object { Get-Content $_.FullName | ConvertFrom-Json }
+                    }
+                    else {
+                        Stop-PSFFunction -Message "Could not reach image information location '$informationPath'" -ErrorRecord $_ -Target $informationPath
+                        return
+                    }
 
-                # Remove the PS Drive
-                Remove-PSDrive -Name InformationPath
+                    # Remove the PS Drive
+                    Remove-PSDrive -Name InformationPath -Scope Script
+                }
+                catch {
+                    Stop-PSFFunction -Message "Couldn't create PS Drive" -Target $jsonFolder -ErrorRecord $_
+                }
             }
             catch {
                 Stop-PSFFunction -Message "Could not retrieve image information from files" -ErrorRecord $_ -Target $informationPath
