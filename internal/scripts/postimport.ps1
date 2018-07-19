@@ -32,11 +32,12 @@ if (-not (Get-PSFConfigValue -FullName psdatabaseclone.setup.status)) {
 if((Get-PSFConfigValue -FullName psdatabaseclone.informationstore.mode) -eq 'File'){
     # Get the json file
     $jsonFolder = Get-PSFConfigValue -FullName psdatabaseclone.informationstore.path
+    $jsonCred = Get-PSFConfigValue -FullName psdatabaseclone.informationstore.credential
 
     # Create a PS Drive
-    if (-not [bool](Get-PSDrive -Name PSDCJSONFolder -Scope Script)) {
+    if (-not [bool](Get-PSDrive -Name PSDCJSONFolder -Scope Global)) {
         try {
-            $null = New-PSDrive -Name PSDCJSONFolder -Root $jsonFolder -Credential $Credential -PSProvider FileSystem -Scope Script
+            $null = New-PSDrive -Name PSDCJSONFolder -Root $jsonFolder -Credential $jsonCred -PSProvider FileSystem -Scope Global
         }
         catch {
             Stop-PSFFunction -Message "Couldn't create PS Drive" -Target $jsonFolder -ErrorRecord $_
