@@ -50,6 +50,11 @@
         https://psdatabaseclone.io/
 
     .EXAMPLE
+        Get-PSDCClone
+
+        Get all the clones
+
+    .EXAMPLE
         Get-PSDCClone -HostName host1, host2
 
         Retrieve the clones for host1 and host2
@@ -96,7 +101,7 @@
             $pdcSqlInstance = Get-PSFConfigValue -FullName psdatabaseclone.database.server
             $pdcDatabase = Get-PSFConfigValue -FullName psdatabaseclone.database.name
             if (-not $PSDCSqlCredential) {
-                $pdcCredential = Get-PSFConfigValue -FullName psdatabaseclone.database.credential -Fallback $null
+                $pdcCredential = Get-PSFConfigValue -FullName psdatabaseclone.informationstore.credential -Fallback $null
             }
             else {
                 $pdcCredential = $PSDCSqlCredential
