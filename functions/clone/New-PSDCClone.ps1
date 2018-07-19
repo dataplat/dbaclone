@@ -163,16 +163,15 @@
                 Stop-PSFFunction -Message "Could not connect to Sql Server instance $SqlInstance" -ErrorRecord $_ -Target $SqlInstance
             }
 
-            # Check if Hyper-V enabled for the SQL instance
-            if (-not (Test-PSDCHyperVEnabled -HostName $server.Name -Credential $Credential)) {
-                Stop-PSFFunction -Message "Hyper-V is not enabled on the remote host." -ErrorRecord $_ -Target $uriHost -Continue
-            }
-
             # Setup the computer object
             $computer = [PsfComputer]$server.Name
 
-            if (-not $computer.IsLocalhost) {
+            # Check if Hyper-V enabled for the SQL instance
+            if (-not (Test-PSDCHyperVEnabled -HostName $computer.ComputerName -Credential $Credential)) {
+                Stop-PSFFunction -Message "Hyper-V is not enabled on host." -ErrorRecord $_ -Target $computer -Continue
+            }
 
+            if (-not $computer.IsLocalhost) {
                 # Get the result for the remote test
                 $resultPSRemote = Test-PSDCRemoting -ComputerName $server.Name -Credential $Credential
 
@@ -245,35 +244,7 @@
             # Loopt through all the databases
             foreach ($db in $Database) {
 
-                if ($informationStore -eq 'SQL') {
-
-                    # Check for the parent
-                    if ($LatestImage) {
-                        if ($PSCmdlet.ShouldProcess($LatestImage, "Retrieving latest image")) {
-                            $query = "
-                            SELECT TOP ( 1 )
-                                    [ImageLocation],
-                                    [SizeMB],
-                                    [DatabaseName],
-                                    [DatabaseTimestamp],
-                                    [CreatedOn]
-                            FROM [dbo].[Image]
-                            WHERE DatabaseName = '$db'
-                            ORDER BY CreatedOn DESC;
-                        "
-
-                            try {
-                                $result = Invoke-DbaSqlQuery -SqlInstance $pdcSqlInstance -SqlCredential $pdcCredential -Database $pdcDatabase -Query $query -EnableException
-
-
-                            }
-                            catch {
-                                Stop-PSFFunction -Message "Could not execute query to retrieve latest image" -Target $pdcSqlInstance -ErrorRecord $_ -Continue
-                            }
-                        }
-                    }
-                }
-                elseif ($informationStore -eq 'File') {
+                if ($LatestImage) {
                     $images = Get-PSDCImage -Database $db
                     $result = $images[-1] | Sort-Object CreatedOn
                 }
@@ -444,7 +415,7 @@
                             $partition = Get-Partition -Disk $disk
 
                             # Create an access path for the disk
-                            $null = Add-PartitionAccessPath -DiskNumber $disk.Number -PartitionNumber $partition[1].PartitionNumber -AccessPath $accessPath -ErrorAction Ignore
+                            $null = Add-PartitionAccessPath -DiskNumber $disk.Number -PartitionNumber $partition[1].PartitionNumber -AccessPath $accessPath -ErrorAction SilentlyContinue
                         }
                         else {
                             $command = [ScriptBlock]::Create("Get-Partition -DiskNumber $($disk.Number)")
@@ -462,12 +433,11 @@
                 }
 
                 # Get all the files of the database
-                # Check if computer is local
                 if ($computer.IsLocalhost) {
                     $databaseFiles = Get-ChildItem -Path $accessPath -Recurse | Where-Object {-not $_.PSIsContainer}
                 }
                 else {
-                    $commandText = "Get-ChildItem -Path $accessPath -Recurse |" + 'Where-Object {-not $_.PSIsContainer}'
+                    $commandText = "Get-ChildItem -Path $accessPath -Recurse | " + 'Where-Object {-not $_.PSIsContainer}'
                     $command = [ScriptBlock]::Create($commandText)
                     $databaseFiles = Invoke-PSFCommand -ComputerName $computer -ScriptBlock $command -Credential $Credential
                 }
@@ -699,13 +669,13 @@
                     $null = New-PSDrive -Name JSONFolder -Root $jsonFolder -Credential $Credential -PSProvider FileSystem
 
                     # Set the clone file
-                    $jsonCloneFile = JSONFolder:\clones.json
+                    $jsonCloneFile = "JSONFolder:\clones.json"
 
                     # Convert the data back to JSON
                     $clones | ConvertTo-Json | Set-Content $jsonCloneFile
 
                     # Remove the PS Drive
-                    $null = Remove-PSDrive -Name JSONFolder
+                    $null = Remove-PSDrive -Name JSONFolder -Force
                 }
 
                 # Add the results to the custom object

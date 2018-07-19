@@ -199,40 +199,9 @@
                     }
                 }
 
-                if ($informationStore -eq 'SQL') {
-
-                    $query = "
-                    SELECT c.CloneLocation,
-                            c.AccessPath,
-                            c.SqlInstance,
-                            c.DatabaseName,
-                            h.HostName,
-                            h.IPAddress,
-                            h.FQDN,
-                            i.ImageLocation
-                    FROM dbo.Image as i
-                        INNER JOIN dbo.Clone AS c
-                            ON c.ImageID = i.ImageID
-                        INNER JOIN dbo.Host AS h
-                            ON h.HostID = c.HostID
-                    WHERE i.ImageID = $($item.ImageID)
-                    ORDER BY h.HostName;
-                "
-
-                    # Try to get the neccesary info from the EasyClone database
-                    try {
-                        Write-PSFMessage -Message "Retrieving data for image '$($item.Name)'" -Level Verbose
-                        $results = @()
-                        $results += Invoke-DbaSqlQuery -SqlInstance $pdcSqlInstance -SqlCredential $pdcCredential -Database $pdcDatabase -Query $query
-                    }
-                    catch {
-                        Stop-PSFFunction -Message "Couldn't retrieve clone records for host $($result.HostName)" -ErrorRecord $_  -Target $hst -Continue
-                    }
-                }
-                elseif ($informationStore -eq 'File') {
-                    $results = @()
-                    $results = Get-PSDCClone -ImageID $item.ImageID
-                }
+                # Get the clones associated with the image
+                $results = @()
+                $results = Get-PSDCClone -ImageID $item.ImageID
 
                 # Check the results
                 if ($results.Count -ge 1) {
@@ -313,10 +282,10 @@
                         $jsonImageFile = JSONFolder:\images.json
 
                         # Convert the data back to JSON
-                        if($newImageData.Count -ge 1){
+                        if ($newImageData.Count -ge 1) {
                             $imageData | ConvertTo-Json | Set-Content $jsonImageFile
                         }
-                        else{
+                        else {
                             Clear-Content -Path $jsonImageFile
                         }
 

@@ -148,7 +148,7 @@
             # Test the module database setup
             if ($PSCmdlet.ShouldProcess("Test-PSDCConfiguration", "Testing module setup")) {
                 try {
-                    #Test-PSDCConfiguration -SqlCredential $pdcCredential -EnableException
+                    Test-PSDCConfiguration -SqlCredential $pdcCredential -EnableException
                 }
                 catch {
                     Stop-PSFFunction -Message "Something is wrong in the module configuration" -ErrorRecord $_ -Continue
@@ -208,7 +208,7 @@
 
         # Check if Hyper-V is enabled
         if (-not (Test-PSDCHyperVEnabled -HostName $uriHost -Credential $DestinationCredential)) {
-            Stop-PSFFunction -Message "Hyper-V is not enabled on the remote host." -ErrorRecord $_ -Target $uriHost
+            Stop-PSFFunction -Message "Hyper-V is not enabled on the host." -ErrorRecord $_ -Target $uriHost
             return
         }
 
@@ -572,7 +572,7 @@
                 $images | ConvertTo-Json | Set-Content $jsonImageFile
 
                 # Remove the PS Drive
-                $null = Remove-PSDrive -Name JSONFolder
+                Remove-PSDrive -Name JSONFolder -Force
             }
 
             # Add the results to the custom object

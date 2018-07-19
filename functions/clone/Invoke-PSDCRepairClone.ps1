@@ -135,40 +135,8 @@
                 }
             }
 
-            if ($informationStore -eq 'SQL') {
-                $query = "
-                    SELECT  i.ImageID,
-                            i.ImageLocation,
-                            c.CloneLocation,
-                            c.SqlInstance,
-                            c.DatabaseName,
-                            c.IsEnabled
-                    FROM dbo.Clone AS c
-                        INNER JOIN dbo.Image AS i
-                            ON i.ImageID = c.ImageID
-                        INNER JOIN dbo.Host AS h
-                            ON h.HostID = c.HostID
-                    WHERE h.HostName = '$hst';
-                "
-
-                Write-PSFMessage -Message "Query Host Clones`n$query" -Level Debug
-
-                # Get the clones registered for the host
-                try {
-                    Write-PSFMessage -Message "Get the clones for host $hst" -Level Verbose
-                    $results = Invoke-DbaSqlQuery -SqlInstance $pdcSqlInstance -SqlCredential $pdcCredential -Database $pdcDatabase -Query $query
-                }
-                catch {
-                    Stop-PSFFunction -Message "Couldn't get the clones for $hst" -Target $pdcSqlInstance -ErrorRecord $_ -Continue
-                }
-            }
-            elseif ($informationStore -eq 'File') {
-                # Get the path
-                $informationPath = Get-PSFConfigValue -FullName 'psdatabaseclone.informationstore.path'
-
-                # Get the clones
-                $results = Get-PSDCClone -HostName SQLDB1
-            }
+            # Get the clones
+            $results = Get-PSDCClone -HostName $hst
 
             # Loop through the results
             foreach ($result in $results) {
@@ -182,8 +150,8 @@
                 # Check if the parent of the clone can be reached
                 $null = New-PSDrive -Name ImagePath -Root (Split-Path $image.ImageLocation) -Credential $Credential -PSProvider FileSystem
 
+                # Test if the image still exists
                 if (Test-Path -Path "ImagePath:\$($image.Name).vhdx") {
-
                     # Mount the clone
                     try {
                         Write-PSFMessage -Message "Mounting vhd $($result.CloneLocation)" -Level Verbose
@@ -204,7 +172,7 @@
                     }
                 }
                 else {
-                    Stop-PSFFunction -Message "Vhd $($result.CloneLocation) cannot be mounted because parent path cannot be reached" -Target $clone -Continue
+                    Stop-PSFFunction -Message "Vhd $($result.CloneLocation) cannot be mounted because parent path cannot be reached" -Target $image -Continue
                 }
 
                 # Remove the PS Drive
