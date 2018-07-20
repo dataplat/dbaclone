@@ -29,7 +29,7 @@ if (-not (Get-PSFConfigValue -FullName psdatabaseclone.setup.status)) {
 }
 
 # Check the information mode
-if((Get-PSFConfigValue -FullName psdatabaseclone.informationstore.mode) -eq 'File'){
+if([bool](Get-PSFConfigValue -FullName psdatabaseclone.informationstore.mode) -eq 'File'){
     # Get the json file
     $jsonFolder = Get-PSFConfigValue -FullName psdatabaseclone.informationstore.path
     $jsonCred = Get-PSFConfigValue -FullName psdatabaseclone.informationstore.credential
