@@ -157,10 +157,10 @@
             # Try connecting to the instance
             Write-PSFMessage -Message "Attempting to connect to Sql Server $SqlInstance.." -Level Verbose
             try {
-                $server = Connect-DbaInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
+                $server = Connect-DbaInstance -SqlInstance $instance -SqlCredential $SqlCredential
             }
             catch {
-                Stop-PSFFunction -Message "Could not connect to Sql Server instance $SqlInstance" -ErrorRecord $_ -Target $SqlInstance
+                Stop-PSFFunction -Message "Could not connect to Sql Server instance $instance" -ErrorRecord $_ -Target $instance
             }
 
             # Setup the computer object
@@ -205,7 +205,7 @@
                         try {
                             # Check if computer is local
                             if ($computer.IsLocalhost) {
-                                $Destination = Convert-PSDCLocalUncPathToLocalPath -UncPath $Destination -Credential $Credential
+                                $Destination = Convert-PSDCLocalUncPathToLocalPath -UncPath $Destination
                             }
                             else {
                                 $command = [ScriptBlock]::Create("Convert-PSDCLocalUncPathToLocalPath -UncPath `"$Destination`"")
@@ -500,7 +500,7 @@
                         $hostKnown = (Invoke-DbaSqlQuery -SqlInstance $pdcSqlInstance -SqlCredential $pdcCredential -Database $pdcDatabase -Query $query -EnableException).HostKnown
                     }
                     elseif ($informationStore -eq 'File') {
-                        $hosts = Get-ChildItem -Path (Get-PSFConfigValue -FullName 'psdatabaseclone.informationstore.path') -Filter *hosts.json | ForEach-Object { Get-Content $_.FullName | ConvertFrom-Json}
+                        $hosts = Get-ChildItem -Path PSDCJSONFolder:\ -Filter *hosts.json | ForEach-Object { Get-Content $_.FullName | ConvertFrom-Json}
 
                         $hostKnown = [bool]($hostname -in $hosts.HostName)
                     }
@@ -538,7 +538,7 @@
                             [array]$hosts = $null
 
                             # Get all the images
-                            $hosts = Get-ChildItem -Path (Get-PSFConfigValue -FullName 'psdatabaseclone.informationstore.path') -Filter *hosts.json | ForEach-Object { Get-Content $_.FullName | ConvertFrom-Json}
+                            $hosts = Get-ChildItem -Path PSDCJSONFolder:\ -Filter *hosts.json | ForEach-Object { Get-Content $_.FullName | ConvertFrom-Json}
 
                             # Setup the new host id
                             if ($hosts.Count -ge 1) {
@@ -556,9 +556,8 @@
                                 FQDN      = $fqdn
                             }
 
-                            # Get the json file
-                            $jsonFolder = Get-PSFConfigValue -FullName psdatabaseclone.informationstore.path
-                            $jsonHostFile = "$jsonFolder\hosts.json"
+                            # Setup the json file
+                            $jsonHostFile = "PSDCJSONFolder:\hosts.json"
 
                             # Convert the data back to JSON
                             $hosts | ConvertTo-Json | Set-Content $jsonHostFile
