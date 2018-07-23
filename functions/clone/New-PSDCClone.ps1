@@ -658,6 +658,7 @@
                         CloneID       = $cloneID
                         ImageID       = $image.ImageID
                         ImageName     = $image.ImageName
+                        ImageLocation = $ParentVhd
                         HostID        = $hostId
                         HostName      = $hostname
                         CloneLocation = $cloneLocation
