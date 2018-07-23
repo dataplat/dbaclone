@@ -50,7 +50,6 @@
     }
     catch {
         Stop-PSFFunction -Message "Something went wrong converting the UncPath $UncPath to URI" -Target $UncPath -ErrorRecord $_
-        return
     }
 
     # Check if the path is a valid UNC path
@@ -67,7 +66,6 @@
     # Check if the
     if (($uncArray.Length -lt 2) -or (-not $uncArray[1])) {
         Stop-PSFFunction -Message "Could not map un path $UncPath. Make sure it consists of at least two segments i.e \\server\directory or \\server\c$)" -Target $uri
-        return
     }
 
     # Get the share
@@ -76,7 +74,6 @@
     # Check if something returned
     if (!$share) {
         Stop-PSFFunction -Message "The unc path could not be mapped to a share" -Target $localShares
-        return
     }
 
     # Rebuild the array so we have a the same construction with folders
