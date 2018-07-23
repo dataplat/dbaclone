@@ -580,7 +580,7 @@
 
                 # Set the image file
                 $jsonImageFile = "PSDCJSONFolder:\images.json"
-                "Writing images"
+
                 # Convert the data back to JSON
                 $images | ConvertTo-Json | Set-Content $jsonImageFile
             }
