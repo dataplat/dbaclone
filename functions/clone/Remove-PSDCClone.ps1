@@ -286,22 +286,14 @@
 
                         $newCloneData = $cloneData | Where-Object {$_.CloneID -ne $item.CloneID}
 
-                        # Get the json file
-                        $jsonFolder = Get-PSFConfigValue -FullName psdatabaseclone.informationstore.path
-
-                        # Create a PS Drive
-                        $null = New-PSDrive -Name JSONFolder -Root $jsonFolder -Credential $Credential -PSProvider FileSystem
-
                         # Set the clone file
-                        $jsonCloneFile = JSONFolder:\clones.json
+                        $jsonCloneFile = "JSONFolder:\clones.json"
 
                         # Convert the data back to JSON
-                        "Count clones new: $($newCloneData.Count)"
                         if($newCloneData.Count -ge 1){
                             $newCloneData | ConvertTo-Json | Set-Content $jsonCloneFile
                         }
                         else{
-                            "Clearing data"
                             Clear-Content -Path $jsonCloneFile
                         }
 
