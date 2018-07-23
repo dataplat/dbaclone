@@ -158,17 +158,19 @@
             Write-PSFMessage -Message "Attempting to connect to Sql Server $SqlInstance.." -Level Verbose
             try {
                 $server = Connect-DbaInstance -SqlInstance $instance -SqlCredential $SqlCredential
+
+                # Setup the computer object
+                $computer = [PsfComputer]$server.Name
+
+                # Check if Hyper-V enabled for the SQL instance
+                if (-not (Test-PSDCHyperVEnabled -HostName $computer.ComputerName -Credential $Credential)) {
+                    Stop-PSFFunction -Message "Hyper-V is not enabled on host." -ErrorRecord $_ -Target $computer -Continue
+                    return
+                }
             }
             catch {
                 Stop-PSFFunction -Message "Could not connect to Sql Server instance $instance" -ErrorRecord $_ -Target $instance
-            }
-
-            # Setup the computer object
-            $computer = [PsfComputer]$server.Name
-
-            # Check if Hyper-V enabled for the SQL instance
-            if (-not (Test-PSDCHyperVEnabled -HostName $computer.ComputerName -Credential $Credential)) {
-                Stop-PSFFunction -Message "Hyper-V is not enabled on host." -ErrorRecord $_ -Target $computer -Continue
+                return
             }
 
             if (-not $computer.IsLocalhost) {
@@ -357,6 +359,10 @@
                         else {
                             $command = [ScriptBlock]::Create("New-VHD -ParentPath $ParentVhd -Path `"$Destination\$CloneName.vhdx`" -Differencing")
                             $vhd = Invoke-PSFCommand -ComputerName $computer -ScriptBlock $command -Credential $Credential
+
+                            if(-not $vhd){
+                                return
+                            }
                         }
 
                     }
