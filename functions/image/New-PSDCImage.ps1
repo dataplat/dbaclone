@@ -165,6 +165,7 @@
         }
         catch {
             Stop-PSFFunction -Message "Could not connect to Sql Server instance $SourceSqlInstance" -ErrorRecord $_ -Target $SourceSqlInstance
+            return
         }
 
         # Cleanup the values in the network path
@@ -187,7 +188,7 @@
 
         if (-not $computer.IsLocalhost) {
             # Get the result for the remote test
-            $resultPSRemote = Test-PSDCRemoting -ComputerName $uriHost -Credential $Credential
+            $resultPSRemote = Test-PSDCRemoting -ComputerName $computer -Credential $Credential
 
             # Check the result
             if ($resultPSRemote.Result) {
@@ -218,12 +219,16 @@
                 try {
                     # Check if computer is local
                     if ($computer.IsLocalhost) {
-                        $ImageLocalPath = Convert-PSDCLocalUncPathToLocalPath -UncPath $ImageNetworkPath
+                        $ImageLocalPath = Convert-PSDCLocalUncPathToLocalPath -UncPath $ImageNetworkPath -EnableException
                     }
                     else {
-                        $command = "Convert-PSDCLocalUncPathToLocalPath -UncPath `"$ImageNetworkPath`""
+                        $command = "Convert-PSDCLocalUncPathToLocalPath -UncPath `"$ImageNetworkPath`" -EnableException"
                         $commandGetLocalPath = [ScriptBlock]::Create($command)
                         $ImageLocalPath = Invoke-PSFCommand -ComputerName $computer -ScriptBlock $commandGetLocalPath -Credential $DestinationCredential
+
+                        if (-not $ImageLocalPath) {
+                            return
+                        }
                     }
 
                     Write-PSFMessage -Message "Converted '$ImageNetworkPath' to '$ImageLocalPath'" -Level Verbose
@@ -369,10 +374,24 @@
                             # Check if computer is local
                             if ($computer.IsLocalhost) {
                                 $null = New-Item -Path $accessPath -ItemType Directory -Force
+                                $acl = Get-Acl -Path $accessPath
+                                $accessRule = New-Object System.Security.AccessControl.FilesystemAccessrule("Everyone", "FullControl", "ContainerInherit,ObjectInherit", "None", "Allow")
+                                $acl.SetAccessRule($accessRule)
+                                Set-Acl -Path $accessPath -AclObject $acl
                             }
                             else {
                                 $command = [ScriptBlock]::Create("New-Item -Path $accessPath -ItemType Directory -Force")
                                 $null = Invoke-PSFCommand -ComputerName $computer -ScriptBlock $command -Credential $DestinationCredential
+
+                                [string]$commandText = "`$acl = Get-Acl -Path $accessPath
+                                    `$accessRule = New-Object System.Security.AccessControl.FilesystemAccessrule(`"Everyone`", `"FullControl`", `"ContainerInherit,ObjectInherit`", `"InheritOnly`", `"Allow`")
+                                    `$acl.SetAccessRule(`$accessRule)
+                                    Set-Acl -Path $accessPath -AclObject `$acl
+                                "
+
+                                $command = [scriptblock]::Create($commandText)
+
+                                $null = Invoke-PSFCommand -ComputerName $computer -ScriptBlock $command -ArgumentList $accessPath -Credential $DestinationCredential
                             }
                         }
                         catch {
@@ -561,7 +580,7 @@
 
                 # Set the image file
                 $jsonImageFile = "PSDCJSONFolder:\images.json"
-
+                "Writing images"
                 # Convert the data back to JSON
                 $images | ConvertTo-Json | Set-Content $jsonImageFile
             }
