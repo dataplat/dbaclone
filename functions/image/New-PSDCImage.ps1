@@ -578,6 +578,19 @@
                     CreatedOn         = (Get-Date -format "yyyyMMddHHmmss")
                 }
 
+                # Test if the JSON folder can be reached
+                if (-not (Test-Path -Path "PSDCJSONFolder:\")) {
+                    $command = [scriptblock]::Create("Import-Module PSDatabaseClone -Force")
+
+                    try {
+                        Invoke-PSFCommand -ComputerName $computer -ScriptBlock $command -Credential $Credential
+                    }
+                    catch {
+                        Stop-PSFFunction -Message "Couldn't import module remotely" -Target $command
+                        return
+                    }
+                }
+
                 # Set the image file
                 $jsonImageFile = "PSDCJSONFolder:\images.json"
 

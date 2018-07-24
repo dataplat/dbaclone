@@ -360,7 +360,7 @@
                             $command = [ScriptBlock]::Create("New-VHD -ParentPath $ParentVhd -Path `"$Destination\$CloneName.vhdx`" -Differencing")
                             $vhd = Invoke-PSFCommand -ComputerName $computer -ScriptBlock $command -Credential $Credential
 
-                            if(-not $vhd){
+                            if (-not $vhd) {
                                 return
                             }
                         }
@@ -562,6 +562,19 @@
                                 FQDN      = $fqdn
                             }
 
+                            # Test if the JSON folder can be reached
+                            if (-not (Test-Path -Path "PSDCJSONFolder:\")) {
+                                $command = [scriptblock]::Create("Import-Module PSDatabaseClone -Force")
+
+                                try {
+                                    Invoke-PSFCommand -ComputerName $computer -ScriptBlock $command -Credential $Credential
+                                }
+                                catch {
+                                    Stop-PSFFunction -Message "Couldn't import module remotely" -Target $command
+                                    return
+                                }
+                            }
+
                             # Setup the json file
                             $jsonHostFile = "PSDCJSONFolder:\hosts.json"
 
@@ -666,6 +679,19 @@
                         SqlInstance   = $($server.DomainInstanceName)
                         DatabaseName  = $cloneDatabase
                         IsEnabled     = $active
+                    }
+
+                    # Test if the JSON folder can be reached
+                    if (-not (Test-Path -Path "PSDCJSONFolder:\")) {
+                        $command = [scriptblock]::Create("Import-Module PSDatabaseClone -Force")
+
+                        try {
+                            Invoke-PSFCommand -ComputerName $computer -ScriptBlock $command -Credential $Credential
+                        }
+                        catch {
+                            Stop-PSFFunction -Message "Couldn't import module remotely" -Target $command
+                            return
+                        }
                     }
 
                     # Set the clone file
