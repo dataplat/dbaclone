@@ -32,7 +32,7 @@ if ($osDetails.Caption -notin $supportedVersions ) {
     elseif ($osDetails.Caption -like '*Windows Server*') {
         $feature = Get-WindowsFeature -Name 'Hyper-V'
         if (-not $feature.Installed) {
-            Write-PSFMessage -Message "Hyper-V is not enabled, the module can only be used remotely.`nTo use the module locally execute the following command: `"Install-WindowsFeature -Name Hyper-V`"" -Level Warning  -FunctionName 'Test-PSDCConfiguration'
+            Write-PSFMessage -Message "Hyper-V is not enabled, the module can only be used remotely.`nTo use the module execute the following command:`n `"Install-WindowsFeature -Name Hyper-V`"`n`"Install-WindowsFeature -Name Hyper-V-PowerShell`"" -Level Warning  -FunctionName 'Pre Import'
         }
 
         Stop-PSFFunction -Message "Module can only work on Windows Server 2012 R2 and up, Enterprise or Education" -Target $OSDetails -FunctionName 'Pre Import'
