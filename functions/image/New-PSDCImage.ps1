@@ -374,24 +374,10 @@
                             # Check if computer is local
                             if ($computer.IsLocalhost) {
                                 $null = New-Item -Path $accessPath -ItemType Directory -Force
-                                $acl = Get-Acl -Path $accessPath
-                                $accessRule = New-Object System.Security.AccessControl.FilesystemAccessrule("Everyone", "FullControl", "ContainerInherit,ObjectInherit", "None", "Allow")
-                                $acl.SetAccessRule($accessRule)
-                                Set-Acl -Path $accessPath -AclObject $acl
                             }
                             else {
                                 $command = [ScriptBlock]::Create("New-Item -Path $accessPath -ItemType Directory -Force")
                                 $null = Invoke-PSFCommand -ComputerName $computer -ScriptBlock $command -Credential $DestinationCredential
-
-                                [string]$commandText = "`$acl = Get-Acl -Path $accessPath
-                                    `$accessRule = New-Object System.Security.AccessControl.FilesystemAccessrule(`"Everyone`", `"FullControl`", `"ContainerInherit,ObjectInherit`", `"InheritOnly`", `"Allow`")
-                                    `$acl.SetAccessRule(`$accessRule)
-                                    Set-Acl -Path $accessPath -AclObject `$acl
-                                "
-
-                                $command = [scriptblock]::Create($commandText)
-
-                                $null = Invoke-PSFCommand -ComputerName $computer -ScriptBlock $command -ArgumentList $accessPath -Credential $DestinationCredential
                             }
                         }
                         catch {
