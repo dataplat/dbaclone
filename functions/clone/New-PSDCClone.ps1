@@ -196,7 +196,12 @@
 
             # Check destination
             if (-not $Destination) {
-                $Destination = "$($server.DefaultFile)\clone"
+                $Destination = $server.DefaultFile
+                if ($server.DefaultFile.EndsWith("\")) {
+                    $Destination = $Destination.Substring(0, $Destination.Length - 1)
+                }
+
+                $Destination += "\clone"
             }
             else {
                 # If the destination is a network path
@@ -229,12 +234,12 @@
                 # Test if the destination can be reached
                 # Check if computer is local
                 if ($computer.IsLocalhost) {
-                    if (-not (Test-Path -Path $Destination -Credential $Credential)) {
+                    if (-not (Test-Path -Path $Destination)) {
                         Stop-PSFFunction -Message "Could not find destination path $Destination" -Target $SqlInstance
                     }
                 }
                 else {
-                    $command = [ScriptBlock]::Create("Test-Path -Path $Destination")
+                    $command = [ScriptBlock]::Create("Test-Path -Path '$Destination'")
                     $result = Invoke-PSFCommand -ComputerName $computer -ScriptBlock $command -Credential $Credential
                     if (-not $result) {
                         Stop-PSFFunction -Message "Could not find destination path $Destination" -Target $SqlInstance
@@ -271,7 +276,7 @@
                         }
                     }
                     else {
-                        $command = [scriptblock]::Create("Test-Path -Path $ParentVhd")
+                        $command = [scriptblock]::Create("Test-Path -Path '$ParentVhd'")
                         $result = Invoke-PSFCommand -ComputerName $computer -ScriptBlock $command -Credential $Credential
                         if ($result) {
                             $parentVhdFileName = $ParentVhd.Split("\")[-1]
@@ -319,11 +324,11 @@
                         }
                     }
                     else {
-                        $command = [ScriptBlock]::Create("Test-Path -Path $accessPath")
+                        $command = [ScriptBlock]::Create("Test-Path -Path '$accessPath'")
                         $result = Invoke-PSFCommand -ComputerName $computer -ScriptBlock $command -Credential $Credential
                         if (-not $result) {
                             try {
-                                $command = [ScriptBlock]::Create("New-Item -Path $accessPath -ItemType Directory -Force")
+                                $command = [ScriptBlock]::Create("New-Item -Path '$accessPath' -ItemType Directory -Force")
                                 $null = Invoke-PSFCommand -ComputerName $computer -ScriptBlock $command -Credential $Credential
                             }
                             catch {
@@ -427,7 +432,7 @@
                             $command = [ScriptBlock]::Create("Get-Partition -DiskNumber $($disk.Number)")
                             $partition = Invoke-PSFCommand -ComputerName $computer -ScriptBlock $command -Credential $Credential
 
-                            $command = [ScriptBlock]::Create("Add-PartitionAccessPath -DiskNumber $($disk.Number) -PartitionNumber $($partition[1].PartitionNumber) -AccessPath $accessPath -ErrorAction Ignore")
+                            $command = [ScriptBlock]::Create("Add-PartitionAccessPath -DiskNumber $($disk.Number) -PartitionNumber $($partition[1].PartitionNumber) -AccessPath '$accessPath' -ErrorAction Ignore")
 
                             $null = Invoke-PSFCommand -ComputerName $computer -ScriptBlock $command -Credential $Credential
                         }
@@ -438,12 +443,49 @@
                     }
                 }
 
+                # Set privileges for access path
+                try {
+                    # Check if computer is local
+                    if ($computer.IsLocalhost) {
+                        $accessRule = New-Object System.Security.AccessControl.FilesystemAccessrule("Everyone", "FullControl", "Allow")
+
+                        foreach ($file in $(Get-ChildItem $accessPath -Recurse)) {
+                            $acl = Get-Acl $file.FullName
+
+                            # Add this access rule to the ACL
+                            $acl.SetAccessRule($accessRule)
+
+                            # Write the changes to the object
+                            Set-Acl -Path $file.Fullname -AclObject $acl
+                        }
+                    }
+                    else {
+                        [string]$commandText = "`$accessRule = New-Object System.Security.AccessControl.FilesystemAccessrule(`"Everyone`", `"FullControl`", `"Allow`")
+                            foreach (`$file in `$(Get-ChildItem -Path `"$accessPath`" -Recurse)) {
+                                `$acl = Get-Acl `$file.Fullname
+
+                                # Add this access rule to the ACL
+                                `$acl.SetAccessRule(`$accessRule)
+
+                                # Write the changes to the object
+                                Set-Acl -Path `$file.Fullname -AclObject `$acl
+                            }"
+
+                        $command = [scriptblock]::Create($commandText)
+
+                        $null = Invoke-PSFCommand -ComputerName $computer -ScriptBlock $command -ArgumentList $accessPath -Credential $DestinationCredential
+                    }
+                }
+                catch {
+                    Stop-PSFFunction -Message "Couldn't create access path directory" -ErrorRecord $_ -Target $accessPath -Continue
+                }
+
                 # Get all the files of the database
                 if ($computer.IsLocalhost) {
                     $databaseFiles = Get-ChildItem -Path $accessPath -Recurse | Where-Object {-not $_.PSIsContainer}
                 }
                 else {
-                    $commandText = "Get-ChildItem -Path $accessPath -Recurse | " + 'Where-Object {-not $_.PSIsContainer}'
+                    $commandText = "Get-ChildItem -Path '$accessPath' -Recurse | " + 'Where-Object {-not $_.PSIsContainer}'
                     $command = [ScriptBlock]::Create($commandText)
                     $databaseFiles = Invoke-PSFCommand -ComputerName $computer -ScriptBlock $command -Credential $Credential
                 }
