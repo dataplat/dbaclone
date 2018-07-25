@@ -18,6 +18,7 @@ Write-Host -Object "appveyor.prep: Install PSFramework" -ForegroundColor DarkGre
 Install-Module -Name PSFramework | Out-Null
 
 # Creating config files
+Write-Host -Object "appveyor.prep: Creating configurations files" -ForegroundColor DarkGreen
 $configPath = "c:\projects\config"
 
 $null = New-Item -Path "$configPath\hosts.json" -Force:$Force
@@ -25,11 +26,13 @@ $null = New-Item -Path "$configPath\images.json" -Force:$Force
 $null = New-Item -Path "$configPath\clones.json" -Force:$Force
 
 # Setting configurations
+Write-Host -Object "appveyor.prep: Setting configurations" -ForegroundColor DarkGreen
 Set-PSFConfig -Module PSDatabaseClone -Name setup.status -Value $true -Validation bool
 Set-PSFConfig -Module PSDatabaseClone -Name informationstore.mode -Value 'File'
 Set-PSFConfig -Module PSDatabaseClone -Name informationstore.path -Value "$configPath" -Validation string
 
 # Registering configurations
+Write-Host -Object "appveyor.prep: Registering configurations" -ForegroundColor DarkGreen
 Get-PSFConfig -FullName psdatabaseclone.setup.status | Register-PSFConfig -Scope SystemDefault
 Get-PSFConfig -FullName psdatabaseclone.informationstore.mode | Register-PSFConfig -Scope SystemDefault
 Get-PSFConfig -FullName psdatabaseclone.informationstore.path | Register-PSFConfig -Scope SystemDefault
