@@ -57,12 +57,12 @@
     .NOTES
         Author: Sander Stad (@sqlstad, sqlstad.nl)
 
-        Website: https://psdatabaseclone.io
+        Website: https://psdatabaseclone.org
         Copyright: (C) Sander Stad, sander@sqlstad.nl
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://psdatabaseclone.io/
+        https://psdatabaseclone.org/
 
     .EXAMPLE
         Remove-PSDCClone -HostName Host1 -Database Clone1
@@ -102,28 +102,36 @@
     )
 
     begin {
-
-        # Get the module configurations
-        $pdcSqlInstance = Get-PSFConfigValue -FullName psdatabaseclone.database.Server
-        $pdcDatabase = Get-PSFConfigValue -FullName psdatabaseclone.database.name
-        if (-not $PSDCSqlCredential) {
-            $pdcCredential = Get-PSFConfigValue -FullName psdatabaseclone.database.credential -Fallback $null
-        }
-        else {
-            $pdcCredential = $PSDCSqlCredential
+        # Check if the setup has ran
+        if (-not (Get-PSFConfigValue -FullName psdatabaseclone.setup.status)) {
+            Stop-PSFFunction -Message "The module setup has NOT yet successfully run. Please run 'Set-PSDCConfiguration'"
+            return
         }
 
-        # Test the module database setup
-        if ($PSCmdlet.ShouldProcess("Test-PSDCConfiguration", "Testing module setup")) {
-            try {
-                Test-PSDCConfiguration -SqlCredential $pdcCredential -EnableException
+        # Get the information store
+        $informationStore = Get-PSFConfigValue -FullName psdatabaseclone.informationstore.mode
+
+        if ($informationStore -eq 'SQL') {
+            # Get the module configurations
+            $pdcSqlInstance = Get-PSFConfigValue -FullName psdatabaseclone.database.Server
+            $pdcDatabase = Get-PSFConfigValue -FullName psdatabaseclone.database.name
+            if (-not $PSDCSqlCredential) {
+                $pdcCredential = Get-PSFConfigValue -FullName psdatabaseclone.informationstore.credential -Fallback $null
             }
-            catch {
-                Stop-PSFFunction -Message "Something is wrong in the module configuration" -ErrorRecord $_ -Continue
+            else {
+                $pdcCredential = $PSDCSqlCredential
+            }
+
+            # Test the module database setup
+            if ($PSCmdlet.ShouldProcess("Test-PSDCConfiguration", "Testing module setup")) {
+                try {
+                    Test-PSDCConfiguration -SqlCredential $pdcCredential -EnableException
+                }
+                catch {
+                    Stop-PSFFunction -Message "Something is wrong in the module configuration" -ErrorRecord $_ -Continue
+                }
             }
         }
-
-        Write-PSFMessage -Message "Started removing database clones" -Level Verbose
 
         # Get all the items
         $items = Get-PSDCClone
@@ -154,6 +162,8 @@
         # Test if there are any errors
         if (Test-PSFFunctionInterrupt) { return }
 
+        Write-PSFMessage -Message "Started removing database clones" -Level Verbose
+
         # Group the objects to make it easier to go through
         $clones = $InputObject | Group-Object SqlInstance
 
@@ -170,17 +180,27 @@
             }
 
             # Setup the computer object
-            $computer = [PsfComputer]$server.Name
+            $computer = [PsfComputer]$clone.Name
 
             if (-not $computer.IsLocalhost) {
-                $command = [scriptblock]::Create("Import-Module PSDatabaseClone")
+                # Get the result for the remote test
+                $resultPSRemote = Test-PSDCRemoting -ComputerName $clone.Name -Credential $Credential
 
-                try {
-                    Invoke-PSFCommand -ComputerName $computer -ScriptBlock $command -Credential $Credential
+                # Check the result
+                if ($resultPSRemote.Result) {
+
+                    $command = [scriptblock]::Create("Import-Module PSDatabaseClone")
+
+                    try {
+                        Invoke-PSFCommand -ComputerName $computer -ScriptBlock $command -Credential $Credential
+                    }
+                    catch {
+                        Stop-PSFFunction -Message "Couldn't import module remotely" -Target $command
+                        return
+                    }
                 }
-                catch {
-                    Stop-PSFFunction -Message "Couldn't import module remotely" -Target $command
-                    return
+                else {
+                    Stop-PSFFunction -Message "Couldn't connect to host remotely.`nVerify that the specified computer name is valid, that the computer is accessible over the network, and that a firewall exception for the WinRM service is enabled and allows access from this computer" -Target $resultPSRemote -Continue
                 }
             }
 
@@ -247,14 +267,39 @@
                 }
 
                 if ($PSCmdlet.ShouldProcess("Clone ID: $($item.CloneID)", "Deleting clone from database")) {
-                    # Removing records from database
-                    try {
-                        $query = "DELETE FROM dbo.Clone WHERE CloneID = $($item.CloneID);"
+                    if ($informationStore -eq 'SQL') {
+                        # Removing records from database
+                        try {
+                            $query = "DELETE FROM dbo.Clone WHERE CloneID = $($item.CloneID);"
 
-                        $null = Invoke-DbaSqlQuery -SqlInstance $pdcSqlInstance -SqlCredential $pdcCredential -Database $pdcDatabase -Query $query -EnableException
+                            $null = Invoke-DbaSqlQuery -SqlInstance $pdcSqlInstance -SqlCredential $pdcCredential -Database $pdcDatabase -Query $query -EnableException
+                        }
+                        catch {
+                            Stop-PSFFunction -Message "Could not remove clone record from database" -ErrorRecord $_ -Target $query -Continue
+                        }
                     }
-                    catch {
-                        Stop-PSFFunction -Message "Could not remove clone record from database" -ErrorRecord $_ -Target $query -Continue
+                    elseif ($informationStore -eq 'File') {
+                        [array]$cloneData = $null
+                        [array]$newCloneData = $null
+
+                        $cloneData = Get-PSDCClone
+
+                        $newCloneData = $cloneData | Where-Object {$_.CloneID -ne $item.CloneID}
+
+                        # Set the clone file
+                        $jsonCloneFile = "JSONFolder:\clones.json"
+
+                        # Convert the data back to JSON
+                        if($newCloneData.Count -ge 1){
+                            $newCloneData | ConvertTo-Json | Set-Content $jsonCloneFile
+                        }
+                        else{
+                            Clear-Content -Path $jsonCloneFile
+                        }
+
+                        # Remove the PS Drive
+                        $null = Remove-PSDrive -Name JSONFolder
+
                     }
                 }
 

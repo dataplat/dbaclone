@@ -29,12 +29,12 @@
     .NOTES
         Author: Sander Stad (@sqlstad, sqlstad.nl)
 
-        Website: https://psdatabaseclone.io
+        Website: https://psdatabaseclone.org
         Copyright: (C) Sander Stad, sander@sqlstad.nl
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://psdatabaseclone.io/
+        https://psdatabaseclone.org/
 
     .EXAMPLE
         Test-PSDCHyperVEnabled -HostName APPSRV1
@@ -88,14 +88,19 @@
     }
     elseif ($osDetails.Caption -like '*Windows Server*') {
         if ($computer.IsLocalhost) {
-            $feature = Get-WindowsFeature -Name 'Hyper-V'
+            $feature = Get-WindowsFeature -Name 'Hyper-V', 'Hyper-V-PowerShell'
         }
         else{
             $command  = [scriptblock]::Create("Get-WindowsFeature -Name 'Hyper-V'")
             $feature = Invoke-PSFCommand -ComputerName $computer -ScriptBlock $command -Credential $Credential
         }
 
-        return $feature.Installed
+        if($feature.Installed -contains $false){
+            return $false
+        }
+        else{
+            return $true
+        }
     }
 
 

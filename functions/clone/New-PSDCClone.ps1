@@ -63,12 +63,12 @@
     .NOTES
         Author: Sander Stad (@sqlstad, sqlstad.nl)
 
-        Website: https://psdatabaseclone.io
+        Website: https://psdatabaseclone.org
         Copyright: (C) Sander Stad, sander@sqlstad.nl
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://psdatabaseclone.io/
+        https://psdatabaseclone.org/
 
     .EXAMPLE
         New-PSDCClone -SqlInstance SQLDB1 -ParentVhd C:\Temp\images\DB1_20180623203204.vhdx -Destination C:\Temp\clones\ -CloneName DB1_Clone1
@@ -110,28 +110,32 @@
     )
 
     begin {
+        # Get the information store
+        $informationStore = Get-PSFConfigValue -FullName psdatabaseclone.informationstore.mode
 
-        # Get the module configurations
-        $pdcSqlInstance = Get-PSFConfigValue -FullName psdatabaseclone.database.Server
-        $pdcDatabase = Get-PSFConfigValue -FullName psdatabaseclone.database.name
-        if (-not $PSDCSqlCredential) {
-            $pdcCredential = Get-PSFConfigValue -FullName psdatabaseclone.database.credential -Fallback $null
-        }
-        else {
-            $pdcCredential = $PSDCSqlCredential
-        }
-
-        # Test the module database setup
-        if ($PSCmdlet.ShouldProcess("Test-PSDCConfiguration", "Testing module setup")) {
-            try {
-                Test-PSDCConfiguration -SqlCredential $pdcCredential -EnableException
+        if ($informationStore -eq 'SQL') {
+            # Get the module configurations
+            $pdcSqlInstance = Get-PSFConfigValue -FullName psdatabaseclone.database.Server
+            $pdcDatabase = Get-PSFConfigValue -FullName psdatabaseclone.database.name
+            if (-not $PSDCSqlCredential) {
+                $pdcCredential = Get-PSFConfigValue -FullName psdatabaseclone.informationstore.credential -Fallback $null
             }
-            catch {
-                Stop-PSFFunction -Message "Something is wrong in the module configuration" -ErrorRecord $_ -Continue
+            else {
+                $pdcCredential = $PSDCSqlCredential
+            }
+
+            # Test the module database setup
+            if ($PSCmdlet.ShouldProcess("Test-PSDCConfiguration", "Testing module setup")) {
+                try {
+                    Test-PSDCConfiguration -SqlCredential $pdcCredential -EnableException
+                }
+                catch {
+                    Stop-PSFFunction -Message "Something is wrong in the module configuration" -ErrorRecord $_ -Continue
+                }
             }
         }
 
-        Write-PSFMessage -Message "Started image creation" -Level Verbose
+        Write-PSFMessage -Message "Started clone creation" -Level Verbose
 
         # Random string
         $random = -join ((65..90) + (97..122) | Get-Random -Count 5 | ForEach-Object {[char]$_})
@@ -153,35 +157,51 @@
             # Try connecting to the instance
             Write-PSFMessage -Message "Attempting to connect to Sql Server $SqlInstance.." -Level Verbose
             try {
-                $server = Connect-DbaInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
+                $server = Connect-DbaInstance -SqlInstance $instance -SqlCredential $SqlCredential
+
+                # Setup the computer object
+                $computer = [PsfComputer]$server.Name
+
+                # Check if Hyper-V enabled for the SQL instance
+                if (-not (Test-PSDCHyperVEnabled -HostName $computer.ComputerName -Credential $Credential)) {
+                    Stop-PSFFunction -Message "Hyper-V is not enabled on host." -ErrorRecord $_ -Target $computer -Continue
+                    return
+                }
             }
             catch {
-                Stop-PSFFunction -Message "Could not connect to Sql Server instance $SqlInstance" -ErrorRecord $_ -Target $SqlInstance
+                Stop-PSFFunction -Message "Could not connect to Sql Server instance $instance" -ErrorRecord $_ -Target $instance
+                return
             }
-
-            # Check if Hyper-V enabled for the SQL instance
-            if (-not (Test-PSDCHyperVEnabled -HostName $server.Name -Credential $Credential)) {
-                Stop-PSFFunction -Message "Hyper-V is not enabled on the remote host." -ErrorRecord $_ -Target $uriHost -Continue
-            }
-
-            # Setup the computer object
-            $computer = [PsfComputer]$server.Name
 
             if (-not $computer.IsLocalhost) {
-                $command = [scriptblock]::Create("Import-Module PSDatabaseClone")
+                # Get the result for the remote test
+                $resultPSRemote = Test-PSDCRemoting -ComputerName $server.Name -Credential $Credential
 
-                try {
-                    Invoke-PSFCommand -ComputerName $computer -ScriptBlock $command -Credential $Credential
+                # Check the result
+                if ($resultPSRemote.Result) {
+                    $command = [scriptblock]::Create("Import-Module PSDatabaseClone")
+
+                    try {
+                        Invoke-PSFCommand -ComputerName $computer -ScriptBlock $command -Credential $Credential
+                    }
+                    catch {
+                        Stop-PSFFunction -Message "Couldn't import module remotely" -Target $command
+                        return
+                    }
                 }
-                catch {
-                    Stop-PSFFunction -Message "Couldn't import module remotely" -Target $command
-                    return
+                else {
+                    Stop-PSFFunction -Message "Couldn't connect to host remotely.`nVerify that the specified computer name is valid, that the computer is accessible over the network, and that a firewall exception for the WinRM service is enabled and allows access from this computer" -Target $resultPSRemote -Continue
                 }
             }
 
             # Check destination
             if (-not $Destination) {
-                $Destination = "$($server.DefaultFile)\clone"
+                $Destination = $server.DefaultFile
+                if ($server.DefaultFile.EndsWith("\")) {
+                    $Destination = $Destination.Substring(0, $Destination.Length - 1)
+                }
+
+                $Destination += "\clone"
             }
             else {
                 # If the destination is a network path
@@ -192,7 +212,7 @@
                         try {
                             # Check if computer is local
                             if ($computer.IsLocalhost) {
-                                $Destination = Convert-PSDCLocalUncPathToLocalPath -UncPath $Destination -Credential $Credential
+                                $Destination = Convert-PSDCLocalUncPathToLocalPath -UncPath $Destination
                             }
                             else {
                                 $command = [ScriptBlock]::Create("Convert-PSDCLocalUncPathToLocalPath -UncPath `"$Destination`"")
@@ -214,12 +234,12 @@
                 # Test if the destination can be reached
                 # Check if computer is local
                 if ($computer.IsLocalhost) {
-                    if (-not (Test-Path -Path $Destination -Credential $Credential)) {
+                    if (-not (Test-Path -Path $Destination)) {
                         Stop-PSFFunction -Message "Could not find destination path $Destination" -Target $SqlInstance
                     }
                 }
                 else {
-                    $command = [ScriptBlock]::Create("Test-Path -Path $Destination")
+                    $command = [ScriptBlock]::Create("Test-Path -Path '$Destination'")
                     $result = Invoke-PSFCommand -ComputerName $computer -ScriptBlock $command -Credential $Credential
                     if (-not $result) {
                         Stop-PSFFunction -Message "Could not find destination path $Destination" -Target $SqlInstance
@@ -231,36 +251,17 @@
             # Loopt through all the databases
             foreach ($db in $Database) {
 
-                # Check for the parent
                 if ($LatestImage) {
-                    if ($PSCmdlet.ShouldProcess($LatestImage, "Retrieving latest image")) {
-                        $query = "
-                            SELECT TOP ( 1 )
-                                    [ImageLocation],
-                                    [SizeMB],
-                                    [DatabaseName],
-                                    [DatabaseTimestamp],
-                                    [CreatedOn]
-                            FROM [dbo].[Image]
-                            WHERE DatabaseName = '$db'
-                            ORDER BY CreatedOn DESC;
-                        "
+                    $images = Get-PSDCImage -Database $db
+                    $result = $images[-1] | Sort-Object CreatedOn
+                }
 
-                        try {
-                            $result = Invoke-DbaSqlQuery -SqlInstance $pdcSqlInstance -SqlCredential $pdcCredential -Database $pdcDatabase -Query $query -EnableException
-
-                            # Check the results
-                            if ($null -eq $result) {
-                                Stop-PSFFunction -Message "No image could be found for database $db" -Target $pdcSqlInstance -Continue
-                            }
-                            else {
-                                $ParentVhd = $result.ImageLocation
-                            }
-                        }
-                        catch {
-                            Stop-PSFFunction -Message "Could not execute query to retrieve latest image" -Target $pdcSqlInstance -ErrorRecord $_ -Continue
-                        }
-                    }
+                # Check the results
+                if ($null -eq $result) {
+                    Stop-PSFFunction -Message "No image could be found for database $db" -Target $pdcSqlInstance -Continue
+                }
+                else {
+                    $ParentVhd = $result.ImageLocation
                 }
 
                 # Take apart the vhd directory
@@ -275,7 +276,7 @@
                         }
                     }
                     else {
-                        $command = [scriptblock]::Create("Test-Path -Path $ParentVhd")
+                        $command = [scriptblock]::Create("Test-Path -Path '$ParentVhd'")
                         $result = Invoke-PSFCommand -ComputerName $computer -ScriptBlock $command -Credential $Credential
                         if ($result) {
                             $parentVhdFileName = $ParentVhd.Split("\")[-1]
@@ -323,11 +324,11 @@
                         }
                     }
                     else {
-                        $command = [ScriptBlock]::Create("Test-Path -Path $accessPath")
+                        $command = [ScriptBlock]::Create("Test-Path -Path '$accessPath'")
                         $result = Invoke-PSFCommand -ComputerName $computer -ScriptBlock $command -Credential $Credential
                         if (-not $result) {
                             try {
-                                $command = [ScriptBlock]::Create("New-Item -Path $accessPath -ItemType Directory -Force")
+                                $command = [ScriptBlock]::Create("New-Item -Path '$accessPath' -ItemType Directory -Force")
                                 $null = Invoke-PSFCommand -ComputerName $computer -ScriptBlock $command -Credential $Credential
                             }
                             catch {
@@ -363,6 +364,10 @@
                         else {
                             $command = [ScriptBlock]::Create("New-VHD -ParentPath $ParentVhd -Path `"$Destination\$CloneName.vhdx`" -Differencing")
                             $vhd = Invoke-PSFCommand -ComputerName $computer -ScriptBlock $command -Credential $Credential
+
+                            if (-not $vhd) {
+                                return
+                            }
                         }
 
                     }
@@ -421,13 +426,13 @@
                             $partition = Get-Partition -Disk $disk
 
                             # Create an access path for the disk
-                            $null = Add-PartitionAccessPath -DiskNumber $disk.Number -PartitionNumber $partition[1].PartitionNumber -AccessPath $accessPath -ErrorAction Ignore
+                            $null = Add-PartitionAccessPath -DiskNumber $disk.Number -PartitionNumber $partition[1].PartitionNumber -AccessPath $accessPath -ErrorAction SilentlyContinue
                         }
                         else {
                             $command = [ScriptBlock]::Create("Get-Partition -DiskNumber $($disk.Number)")
                             $partition = Invoke-PSFCommand -ComputerName $computer -ScriptBlock $command -Credential $Credential
 
-                            $command = [ScriptBlock]::Create("Add-PartitionAccessPath -DiskNumber $($disk.Number) -PartitionNumber $($partition[1].PartitionNumber) -AccessPath $accessPath -ErrorAction Ignore")
+                            $command = [ScriptBlock]::Create("Add-PartitionAccessPath -DiskNumber $($disk.Number) -PartitionNumber $($partition[1].PartitionNumber) -AccessPath '$accessPath' -ErrorAction Ignore")
 
                             $null = Invoke-PSFCommand -ComputerName $computer -ScriptBlock $command -Credential $Credential
                         }
@@ -438,17 +443,52 @@
                     }
                 }
 
+                # Set privileges for access path
+                try {
+                    # Check if computer is local
+                    if ($computer.IsLocalhost) {
+                        $accessRule = New-Object System.Security.AccessControl.FilesystemAccessrule("Everyone", "FullControl", "Allow")
+
+                        foreach ($file in $(Get-ChildItem $accessPath -Recurse)) {
+                            $acl = Get-Acl $file.FullName
+
+                            # Add this access rule to the ACL
+                            $acl.SetAccessRule($accessRule)
+
+                            # Write the changes to the object
+                            Set-Acl -Path $file.Fullname -AclObject $acl
+                        }
+                    }
+                    else {
+                        [string]$commandText = "`$accessRule = New-Object System.Security.AccessControl.FilesystemAccessrule(`"Everyone`", `"FullControl`", `"Allow`")
+                            foreach (`$file in `$(Get-ChildItem -Path `"$accessPath`" -Recurse)) {
+                                `$acl = Get-Acl `$file.Fullname
+
+                                # Add this access rule to the ACL
+                                `$acl.SetAccessRule(`$accessRule)
+
+                                # Write the changes to the object
+                                Set-Acl -Path `$file.Fullname -AclObject `$acl
+                            }"
+
+                        $command = [scriptblock]::Create($commandText)
+
+                        $null = Invoke-PSFCommand -ComputerName $computer -ScriptBlock $command -ArgumentList $accessPath -Credential $DestinationCredential
+                    }
+                }
+                catch {
+                    Stop-PSFFunction -Message "Couldn't create access path directory" -ErrorRecord $_ -Target $accessPath -Continue
+                }
+
                 # Get all the files of the database
-                # Check if computer is local
                 if ($computer.IsLocalhost) {
                     $databaseFiles = Get-ChildItem -Path $accessPath -Recurse | Where-Object {-not $_.PSIsContainer}
                 }
                 else {
-                    $commandText = "Get-ChildItem -Path $accessPath -Recurse |" + 'Where-Object {-not $_.PSIsContainer}'
+                    $commandText = "Get-ChildItem -Path '$accessPath' -Recurse | " + 'Where-Object {-not $_.PSIsContainer}'
                     $command = [ScriptBlock]::Create($commandText)
                     $databaseFiles = Invoke-PSFCommand -ComputerName $computer -ScriptBlock $command -Credential $Credential
                 }
-
 
                 # Setup the database filestructure
                 $dbFileStructure = New-Object System.Collections.Specialized.StringCollection
@@ -484,15 +524,16 @@
                         $computerinfo = Invoke-PSFCommand -ComputerName $computer -ScriptBlock $command -Credential $Credential
 
                         $command = [scriptblock]::Create('$env:COMPUTERNAME')
+                        $result = Invoke-PSFCommand -ComputerName $computer -ScriptBlock $command -Credential $Credential
 
-                        $hostname = Invoke-PSFCommand -ComputerName $computer -ScriptBlock $command -Credential $Credential
+                        $hostname = $result.ToString()
                         $ipAddress = $computerinfo.AddressList[0]
                         $fqdn = $computerinfo.HostName
                     }
 
-
-                    # Setup the query to check of the host is already added
-                    $query = "
+                    if ($informationStore -eq 'SQL') {
+                        # Setup the query to check of the host is already added
+                        $query = "
                             IF EXISTS (SELECT HostName FROM Host WHERE HostName ='$hostname')
                             BEGIN
                                 SELECT CAST(1 AS BIT) AS HostKnown;
@@ -503,19 +544,28 @@
                             END;
                         "
 
-                    # Execute the query
-                    $result = Invoke-DbaSqlQuery -SqlInstance $pdcSqlInstance -SqlCredential $pdcCredential -Database $pdcDatabase -Query $query -EnableException
+                        # Execute the query
+                        $hostKnown = (Invoke-DbaSqlQuery -SqlInstance $pdcSqlInstance -SqlCredential $pdcCredential -Database $pdcDatabase -Query $query -EnableException).HostKnown
+                    }
+                    elseif ($informationStore -eq 'File') {
+                        $hosts = Get-ChildItem -Path PSDCJSONFolder:\ -Filter *hosts.json | ForEach-Object { Get-Content $_.FullName | ConvertFrom-Json}
+
+                        $hostKnown = [bool]($hostname -in $hosts.HostName)
+                    }
                 }
                 catch {
                     Stop-PSFFunction -Message "Couldnt execute query to see if host was known" -Target $query -ErrorRecord $_ -Continue
                 }
 
                 # Add the host if the host is known
-                if (-not $result.HostKnown) {
+                if (-not $hostKnown) {
                     if ($PSCmdlet.ShouldProcess($hostname, "Adding hostname to database")) {
-                        Write-PSFMessage -Message "Adding host $hostname to database" -Level Verbose
 
-                        $query = "
+                        if ($informationStore -eq 'SQL') {
+
+                            Write-PSFMessage -Message "Adding host $hostname to database" -Level Verbose
+
+                            $query = "
                                 DECLARE @HostID INT;
                                 EXECUTE dbo.Host_New @HostID = @HostID OUTPUT, -- int
                                                     @HostName = '$hostname',   -- varchar(100)
@@ -525,49 +575,95 @@
                                 SELECT @HostID AS HostID
                             "
 
-                        Write-PSFMessage -Message "Query New Host`n$query" -Level Debug
-
-                        try {
-                            $hostId = (Invoke-DbaSqlQuery -SqlInstance $pdcSqlInstance -SqlCredential $pdcCredential -Database $pdcDatabase -Query $query -EnableException).HostID
+                            try {
+                                $hostID = (Invoke-DbaSqlQuery -SqlInstance $pdcSqlInstance -SqlCredential $pdcCredential -Database $pdcDatabase -Query $query -EnableException).HostID
+                            }
+                            catch {
+                                Stop-PSFFunction -Message "Couldnt execute query for adding host" -Target $query -ErrorRecord $_ -Continue
+                            }
                         }
-                        catch {
-                            Stop-PSFFunction -Message "Couldnt execute query for adding host" -Target $query -ErrorRecord $_ -Continue
+                        elseif ($informationStore -eq 'File') {
+                            [array]$hosts = $null
+
+                            # Get all the images
+                            $hosts = Get-ChildItem -Path PSDCJSONFolder:\ -Filter *hosts.json | ForEach-Object { Get-Content $_.FullName | ConvertFrom-Json}
+
+                            # Setup the new host id
+                            if ($hosts.Count -ge 1) {
+                                $hostID = ($hosts[-1].HostID | Sort-Object HostID) + 1
+                            }
+                            else {
+                                $hostID = 1
+                            }
+
+                            # Add the new information to the array
+                            $hosts += [PSCustomObject]@{
+                                HostID    = $hostID
+                                HostName  = $hostname
+                                IPAddress = $ipAddress.IPAddressToString
+                                FQDN      = $fqdn
+                            }
+
+                            # Test if the JSON folder can be reached
+                            if (-not (Test-Path -Path "PSDCJSONFolder:\")) {
+                                $command = [scriptblock]::Create("Import-Module PSDatabaseClone -Force")
+
+                                try {
+                                    Invoke-PSFCommand -ComputerName $computer -ScriptBlock $command -Credential $Credential
+                                }
+                                catch {
+                                    Stop-PSFFunction -Message "Couldn't import module remotely" -Target $command
+                                    return
+                                }
+                            }
+
+                            # Setup the json file
+                            $jsonHostFile = "PSDCJSONFolder:\hosts.json"
+
+                            # Convert the data back to JSON
+                            $hosts | ConvertTo-Json | Set-Content $jsonHostFile
                         }
                     }
                 }
                 else {
-                    Write-PSFMessage -Message "Selecting host $hostname from database" -Level Verbose
-                    $query = "SELECT HostID FROM Host WHERE HostName = '$hostname'"
+                    if ($informationStore -eq 'SQL') {
+                        Write-PSFMessage -Message "Selecting host $hostname from database" -Level Verbose
+                        $query = "SELECT HostID FROM Host WHERE HostName = '$hostname'"
 
+                        try {
+                            $hostID = (Invoke-DbaSqlQuery -SqlInstance $pdcSqlInstance -SqlCredential $pdcCredential -Database $pdcDatabase -Query $query -EnableException).HostID
+                        }
+                        catch {
+                            Stop-PSFFunction -Message "Couldnt execute query for retrieving host id" -Target $query -ErrorRecord $_ -Continue
+                        }
+                    }
+                    elseif ($informationStore -eq 'File') {
+                        $hostID = ($hosts | Where-Object {$_.Hostname -eq $hostname} | Select-Object HostID -Unique).HostID
+                    }
+                }
+
+                # Setup the clone location
+                $cloneLocation = "$Destination\$CloneName.vhdx"
+
+                if ($informationStore -eq 'SQL') {
+                    # Get the image id from the database
+                    Write-PSFMessage -Message "Selecting image from database" -Level Verbose
                     try {
-                        $hostId = (Invoke-DbaSqlQuery -SqlInstance $pdcSqlInstance -SqlCredential $pdcCredential -Database $pdcDatabase -Query $query -EnableException).HostID
+                        $query = "SELECT ImageID, ImageName FROM dbo.Image WHERE ImageLocation = '$ParentVhd'"
+                        $image = Invoke-DbaSqlQuery -SqlInstance $pdcSqlInstance -SqlCredential $pdcCredential -Database $pdcDatabase -Query $query -EnableException
                     }
                     catch {
-                        Stop-PSFFunction -Message "Couldnt execute query for retrieving host id" -Target $query -ErrorRecord $_ -Continue
+                        Stop-PSFFunction -Message "Couldnt execute query for retrieving image id" -Target $query -ErrorRecord $_ -Continue
                     }
-                }
 
-
-                # Get the image id from the database
-                Write-PSFMessage -Message "Selecting image from database" -Level Verbose
-                try {
-                    $query = "SELECT ImageID, ImageName FROM dbo.Image WHERE ImageLocation = '$ParentVhd'"
-                    $resultImage = Invoke-DbaSqlQuery -SqlInstance $pdcSqlInstance -SqlCredential $pdcCredential -Database $pdcDatabase -Query $query -EnableException
-                }
-                catch {
-                    Stop-PSFFunction -Message "Couldnt execute query for retrieving image id" -Target $query -ErrorRecord $_ -Continue
-                }
-
-                if ($PSCmdlet.ShouldProcess("$Destination\$CloneName.vhdx", "Adding clone to database")) {
-                    if ($null -ne $resultImage.ImageID) {
-                        $cloneLocation = "$Destination\$CloneName.vhdx"
-
-                        # Setup the query to add the clone to the database
-                        Write-PSFMessage -Message "Adding clone $cloneLocation to database" -Level Verbose
-                        $query = "
+                    if ($PSCmdlet.ShouldProcess("$Destination\$CloneName.vhdx", "Adding clone to database")) {
+                        if ($null -ne $image.ImageID) {
+                            # Setup the query to add the clone to the database
+                            Write-PSFMessage -Message "Adding clone $cloneLocation to database" -Level Verbose
+                            $query = "
                                 DECLARE @CloneID INT;
                                 EXECUTE dbo.Clone_New @CloneID = @CloneID OUTPUT,                   -- int
-                                                    @ImageID = $($resultImage.ImageID),		        -- int
+                                                    @ImageID = $($image.ImageID),             -- int
                                                     @HostID = $hostId,			                    -- int
                                                     @CloneLocation = '$cloneLocation',	            -- varchar(255)
                                                     @AccessPath = '$accessPath',                    -- varchar(255)
@@ -578,33 +674,86 @@
                                 SELECT @CloneID AS CloneID
                             "
 
-                        Write-PSFMessage -Message "Query New Clone`n$query" -Level Debug
+                            Write-PSFMessage -Message "Query New Clone`n$query" -Level Debug
 
-                        # execute the query
-                        try {
-                            $result = Invoke-DbaSqlQuery -SqlInstance $pdcSqlInstance -SqlCredential $pdcCredential -Database $pdcDatabase -Query $query -EnableException
-                        }
-                        catch {
-                            Stop-PSFFunction -Message "Couldnt execute query for adding clone" -Target $query -ErrorRecord $_ -Continue
-                        }
+                            # execute the query
+                            try {
+                                $result = Invoke-DbaSqlQuery -SqlInstance $pdcSqlInstance -SqlCredential $pdcCredential -Database $pdcDatabase -Query $query -EnableException
+                                $cloneID = $result.CloneID
+                            }
+                            catch {
+                                Stop-PSFFunction -Message "Couldnt execute query for adding clone" -Target $query -ErrorRecord $_ -Continue
+                            }
 
+                        }
+                        else {
+                            Stop-PSFFunction -Message "Image couldn't be found" -Target $imageName -Continue
+                        }
+                    }
+                }
+                elseif ($informationStore -eq 'File') {
+                    # Get the image
+                    $image = Get-PSDCImage -ImageLocation $ParentVhd
+
+                    [array]$clones = $null
+
+                    # Get all the images
+                    $clones = Get-PSDCClone
+
+                    # Setup the new image id
+                    if ($clones.Count -ge 1) {
+                        $cloneID = ($clones[-1].CloneID | Sort-Object CloneID) + 1
                     }
                     else {
-                        Stop-PSFFunction -Message "Image couldn't be found" -Target $imageName -Continue
+                        $cloneID = 1
                     }
+
+                    # Add the new information to the array
+                    $clones += [PSCustomObject]@{
+                        CloneID       = $cloneID
+                        ImageID       = $image.ImageID
+                        ImageName     = $image.ImageName
+                        ImageLocation = $ParentVhd
+                        HostID        = $hostId
+                        HostName      = $hostname
+                        CloneLocation = $cloneLocation
+                        AccessPath    = $accessPath
+                        SqlInstance   = $($server.DomainInstanceName)
+                        DatabaseName  = $cloneDatabase
+                        IsEnabled     = $active
+                    }
+
+                    # Test if the JSON folder can be reached
+                    if (-not (Test-Path -Path "PSDCJSONFolder:\")) {
+                        $command = [scriptblock]::Create("Import-Module PSDatabaseClone -Force")
+
+                        try {
+                            Invoke-PSFCommand -ComputerName $computer -ScriptBlock $command -Credential $Credential
+                        }
+                        catch {
+                            Stop-PSFFunction -Message "Couldn't import module remotely" -Target $command
+                            return
+                        }
+                    }
+
+                    # Set the clone file
+                    $jsonCloneFile = "PSDCJSONFolder:\clones.json"
+
+                    # Convert the data back to JSON
+                    $clones | ConvertTo-Json | Set-Content $jsonCloneFile
                 }
 
                 # Add the results to the custom object
                 $clone = New-Object PSDCClone
 
-                $clone.CloneID = $result.CloneID
+                $clone.CloneID = $cloneID
                 $clone.CloneLocation = $cloneLocation
                 $clone.AccessPath = $accessPath
                 $clone.SqlInstance = $server.DomainInstanceName
                 $clone.DatabaseName = $cloneDatabase
                 $clone.IsEnabled = $active
-                $clone.ImageID = $resultImage.ImageID
-                $clone.ImageName = $resultImage.ImageName
+                $clone.ImageID = $image.ImageID
+                $clone.ImageName = $image.ImageName
                 $clone.ImageLocation = $ParentVhd
                 $clone.HostName = $hostname
 

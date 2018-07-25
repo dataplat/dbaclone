@@ -51,12 +51,12 @@
     .NOTES
         Author: Sander Stad (@sqlstad, sqlstad.nl)
 
-        Website: https://psdatabaseclone.io
+        Website: https://psdatabaseclone.org
         Copyright: (C) Sander Stad, sander@sqlstad.nl
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://psdatabaseclone.io/
+        https://psdatabaseclone.org/
 
     .EXAMPLE
         Remove-PSDCImage -ImageLocation "\\server1\images\DB1_20180703193345.vhdx"
@@ -89,26 +89,34 @@
     )
 
     begin {
-
-        # Get the module configurations
-        $pdcSqlInstance = Get-PSFConfigValue -FullName psdatabaseclone.database.Server
-        $pdcDatabase = Get-PSFConfigValue -FullName psdatabaseclone.database.name
-        if (-not $pdcCredential) {
-            $pdcCredential = Get-PSFConfigValue -FullName psdatabaseclone.database.credential -Fallback $null
-        }
-        else {
-            $pdcCredential = $PSDCSqlCredential
+        # Check if the setup has ran
+        if (-not (Get-PSFConfigValue -FullName psdatabaseclone.setup.status)) {
+            Stop-PSFFunction -Message "The module setup has NOT yet successfully run. Please run 'Set-PSDCConfiguration'"
+            return
         }
 
-        # Test the module database setup
-        try {
-            Test-PSDCConfiguration -SqlCredential $pdcCredential -EnableException
-        }
-        catch {
-            Stop-PSFFunction -Message "Something is wrong in the module configuration" -ErrorRecord $_ -Continue
-        }
+        # Get the information store
+        $informationStore = Get-PSFConfigValue -FullName psdatabaseclone.informationstore.mode
 
-        Write-PSFMessage -Message "Started removing database images" -Level Verbose
+        if ($informationStore -eq 'SQL') {
+            # Get the module configurations
+            $pdcSqlInstance = Get-PSFConfigValue -FullName psdatabaseclone.database.Server
+            $pdcDatabase = Get-PSFConfigValue -FullName psdatabaseclone.database.name
+            if (-not $PSDCSqlCredential) {
+                $pdcCredential = Get-PSFConfigValue -FullName psdatabaseclone.informationstore.credential -Fallback $null
+            }
+            else {
+                $pdcCredential = $PSDCSqlCredential
+            }
+
+            # Test the module database setup
+            try {
+                Test-PSDCConfiguration -SqlCredential $pdcCredential -EnableException
+            }
+            catch {
+                Stop-PSFFunction -Message "Something is wrong in the module configuration" -ErrorRecord $_ -Continue
+            }
+        }
 
         # Get all the items
         $items = Get-PSDCImage
@@ -146,6 +154,8 @@
         # Test if there are any errors
         if (Test-PSFFunctionInterrupt) { return }
 
+        Write-PSFMessage -Message "Started removing database images" -Level Verbose
+
         # Group the objects to make it easier to go through
         $images = $InputObject | Group-Object ImageID
 
@@ -167,53 +177,50 @@
                 # Setup the computer object
                 $computer = [PsfComputer]$uriHost
 
-                $query = "
-                    SELECT c.CloneLocation,
-                            c.AccessPath,
-                            c.SqlInstance,
-                            c.DatabaseName,
-                            h.HostName,
-                            h.IPAddress,
-                            h.FQDN,
-                            i.ImageLocation
-                    FROM dbo.Image as i
-                        INNER JOIN dbo.Clone AS c
-                            ON c.ImageID = i.ImageID
-                        INNER JOIN dbo.Host AS h
-                            ON h.HostID = c.HostID
-                    WHERE i.ImageID = $($item.ImageID)
-                    ORDER BY h.HostName;
-                "
+                if (-not $computer.IsLocalhost) {
+                    # Get the result for the remote test
+                    $resultPSRemote = Test-PSDCRemoting -ComputerName $uriHost -Credential $Credential
 
-                # Try to get the neccesary info from the EasyClone database
-                try {
-                    Write-PSFMessage -Message "Retrieving data for image '$($item.Name)'" -Level Verbose
-                    $results = @()
-                    $results += Invoke-DbaSqlQuery -SqlInstance $pdcSqlInstance -SqlCredential $pdcCredential -Database $pdcDatabase -Query $query
+                    # Check the result
+                    if ($resultPSRemote.Result) {
 
-                    # Check the results
-                    if ($results.Count -ge 1) {
+                        $command = [scriptblock]::Create("Import-Module PSDatabaseClone")
 
-                        # Loop through the results
-                        foreach ($result in $results) {
-                            if ($PSCmdlet.ShouldProcess($item.CloneID, "Removing clone $($result.CloneLocation) from $($result.HostName)")) {
-                                # Remove the clones for the host
-                                try {
-                                    Write-PSFMessage -Message "Removing clones for host $($result.HostName) and database $($result.DatabaseName)" -Level Verbose
-                                    Remove-PSDCClone -HostName $result.HostName -Database $result.DatabaseName -PSDCSqlCredential $pdcCredential -Credential $Credential -Confirm:$false
-                                }
-                                catch {
-                                    Stop-PSFFunction -Message "Couldn't remove clones from host $($result.HostName)" -ErrorRecord $_ -Target $result -Continue
-                                }
-                            }
+                        try {
+                            Invoke-PSFCommand -ComputerName $computer -ScriptBlock $command -Credential $Credential
+                        }
+                        catch {
+                            Stop-PSFFunction -Message "Couldn't import module remotely" -Target $command
+                            return
                         }
                     }
                     else {
-                        Write-PSFMessage -Message "No clones were found created with image $($image.Name)" -Level Verbose
+                        Stop-PSFFunction -Message "Couldn't connect to host remotely.`nVerify that the specified computer name is valid, that the computer is accessible over the network, and that a firewall exception for the WinRM service is enabled and allows access from this computer" -Target $resultPSRemote -Continue
                     }
                 }
-                catch {
-                    Stop-PSFFunction -Message "Couldn't retrieve clone records for host $($result.HostName)" -ErrorRecord $_  -Target $hst -Continue
+
+                # Get the clones associated with the image
+                $results = @()
+                $results = Get-PSDCClone -ImageID $item.ImageID
+
+                # Check the results
+                if ($results.Count -ge 1) {
+                    # Loop through the results
+                    foreach ($result in $results) {
+                        if ($PSCmdlet.ShouldProcess($item.CloneID, "Removing clone $($result.CloneLocation) from $($result.HostName)")) {
+                            # Remove the clones for the host
+                            try {
+                                Write-PSFMessage -Message "Removing clones for host $($result.HostName) and database $($result.DatabaseName)" -Level Verbose
+                                Remove-PSDCClone -HostName $result.HostName -Database $result.DatabaseName -PSDCSqlCredential $pdcCredential -Credential $Credential -Confirm:$false
+                            }
+                            catch {
+                                Stop-PSFFunction -Message "Couldn't remove clones from host $($result.HostName)" -ErrorRecord $_ -Target $result -Continue
+                            }
+                        }
+                    }
+                }
+                else {
+                    Write-PSFMessage -Message "No clones were found created with image $($image.Name)" -Level Verbose
                 }
 
                 if ($PSCmdlet.ShouldProcess($item.ImageLocation, "Removing image from system")) {
@@ -248,14 +255,43 @@
                 }
 
                 if ($PSCmdlet.ShouldProcess($item.ImageLocation, "Removing image from database")) {
-                    # Remove the image from the database
-                    try {
-                        $query = "DELETE FROM dbo.Image WHERE ImageID = $($item.ImageID)"
+                    if ($informationStore -eq 'SQL') {
+                        # Remove the image from the database
+                        try {
+                            $query = "DELETE FROM dbo.Image WHERE ImageID = $($item.ImageID)"
 
-                        $null = Invoke-DbaSqlQuery -SqlInstance $pdcSqlInstance -SqlCredential $pdcCredential -Database $pdcDatabase -Query $query
+                            $null = Invoke-DbaSqlQuery -SqlInstance $pdcSqlInstance -SqlCredential $pdcCredential -Database $pdcDatabase -Query $query
+                        }
+                        catch {
+                            Stop-PSFFunction -Message "Couldn't remove image '$($item.ImageLocation)' from database" -ErrorRecord $_ -Target $query
+                        }
                     }
-                    catch {
-                        Stop-PSFFunction -Message "Couldn't remove image '$($item.ImageLocation)' from database" -ErrorRecord $_ -Target $query
+                    elseif ($informationStore -eq 'File') {
+                        $imageData = Get-PSDCImage
+                        [array]$newImageData = $null
+
+                        $imageData = $imageData | Where-Object {$_.ImageID -ne $item.ImageID}
+
+                        # Get the json file
+                        $jsonFolder = Get-PSFConfigValue -FullName psdatabaseclone.informationstore.path
+
+                        # Create a PS Drive
+                        $null = New-PSDrive -Name JSONFolder -Root $jsonFolder -Credential $Credential -PSProvider FileSystem
+
+                        # Set the image file
+                        $jsonImageFile = JSONFolder:\images.json
+
+                        # Convert the data back to JSON
+                        if ($newImageData.Count -ge 1) {
+                            $imageData | ConvertTo-Json | Set-Content $jsonImageFile
+                        }
+                        else {
+                            Clear-Content -Path $jsonImageFile
+                        }
+
+                        # Remove the PS Drive
+                        $null = Remove-PSDrive -Name JSONFolder
+
                     }
                 }
 

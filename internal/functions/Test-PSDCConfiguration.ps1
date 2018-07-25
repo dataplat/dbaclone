@@ -35,12 +35,12 @@
     .NOTES
         Author: Sander Stad (@sqlstad, sqlstad.nl)
 
-        Website: https://psdatabaseclone.io
+        Website: https://psdatabaseclone.org
         Copyright: (C) Sander Stad, sander@sqlstad.nl
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://psdatabaseclone.io/
+        https://psdatabaseclone.org/
 
     .EXAMPLE
         Test-PSDCConfiguration
@@ -71,7 +71,7 @@
         # Get the configurations for the program database
         $Database = Get-PSFConfigValue -FullName psdatabaseclone.database.name -Fallback "NotConfigured"
         $SqlInstance = Get-PSFConfigValue -FullName psdatabaseclone.database.server -Fallback "NotConfigured"
-        $SqlCredential = Get-PSFConfigValue -FullName psdatabaseclone.database.credential -Fallback $null
+        $SqlCredential = Get-PSFConfigValue -FullName psdatabaseclone.informationstore.credential -Fallback $null
     }
 
     Write-PSFMessage -Message "Checking configurations" -Level Verbose

@@ -43,7 +43,7 @@
         Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted.
         This works similar as SqlCredential but is only meant for authentication to the PSDatabaseClone database server and database.
 
-        By default the script will try to retrieve the configuration value "psdatabaseclone.database.credential"
+        By default the script will try to retrieve the configuration value "psdatabaseclone.informationstore.credential"
 
     .PARAMETER ImageNetworkPath
         Network path where to save the image. This has to be a UNC path
@@ -77,12 +77,12 @@
     .NOTES
         Author: Sander Stad (@sqlstad, sqlstad.nl)
 
-        Website: https://psdatabaseclone.io
+        Website: https://psdatabaseclone.org
         Copyright: (C) Sander Stad, sander@sqlstad.nl
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://psdatabaseclone.io/
+        https://psdatabaseclone.org/
 
     .EXAMPLE
         New-PSDCImage -SourceSqlInstance SQLDB1 -DestinationSqlInstance SQLDB2 -ImageLocalPath C:\Temp\images\ -Database DB1 -CreateFullBackup
@@ -125,24 +125,34 @@
     )
 
     begin {
-
-        # Get the module configurations
-        $pdcSqlInstance = Get-PSFConfigValue -FullName psdatabaseclone.database.Server
-        $pdcDatabase = Get-PSFConfigValue -FullName psdatabaseclone.database.name
-        if (-not $PSDCSqlCredential) {
-            $pdcCredential = Get-PSFConfigValue -FullName psdatabaseclone.database.credential -Fallback $null
-        }
-        else {
-            $pdcCredential = $PSDCSqlCredential
+        # Check if the setup has ran
+        if (-not (Get-PSFConfigValue -FullName psdatabaseclone.setup.status)) {
+            Stop-PSFFunction -Message "The module setup has NOT yet successfully run. Please run 'Set-PSDCConfiguration'"
+            return
         }
 
-        # Test the module database setup
-        if ($PSCmdlet.ShouldProcess("Test-PSDCConfiguration", "Testing module setup")) {
-            try {
-                Test-PSDCConfiguration -SqlCredential $pdcCredential -EnableException
+        # Get the information store
+        $informationStore = Get-PSFConfigValue -FullName psdatabaseclone.informationstore.mode
+
+        if ($informationStore -eq 'SQL') {
+            # Get the module configurations
+            $pdcSqlInstance = Get-PSFConfigValue -FullName psdatabaseclone.database.Server
+            $pdcDatabase = Get-PSFConfigValue -FullName psdatabaseclone.database.name
+            if (-not $PSDCSqlCredential) {
+                $pdcCredential = Get-PSFConfigValue -FullName psdatabaseclone.informationstore.credential -Fallback $null
             }
-            catch {
-                Stop-PSFFunction -Message "Something is wrong in the module configuration" -ErrorRecord $_ -Continue
+            else {
+                $pdcCredential = $PSDCSqlCredential
+            }
+
+            # Test the module database setup
+            if ($PSCmdlet.ShouldProcess("Test-PSDCConfiguration", "Testing module setup")) {
+                try {
+                    Test-PSDCConfiguration -SqlCredential $pdcCredential -EnableException
+                }
+                catch {
+                    Stop-PSFFunction -Message "Something is wrong in the module configuration" -ErrorRecord $_ -Continue
+                }
             }
         }
 
@@ -155,6 +165,7 @@
         }
         catch {
             Stop-PSFFunction -Message "Could not connect to Sql Server instance $SourceSqlInstance" -ErrorRecord $_ -Target $SourceSqlInstance
+            return
         }
 
         # Cleanup the values in the network path
@@ -175,36 +186,49 @@
         # Setup the computer object
         $computer = [PsfComputer]$uriHost
 
+        if (-not $computer.IsLocalhost) {
+            # Get the result for the remote test
+            $resultPSRemote = Test-PSDCRemoting -ComputerName $computer -Credential $Credential
+
+            # Check the result
+            if ($resultPSRemote.Result) {
+                $command = [scriptblock]::Create("Import-Module PSDatabaseClone -Force")
+
+                try {
+                    Invoke-PSFCommand -ComputerName $computer -ScriptBlock $command -Credential $Credential
+                }
+                catch {
+                    Stop-PSFFunction -Message "Couldn't import module remotely" -Target $command
+                    return
+                }
+            }
+            else {
+                Stop-PSFFunction -Message "Couldn't connect to host remotely.`nVerify that the specified computer name is valid, that the computer is accessible over the network, and that a firewall exception for the WinRM service is enabled and allows access from this computer" -Target $resultPSRemote -Continue
+            }
+        }
+
         # Check if Hyper-V is enabled
         if (-not (Test-PSDCHyperVEnabled -HostName $uriHost -Credential $DestinationCredential)) {
-            Stop-PSFFunction -Message "Hyper-V is not enabled on the remote host." -ErrorRecord $_ -Target $uriHost
+            Stop-PSFFunction -Message "Hyper-V is not enabled on the host." -ErrorRecord $_ -Target $uriHost
             return
         }
 
-        # Check if the computer is localhost and import the neccesary modules... just in case
-        if (-not $computer.IsLocalhost) {
-            $command = [ScriptBlock]::Create("Import-Module dbatools")
-            Invoke-PSFCommand -ComputerName $computer -ScriptBlock $command -Credential $DestinationCredential
-
-            $command = [ScriptBlock]::Create("Import-Module PSFramework")
-            Invoke-PSFCommand -ComputerName $computer -ScriptBlock $command -Credential $DestinationCredential
-
-            $command = [ScriptBlock]::Create("Import-Module PSDatabaseClone")
-            Invoke-PSFCommand -ComputerName $computer -ScriptBlock $command -Credential $DestinationCredential
-        }
-
         # Get the local path from the network path
-        if ($PSCmdlet.ShouldProcess($ImageNetworkPath, "Converting UNC path to local path")) {
-            if (-not $ImageLocalPath) {
+        if (-not $ImageLocalPath) {
+            if ($PSCmdlet.ShouldProcess($ImageNetworkPath, "Converting UNC path to local path")) {
                 try {
                     # Check if computer is local
                     if ($computer.IsLocalhost) {
-                        $ImageLocalPath = Convert-PSDCLocalUncPathToLocalPath -UncPath $ImageNetworkPath
+                        $ImageLocalPath = Convert-PSDCLocalUncPathToLocalPath -UncPath $ImageNetworkPath -EnableException
                     }
                     else {
-                        $command = "Convert-PSDCLocalUncPathToLocalPath -UncPath `"$ImageNetworkPath`""
+                        $command = "Convert-PSDCLocalUncPathToLocalPath -UncPath `"$ImageNetworkPath`" -EnableException"
                         $commandGetLocalPath = [ScriptBlock]::Create($command)
                         $ImageLocalPath = Invoke-PSFCommand -ComputerName $computer -ScriptBlock $commandGetLocalPath -Credential $DestinationCredential
+
+                        if (-not $ImageLocalPath) {
+                            return
+                        }
                     }
 
                     Write-PSFMessage -Message "Converted '$ImageNetworkPath' to '$ImageLocalPath'" -Level Verbose
@@ -489,7 +513,8 @@
             $databaseName = $db.Name
             $databaseTS = $lastFullBackup.Start
 
-            $query = "
+            if ($informationStore -eq 'SQL') {
+                $query = "
                 DECLARE @ImageID INT;
                 EXECUTE dbo.Image_New @ImageID = @ImageID OUTPUT,				  -- int
                                     @ImageName = '$imageName',                    -- varchar(100)
@@ -501,24 +526,68 @@
                 SELECT @ImageID as ImageID
             "
 
-            Write-PSFMessage -Message "Query New Image`n$query" -Level Debug
+                # Add image to database
+                if ($PSCmdlet.ShouldProcess($imageName, "Adding image to database")) {
+                    try {
+                        Write-PSFMessage -Message "Saving image information in database" -Level Verbose
 
-            # Add image to database
-            if ($PSCmdlet.ShouldProcess($imageName, "Adding image to database")) {
-                try {
-                    Write-PSFMessage -Message "Saving image information in database" -Level Verbose
+                        $result += Invoke-DbaSqlQuery -SqlInstance $pdcSqlInstance -SqlCredential $pdcCredential -Database $pdcDatabase -Query $query -EnableException
+                        $imageID = $result.ImageID
+                    }
+                    catch {
+                        Stop-PSFFunction -Message "Couldn't add image to database" -Target $imageName -ErrorRecord $_
+                    }
+                }
+            }
+            elseif ($informationStore -eq 'File') {
+                [array]$images = $null
 
-                    $result += Invoke-DbaSqlQuery -SqlInstance $pdcSqlInstance -SqlCredential $pdcCredential -Database $pdcDatabase -Query $query -EnableException
+                # Get all the images
+                $images = Get-PSDCImage
+
+                # Setup the new image id
+                if ($images.Count -ge 1) {
+                    $imageID = ($images[-1].ImageID | Sort-Object ImageID) + 1
                 }
-                catch {
-                    Stop-PSFFunction -Message "Couldn't add image to database" -Target $imageName -ErrorRecord $_
+                else {
+                    $imageID = 1
                 }
+
+                # Add the new information to the array
+                $images += [PSCustomObject]@{
+                    ImageID           = $imageID
+                    ImageName         = $imageName
+                    ImageLocation     = $imageLocation
+                    SizeMB            = $sizeMB
+                    DatabaseName      = $databaseName
+                    DatabaseTimestamp = $databaseTS
+                    CreatedOn         = (Get-Date -format "yyyyMMddHHmmss")
+                }
+
+                # Test if the JSON folder can be reached
+                if (-not (Test-Path -Path "PSDCJSONFolder:\")) {
+                    $command = [scriptblock]::Create("Import-Module PSDatabaseClone -Force")
+
+                    try {
+                        Invoke-PSFCommand -ComputerName $computer -ScriptBlock $command -Credential $Credential
+                    }
+                    catch {
+                        Stop-PSFFunction -Message "Couldn't import module remotely" -Target $command
+                        return
+                    }
+                }
+
+                # Set the image file
+                $jsonImageFile = "PSDCJSONFolder:\images.json"
+
+                # Convert the data back to JSON
+                $images | ConvertTo-Json | Set-Content $jsonImageFile
             }
 
             # Add the results to the custom object
             [PSDCImage]$image = New-Object PSDCImage
 
-            $image.ImageID = $result.ImageID
+            $image.ImageID = $imageID
             $image.ImageName = $imageName
             $image.ImageLocation = $imageLocation
             $image.SizeMB = $sizeMB

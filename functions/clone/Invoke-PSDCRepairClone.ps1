@@ -43,12 +43,12 @@
     .NOTES
         Author: Sander Stad (@sqlstad, sqlstad.nl)
 
-        Website: https://psdatabaseclone.io
+        Website: https://psdatabaseclone.org
         Copyright: (C) Sander Stad, sander@sqlstad.nl
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://psdatabaseclone.io/
+        https://psdatabaseclone.org/
 
     .EXAMPLE
         Invoke-PSDCRepairClone -Hostname Host1
@@ -72,24 +72,12 @@
     )
 
     begin {
-        # Get the module configurations
-        $pdcSqlInstance = Get-PSFConfigValue -FullName psdatabaseclone.database.Server
-        $pdcDatabase = Get-PSFConfigValue -FullName psdatabaseclone.database.name
-        if (-not $pdcCredential) {
-            $pdcCredential = Get-PSFConfigValue -FullName psdatabaseclone.database.credential -Fallback $null
-        }
-        else {
-            $pdcCredential = $PSDCSqlCredential
-        }
 
-        # Test the module database setup
-        try {
-            Test-PSDCConfiguration -SqlCredential $pdcCredential -EnableException
+        # Check if the setup has ran
+        if (-not (Get-PSFConfigValue -FullName psdatabaseclone.setup.status)) {
+            Stop-PSFFunction -Message "The module setup has NOT yet successfully run. Please run 'Set-PSDCConfiguration'"
+            return
         }
-        catch {
-            Stop-PSFFunction -Message "Something is wrong in the module configuration" -ErrorRecord $_ -Continue
-        }
-
     }
 
     process {
@@ -100,44 +88,32 @@
         foreach ($hst in $HostName) {
 
             # Setup the computer object
-            $computer = [PsfComputer]$hst
+            $computer = [PSFComputer]$hst
 
             if (-not $computer.IsLocalhost) {
-                $command = [scriptblock]::Create("Import-Module PSDatabaseClone")
+                # Get the result for the remote test
+                $resultPSRemote = Test-PSDCRemoting -ComputerName $hst -Credential $Credential
 
-                try {
-                    Invoke-PSFCommand -ComputerName $computer -ScriptBlock $command -Credential $Credential
+                # Check the result
+                if ($resultPSRemote.Result) {
+
+                    $command = [scriptblock]::Create("Import-Module PSDatabaseClone")
+
+                    try {
+                        Invoke-PSFCommand -ComputerName $computer -ScriptBlock $command -Credential $Credential
+                    }
+                    catch {
+                        Stop-PSFFunction -Message "Couldn't import module remotely" -Target $command
+                        return
+                    }
                 }
-                catch {
-                    Stop-PSFFunction -Message "Couldn't import module remotely" -Target $command
-                    return
+                else {
+                    Stop-PSFFunction -Message "Couldn't connect to host remotely.`nVerify that the specified computer name is valid, that the computer is accessible over the network, and that a firewall exception for the WinRM service is enabled and allows access from this computer" -Target $resultPSRemote -Continue
                 }
             }
 
-            $query = "
-                    SELECT i.ImageLocation,
-                            c.CloneLocation,
-                            c.SqlInstance,
-                            c.DatabaseName,
-                            c.IsEnabled
-                    FROM dbo.Clone AS c
-                        INNER JOIN dbo.Image AS i
-                            ON i.ImageID = c.ImageID
-                        INNER JOIN dbo.Host AS h
-                            ON h.HostID = c.HostID
-                    WHERE h.HostName = '$hst';
-                "
-
-            Write-PSFMessage -Message "Query Host Clones`n$query" -Level Debug
-
-            # Get the clones registered for the host
-            try {
-                Write-PSFMessage -Message "Get the clones for host $hst" -Level Verbose
-                $results = Invoke-DbaSqlQuery -SqlInstance $pdcSqlInstance -SqlCredential $pdcCredential -Database $pdcDatabase -Query $query
-            }
-            catch {
-                Stop-PSFFunction -Message "Couldn't get the clones for $hst" -Target $pdcSqlInstance -ErrorRecord $_ -Continue
-            }
+            # Get the clones
+            $results = Get-PSDCClone -HostName $hst
 
             # Loop through the results
             foreach ($result in $results) {
@@ -146,9 +122,13 @@
                 Write-PSFMessage -Message "Retrieve the databases for $($result.SqlInstance)" -Level Verbose
                 $databases = Get-DbaDatabase -SqlInstance $result.SqlInstance -SqlCredential $SqlCredential
 
-                # Check if the parent of the clone can be reached
-                if (Test-Path -Path $result.ImageLocation) {
+                $image = Get-PSDCImage -ImageID $result.ImageID
 
+                # Check if the parent of the clone can be reached
+                $null = New-PSDrive -Name ImagePath -Root (Split-Path $image.ImageLocation) -Credential $Credential -PSProvider FileSystem
+
+                # Test if the image still exists
+                if (Test-Path -Path "ImagePath:\$($image.Name).vhdx") {
                     # Mount the clone
                     try {
                         Write-PSFMessage -Message "Mounting vhd $($result.CloneLocation)" -Level Verbose
@@ -169,8 +149,11 @@
                     }
                 }
                 else {
-                    Stop-PSFFunction -Message "Vhd $($result.CloneLocation) cannot be mounted because parent path cannot be reached" -Target $clone -Continue
+                    Stop-PSFFunction -Message "Vhd $($result.CloneLocation) cannot be mounted because parent path cannot be reached" -Target $image -Continue
                 }
+
+                # Remove the PS Drive
+                $null = Remove-PSDrive -Name ImagePath
 
                 # Check if the database is already attached
                 if ($result.DatabaseName -notin $databases.Name) {

@@ -72,7 +72,9 @@
     'Set-PSDCConfiguration',
     'Get-PSDCClone',
     'Get-PSDCImage',
-    'Convert-PSDCLocalUncPathToLocalPath'
+    'Convert-PSDCLocalUncPathToLocalPath',
+    'New-PSDCVhdDisk',
+    'Initialize-PSDCVhdDisk'
 
     # Cmdlets to export from this module
     CmdletsToExport    = ''

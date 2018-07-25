@@ -19,6 +19,11 @@
         Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted.
         This works similar as SqlCredential but is only meant for authentication to the PSDatabaseClone database server and database.
 
+    .PARAMETER Credential
+        Allows you to login to servers or use authentication to access files and folder/shares
+
+        $scred = Get-Credential, then pass $scred object to the -Credential parameter.
+
     .PARAMETER ImageID
         Filter based on the image id
 
@@ -34,12 +39,17 @@
     .NOTES
         Author: Sander Stad (@sqlstad, sqlstad.nl)
 
-        Website: https://psdatabaseclone.io
+        Website: https://psdatabaseclone.org
         Copyright: (C) Sander Stad, sander@sqlstad.nl
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://psdatabaseclone.io/
+        https://psdatabaseclone.org/
+
+    .EXAMPLE
+        Get-PSDCImage
+
+        Get all the images
 
     .EXAMPLE
         Get-PSDCImage -ImageName DB1_20180704220944, DB2_20180704221144
@@ -63,6 +73,8 @@
         [System.Management.Automation.PSCredential]$SqlCredential,
         [System.Management.Automation.PSCredential]
         $PSDCSqlCredential,
+        [System.Management.Automation.PSCredential]
+        $Credential,
         [int[]]$ImageID,
         [string[]]$ImageName,
         [string[]]$ImageLocation,
@@ -70,41 +82,68 @@
     )
 
     begin {
-        # Get the module configurations
-        $pdcSqlInstance = Get-PSFConfigValue -FullName psdatabaseclone.database.Server
-        $pdcDatabase = Get-PSFConfigValue -FullName psdatabaseclone.database.name
-        if (-not $pdcCredential) {
-            $pdcCredential = Get-PSFConfigValue -FullName psdatabaseclone.database.credential -Fallback $null
-        }
-        else {
-            $pdcCredential = $PSDCSqlCredential
+        # Check if the setup has ran
+        if (-not (Get-PSFConfigValue -FullName psdatabaseclone.setup.status)) {
+            Stop-PSFFunction -Message "The module setup has NOT yet successfully run. Please run 'Set-PSDCConfiguration'"
+            return
         }
 
-        # Test the module database setup
-        try {
-            Test-PSDCConfiguration -SqlCredential $pdcCredential -EnableException
-        }
-        catch {
-            Stop-PSFFunction -Message "Something is wrong in the module configuration" -ErrorRecord $_ -Continue
-        }
+        # Get the information store
+        $informationStore = Get-PSFConfigValue -FullName psdatabaseclone.informationstore.mode
 
-        $query = "
-            SELECT ImageID,
-                ImageName,
-                ImageLocation,
-                SizeMB,
-                DatabaseName,
-                DatabaseTimestamp,
-                CreatedOn
-            FROM dbo.Image;
-        "
+        if ($informationStore -eq 'SQL') {
 
-        try {
-            $results = @()
-            $results += Invoke-DbaSqlQuery -SqlInstance $pdcSqlInstance -SqlCredential $PSDCSqlCredential -Database $pdcDatabase -Query $query -As PSObject
+            # Get the module configurations
+            $pdcSqlInstance = Get-PSFConfigValue -FullName psdatabaseclone.database.Server
+            $pdcDatabase = Get-PSFConfigValue -FullName psdatabaseclone.database.name
+            if (-not $PSDCSqlCredential) {
+                $pdcCredential = Get-PSFConfigValue -FullName psdatabaseclone.informationstore.credential -Fallback $null
+            }
+            else {
+                $pdcCredential = $PSDCSqlCredential
+            }
+
+            # Test the module database setup
+            try {
+                Test-PSDCConfiguration -SqlCredential $pdcCredential -EnableException
+            }
+            catch {
+                Stop-PSFFunction -Message "Something is wrong in the module configuration" -ErrorRecord $_ -Continue
+            }
+
+            $query = "
+                SELECT ImageID,
+                    ImageName,
+                    ImageLocation,
+                    SizeMB,
+                    DatabaseName,
+                    DatabaseTimestamp,
+                    CreatedOn
+                FROM dbo.Image;
+            "
+
+            try {
+                $results = @()
+                $results += Invoke-DbaSqlQuery -SqlInstance $pdcSqlInstance -SqlCredential $PSDCSqlCredential -Database $pdcDatabase -Query $query -As PSObject
+            }
+            catch {
+                Stop-PSFFunction -Message "Could retrieve images from database $pdcDatabase" -ErrorRecord $_ -Target $query
+            }
         }
-        catch {
-            Stop-PSFFunction -Message "Could retrieve images from database $pdcDatabase" -ErrorRecord $_ -Target $query
+        elseif ($informationStore -eq 'File') {
+            try {
+                if (Test-Path -Path "PSDCJSONFolder:\") {
+                    # Get the clones
+                    $results = Get-ChildItem -Path "PSDCJSONFolder:\" -Filter "*images.json" | ForEach-Object { Get-Content $_.FullName | ConvertFrom-Json }
+                }
+                else {
+                    Stop-PSFFunction -Message "Could not reach image information location 'PSDCJSONFolder:\'" -ErrorRecord $_ -Target "PSDCJSONFolder:\"
+                    return
+                }
+            }
+            catch {
+                Stop-PSFFunction -Message "Couldn't get results from JSN folder" -Target "PSDCJSONFolder:\" -ErrorRecord $_
+            }
         }
 
         # Filter image id
