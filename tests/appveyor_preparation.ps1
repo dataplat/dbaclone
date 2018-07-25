@@ -18,8 +18,8 @@ Write-Host -Object "appveyor.prep: Install PSFramework" -ForegroundColor DarkGre
 Install-Module -Name PSFramework | Out-Null
 
 # Installing Hyper-V
-Copy-Item -Path .\tests\modules\Hyper-V -Destination "C:\Program Files\WindowsPowerShell\Modules"
-Import-Module Hyper-V
+#Copy-Item -Path .\tests\modules\Hyper-V -Destination "C:\Program Files\WindowsPowerShell\Modules"
+#Import-Module Hyper-V
 
 #Write-Host -Object "appveyor.prep: Install Hyper-V PowerShell module" -ForegroundColor DarkGreen
 #$null = Install-WindowsFeature -Name Hyper-V-PowerShell
