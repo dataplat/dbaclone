@@ -1,4 +1,4 @@
-Add-AppveyorTest -Name "appveyor.prep" -Framework NUnit -FileName "appveyor.prep.ps1" -Outcome Running
+﻿Add-AppveyorTest -Name "appveyor.prep" -Framework NUnit -FileName "appveyor.prep.ps1" -Outcome Running
 $sw = [system.diagnostics.stopwatch]::startNew()
 
 # Get PSScriptAnalyzer (to check warnings)
@@ -19,7 +19,7 @@ Install-Module -Name PSFramework | Out-Null
 
 # Get Hyper-V-PowerShell
 Write-Host -Object "appveyor.prep: Install Hyper-V-PowerShell" -ForegroundColor DarkGreen
-Install-WindowsFeature -Name Hyper-V-PowerShell
+Install-WindowsFeature -Name Hyper-V-PowerShell | Out-Null
 
 # Creating config files
 Write-Host -Object "appveyor.prep: Creating configurations files" -ForegroundColor DarkGreen
