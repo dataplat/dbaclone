@@ -44,7 +44,7 @@ foreach ($file in (Get-ChildItem "$PSScriptRoot\general" -Filter "*.Tests.ps1"))
 	}
 }
 
-Write-PSFMessage -Level Important -Message "Proceeding with individual tests"
+<# Write-PSFMessage -Level Important -Message "Proceeding with individual tests"
 foreach ($file in (Get-ChildItem "$PSScriptRoot\functions" -Recurse -File -Filter "*Tests.ps1"))
 {
 	Write-PSFMessage -Level Significant -Message "  Executing $($file.Name)"
@@ -64,7 +64,7 @@ foreach ($file in (Get-ChildItem "$PSScriptRoot\functions" -Recurse -File -Filte
 			}
 		}
 	}
-}
+} #>
 
 $testresults | Sort-Object Describe, Context, Name, Result, Message | Format-List
 
