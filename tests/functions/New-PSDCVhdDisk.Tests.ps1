@@ -15,7 +15,7 @@ Describe "$commandname Unit Tests" {
     }
 
     Context "Create VHD with -FileName parameter" {
-        $null = New-PSDCVhdDisk -Destination $destination -FileName "$name.vhdx" -ErrorAction SilentlyContinue
+        $null = New-PSDCVhdDisk -Destination $destination -FileName "$name.vhdx" #-ErrorAction SilentlyContinue
 
         It "Should be true" {
             (Test-Path -Path $path) | Should Be $true
@@ -25,7 +25,7 @@ Describe "$commandname Unit Tests" {
     }
 
     Context "Create VHD with -Name parameter" {
-        $null = New-PSDCVhdDisk -Destination $destination -Name $name -ErrorAction SilentlyContinue
+        $null = New-PSDCVhdDisk -Destination $destination -Name $name #-ErrorAction SilentlyContinue
 
         It "Should be true" {
             (Test-Path -Path $path) | Should Be $true
