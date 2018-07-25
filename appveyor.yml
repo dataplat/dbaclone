@@ -19,7 +19,7 @@ matrix:
 
 build_script:
 # grab appveyor lab files and needed requirements for tests in CI
-- ps: .\tests\appveyor.prep.ps1
+- ps: .\tests\appveyor_preparation.ps1
 
 test_script:
 # Test with PowerShell and Pester
