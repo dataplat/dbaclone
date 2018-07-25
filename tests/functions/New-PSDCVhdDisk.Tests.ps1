@@ -9,9 +9,9 @@ Describe "$commandname Unit Tests" {
     BeforeAll {
         # Get a random value for the database name
         $random = Get-Random
-
+        $destination = $script:imagefolder
         $name = "Test_VHD_$($random)"
-        $path = "$($script:imagefolder)\$name.vhdx"
+        $path = "$destination\$name.vhdx"
     }
 
     Context "Create VHD with -FileName parameter" {
