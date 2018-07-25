@@ -22,9 +22,9 @@ Write-Host -Object "appveyor.prep: Install PSFramework" -ForegroundColor DarkGre
 Install-Module -Name PSFramework | Out-Null
 
 # Get Hyper-V-PowerShell
-Write-Host -Object "appveyor.prep: Install Hyper-V-PowerShell" -ForegroundColor DarkGreen
-Install-WindowsFeature -Name Hyper-V-PowerShell | Out-Null
-Install-WindowsFeature RSAT-Hyper-V-Tools -IncludeAllSubFeature | Out-Null
+#Write-Host -Object "appveyor.prep: Install Hyper-V-PowerShell" -ForegroundColor DarkGreen
+#Install-WindowsFeature -Name Hyper-V-PowerShell | Out-Null
+#Install-WindowsFeature RSAT-Hyper-V-Tools -IncludeAllSubFeature | Out-Null
 
 # Creating config files
 Write-Host -Object "appveyor.prep: Creating configurations files" -ForegroundColor DarkGreen
