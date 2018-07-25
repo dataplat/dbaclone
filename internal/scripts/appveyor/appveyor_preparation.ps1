@@ -1,21 +1,25 @@
 Add-AppveyorTest -Name "appveyor.prep" -Framework NUnit -FileName "appveyor.prep.ps1" -Outcome Running
 $sw = [system.diagnostics.stopwatch]::startNew()
 
-#Get PSScriptAnalyzer (to check warnings)
+# Get PSScriptAnalyzer (to check warnings)
 Write-Host -Object "appveyor.prep: Install PSScriptAnalyzer" -ForegroundColor DarkGreen
 Install-Module -Name PSScriptAnalyzer -Force -SkipPublisherCheck | Out-Null
 
-#Get Pester (to run tests)
+# Get Pester (to run tests)
 Write-Host -Object "appveyor.prep: Install Pester" -ForegroundColor DarkGreen
 choco install pester | Out-Null
 
-#Get dbatools
+# Get dbatools
 Write-Host -Object "appveyor.prep: Install dbatools" -ForegroundColor DarkGreen
 Install-Module -Name dbatools | Out-Null
 
-#Get PSFramework
+# Get PSFramework
 Write-Host -Object "appveyor.prep: Install PSFramework" -ForegroundColor DarkGreen
 Install-Module -Name PSFramework | Out-Null
+
+# Get Hyper-V-PowerShell
+Write-Host -Object "appveyor.prep: Install Hyper-V-PowerShell" -ForegroundColor DarkGreen
+Install-WindowsFeature -Name Hyper-V-PowerShell
 
 # Creating config files
 Write-Host -Object "appveyor.prep: Creating configurations files" -ForegroundColor DarkGreen
