@@ -21,11 +21,11 @@ Install-Module -Name PSFramework | Out-Null
 #Write-Host $osDetails
 
 # Installing Hyper-V
-Write-Host -Object "appveyor.prep: Install Hyper-V"
-Install-WindowsFeature -Name Hyper-V
+#Write-Host -Object "appveyor.prep: Install Hyper-V"
+#Install-WindowsFeature -Name Hyper-V
 
 Write-Host -Object "appveyor.prep: Install Hyper-V PowerShell module"
-Install-WindowsFeature -Name Install-WindowsFeature -Name Hyper-V-PowerShell
+Install-WindowsFeature -Name Hyper-V-PowerShell
 
 $sw.Stop()
 Update-AppveyorTest -Name "appveyor.prep" -Framework NUnit -FileName "appveyor.prep.ps1" -Outcome Passed -Duration $sw.ElapsedMilliseconds
