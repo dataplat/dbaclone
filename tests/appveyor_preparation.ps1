@@ -9,6 +9,10 @@ Install-Module -Name PSScriptAnalyzer -Force -SkipPublisherCheck | Out-Null
 Write-Host -Object "appveyor.prep: Install Pester" -ForegroundColor DarkGreen
 choco install pester | Out-Null
 
+#Get dbatools
+Write-Host -Object "appveyor.prep: Install dbatools" -ForegroundColor DarkGreen
+Install-Module -Name dbatools | Out-Null
+
 #Get PSFramework
 Write-Host -Object "appveyor.prep: Install PSFramework" -ForegroundColor DarkGreen
 Install-Module -Name PSFramework | Out-Null
