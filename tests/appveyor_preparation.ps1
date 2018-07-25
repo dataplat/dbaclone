@@ -17,12 +17,22 @@ Install-Module -Name dbatools | Out-Null
 Write-Host -Object "appveyor.prep: Install PSFramework" -ForegroundColor DarkGreen
 Install-Module -Name PSFramework | Out-Null
 
-# Installing Hyper-V
-#Copy-Item -Path .\tests\modules\Hyper-V -Destination "C:\Program Files\WindowsPowerShell\Modules"
-#Import-Module Hyper-V
+# Creating config files
+$configPath = "c:\projects\config"
 
-#Write-Host -Object "appveyor.prep: Install Hyper-V PowerShell module" -ForegroundColor DarkGreen
-#$null = Install-WindowsFeature -Name Hyper-V-PowerShell
+$null = New-Item -Path "$configPath\hosts.json" -Force:$Force
+$null = New-Item -Path "$configPath\images.json" -Force:$Force
+$null = New-Item -Path "$configPath\clones.json" -Force:$Force
+
+# Setting configurations
+Set-PSFConfig -Module PSDatabaseClone -Name setup.status -Value $true -Validation bool
+Set-PSFConfig -Module PSDatabaseClone -Name informationstore.mode -Value 'File'
+Set-PSFConfig -Module PSDatabaseClone -Name informationstore.path -Value "$configPath" -Validation string
+
+# Registering configurations
+Get-PSFConfig -FullName psdatabaseclone.setup.status | Register-PSFConfig -Scope SystemDefault
+Get-PSFConfig -FullName psdatabaseclone.informationstore.mode | Register-PSFConfig -Scope SystemDefault
+Get-PSFConfig -FullName psdatabaseclone.informationstore.path | Register-PSFConfig -Scope SystemDefault
 
 $sw.Stop()
 Update-AppveyorTest -Name "appveyor.prep" -Framework NUnit -FileName "appveyor.prep.ps1" -Outcome Passed -Duration $sw.ElapsedMilliseconds
