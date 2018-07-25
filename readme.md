@@ -48,7 +48,7 @@ If you import the module for the first time you'll be prompted to enter some val
 At the very least, the module needs the value for the SQL Server instance that will hold the database containing all the hosts, images and clones.
 The second prompt to the user is for the database name. The default value is "PSDatabaseClone"
 
-<img src="https://www.sqlstad.nl/wp-content/uploads/2018/07/PSDatabaseClone_Module_InitialSetup.png" align="left" style="max-width: 100%"/>
+<img src="https://psdatabaseclone.org/wp-content/uploads/2018/07/PSDatabaseClone_Module_InitialSetup.png" align="left" style="max-width: 100%"/>
 
 If you want to reset the configuration you can run the command "Set-PSDCConfiguration".
 
@@ -57,7 +57,7 @@ Execute the following command to setup the module with a credential
 Set-PSDCConfiguration -SqlInstance SQLDB1 -SqlCredential (Get-Credential)
 ```
 
-<img src="https://www.sqlstad.nl/wp-content/uploads/2018/07/PSDatabaseClone_Module_ManualSetup.png" align="left" style="max-width: 100%"/>
+<img src="https://psdatabaseclone.org/wp-content/uploads/2018/07/PSDatabaseClone_Module_ManualSetup.png" align="left" style="max-width: 100%"/>
 
 This will setup the module to use "SQLDB1" as the database server to host the PSDatabaseClone database.
 It will also show a window to insert the credentials for the connection. The database will be called "PSDatabaseClone".
@@ -74,6 +74,8 @@ During the process a new backup will be generated.
 New-PSDCImage -SourceSqlInstance SQLDB1 -DestinationSqlInstance SQLDB2 -ImageNetworkPath \\fileserver\psdatabaseclone\images -Database DB1 -CreateFullBackup
 ```
 
+<img src="https://psdatabaseclone.org/wp-content/uploads/2018/07/PSDatabaseClone_CreateImage.png" align="left" style="max-width: 100%"/>
+
 ### Step 3 - Create a clone
 You have done the hard work of creating the image and make sure it's accessible for everyone.
 
@@ -86,6 +88,8 @@ New-PSDCClone -SqlInstance SQLDB3 -Destination C:\PSDatabaseClone\clones -CloneN
 ```
 
 This will look into the central database if there is an image for database "DB1". The clone will be called "DB1_Clone1" and will be placed on the instance SQLDB3.
+
+<img src="https://psdatabaseclone.org/wp-content/uploads/2018/07/PSDatabaseClone_CreateClone.png" align="left" style="max-width: 100%"/>
 
 ## Examples
 
