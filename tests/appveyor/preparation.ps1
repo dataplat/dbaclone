@@ -1,6 +1,10 @@
 ﻿Add-AppveyorTest -Name "appveyor.prep" -Framework NUnit -FileName "appveyor.prep.ps1" -Outcome Running
 $sw = [system.diagnostics.stopwatch]::startNew()
 
+# Importing constants
+$rootPath = Split-Path (Split-Path $PSScriptRoot -Parent) -Parent
+. "$rootPath\tests\constants.ps1"
+
 # Get PSScriptAnalyzer (to check warnings)
 Write-Host -Object "appveyor.prep: Install PSScriptAnalyzer" -ForegroundColor DarkGreen
 Install-Module -Name PSScriptAnalyzer -Force -SkipPublisherCheck | Out-Null
@@ -23,11 +27,19 @@ Install-WindowsFeature -Name Hyper-V-PowerShell | Out-Null
 
 # Creating config files
 Write-Host -Object "appveyor.prep: Creating configurations files" -ForegroundColor DarkGreen
-$configPath = "c:\projects\config"
+$configPath = "C:\projects\config"
 
 $null = New-Item -Path "$configPath\hosts.json" -Force:$Force
 $null = New-Item -Path "$configPath\images.json" -Force:$Force
 $null = New-Item -Path "$configPath\clones.json" -Force:$Force
+
+# Creating folder
+Write-Host -Object "appveyor.prep: Creating image and clone directories" -ForegroundColor DarkGreen
+$imageFolder = "C:\projects\images"
+$null = New-Item -Path $imageFolder -ItemType Directory -Force:$Force
+
+$cloneFolder = "C:\projects\clones"
+$null = New-Item -Path $cloneFolder -ItemType Directory -Force:$Force
 
 # Setting configurations
 Write-Host -Object "appveyor.prep: Setting configurations" -ForegroundColor DarkGreen

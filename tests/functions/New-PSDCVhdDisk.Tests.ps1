@@ -11,8 +11,7 @@ Describe "$commandname Unit Tests" {
         $random = Get-Random
 
         $name = "Test_VHD_$($random)"
-        $destination = "$moduleRoot\tests"
-        $path = "$destination\$name.vhdx"
+        $path = "$($script:imagefolder)\$name.vhdx"
     }
 
     Context "Create VHD with -FileName parameter" {
