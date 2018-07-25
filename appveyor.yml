@@ -14,6 +14,10 @@ shallow_clone: true
 environment:
   environment: development
   version: 0.1.$(appveyor_build_number)
+  appveyor_rdp_password: psdatabaseclone
+
+init:
+- ps: iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))
 
 matrix:
   fast_finish: true
