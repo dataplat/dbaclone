@@ -17,8 +17,15 @@ Install-Module -Name dbatools | Out-Null
 Write-Host -Object "appveyor.prep: Install PSFramework" -ForegroundColor DarkGreen
 Install-Module -Name PSFramework | Out-Null
 
-$osDetails = Get-CimInstance Win32_OperatingSystem | Select-Object Caption, Description, Name, OSType, Version
-Write-Host $osDetails
+#$osDetails = Get-CimInstance Win32_OperatingSystem | Select-Object Caption, Description, Name, OSType, Version
+#Write-Host $osDetails
+
+# Installing Hyper-V
+Write-Host -Object "appveyor.prep: Install Hyper-V"
+Install-WindowsFeature -Name Hyper-V
+
+Write-Host -Object "appveyor.prep: Install Hyper-V PowerShell module"
+Install-WindowsFeature -Name Install-WindowsFeature -Name Hyper-V-PowerShell
 
 $sw.Stop()
 Update-AppveyorTest -Name "appveyor.prep" -Framework NUnit -FileName "appveyor.prep.ps1" -Outcome Passed -Duration $sw.ElapsedMilliseconds
