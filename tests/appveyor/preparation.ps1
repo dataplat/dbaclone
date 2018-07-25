@@ -2,7 +2,7 @@
 $sw = [system.diagnostics.stopwatch]::startNew()
 
 # Get PSScriptAnalyzer (to check warnings)
-Write-PSFMessage -Message "appveyor.prep: Install PSScriptAnalyzer" -Level Host
+Write-Host -Object "appveyor.prep: Install PSScriptAnalyzer" -ForegroundColor DarkGreen
 Install-Module -Name PSScriptAnalyzer -Force -SkipPublisherCheck | Out-Null
 
 # Get Pester (to run tests)
