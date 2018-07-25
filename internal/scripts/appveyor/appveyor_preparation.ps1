@@ -1,8 +1,6 @@
 Add-AppveyorTest -Name "appveyor.prep" -Framework NUnit -FileName "appveyor.prep.ps1" -Outcome Running
 $sw = [system.diagnostics.stopwatch]::startNew()
 
-Get-CimInstance Win32_OperatingSystem | Select-Object Caption, Description, Name, OSType, Version
-
 #Get PSScriptAnalyzer (to check warnings)
 Write-Host -Object "appveyor.prep: Install PSScriptAnalyzer" -ForegroundColor DarkGreen
 Install-Module -Name PSScriptAnalyzer -Force -SkipPublisherCheck | Out-Null
