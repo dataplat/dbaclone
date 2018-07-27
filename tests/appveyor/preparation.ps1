@@ -15,11 +15,11 @@ choco install pester | Out-Null
 
 # Get dbatools
 Write-Host -Object "appveyor.prep: Install dbatools" -ForegroundColor DarkGreen
-Install-Module -Name dbatools | Out-Null
+Install-Module -Name dbatools -Force | Out-Null
 
 # Get PSFramework
 Write-Host -Object "appveyor.prep: Install PSFramework" -ForegroundColor DarkGreen
-Install-Module -Name PSFramework | Out-Null
+Install-Module -Name PSFramework -Force | Out-Null
 
 # Get Hyper-V-PowerShell
 #Write-Host -Object "appveyor.prep: Install Hyper-V-PowerShell" -ForegroundColor DarkGreen
