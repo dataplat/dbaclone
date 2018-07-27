@@ -10,7 +10,8 @@ $supportedVersions = @(
     'Microsoft Windows 10 Enterprise',
     'Microsoft Windows 10 Education',
     'Microsoft Windows Server 2012 R2 Standard',
-    'Microsoft Windows Server 2012 R2 Enterprise'
+    'Microsoft Windows Server 2012 R2 Enterprise',
+    'Microsoft Windows Server 2012 R2 Datacenter'
 )
 
 # Get the OS details

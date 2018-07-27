@@ -14,4 +14,8 @@ else {
     $script:instance1_detailed = "localhost,1433\sql2008r2sp2" #Just to make sure things parse a port properly
     $script:appveyorlabrepo = "C:\github\appveyor-lab"
     $instances = @($script:instance1, $script:instance2)
+
+    $script:jsonfolder = "C:\projects\config"
+    $script:imagefolder = "C:\projects\images"
+    $script:clonefolder = "C:\projects\clones"
 }
