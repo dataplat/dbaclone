@@ -1,4 +1,4 @@
-<#
+﻿<#
 	.SYNOPSIS
 		Installs the PSModuleDevelopment Module from github
 
