@@ -311,8 +311,17 @@
         else {
             # Create the JSON files
 
+            if ($null -eq $filePath) {
+                $filePath = $Path
+            }
+
             # Create the PSDrive to be able to use credentials
-            $null = New-PSDrive -Name PSDatabaseClone -PSProvider FileSystem -Root $filePath -Credential $Credential
+            try {
+                $null = New-PSDrive -Name PSDatabaseClone -PSProvider FileSystem -Root $filePath -Credential $Credential
+            }
+            catch {
+                Stop-PSFFunction -Message "Couldn not create PS-Drive to JSON files" -Target $filePath
+            }
 
             # Create the files
             try {

@@ -227,11 +227,11 @@
                             $null = Dismount-VHD -Path $item.CloneLocation -Credential $Credential
                         }
                         else {
-                            $command = [ScriptBlock]::Create("Test-Path -Path $($item.CloneLocation)")
-                            Write-PSFMessage -Message "Dismounting disk $($item.CloneLocation) from $($item.HostName)" -Level Verbose
+                            $command = [ScriptBlock]::Create("Test-Path -Path '$($item.CloneLocation)'")
+                            Write-PSFMessage -Message "Dismounting disk '$($item.CloneLocation)' from $($item.HostName)" -Level Verbose
                             $result = Invoke-PSFCommand -ComputerName $item.HostName -ScriptBlock $command -Credential $Credential
                             #if (-not $result) {
-                            $command = [scriptblock]::Create("Dismount-VHD -Path `"$($item.CloneLocation)`"")
+                            $command = [scriptblock]::Create("Dismount-VHD -Path '$($item.CloneLocation)'")
                             $null = Invoke-PSFCommand -ComputerName $item.HostName -ScriptBlock $command -Credential $Credential
                             #}
                         }
@@ -246,18 +246,18 @@
                     try {
                         if ($computer.IsLocalhost) {
                             Write-PSFMessage -Message "Removing vhd access path" -Level Verbose
-                            $null = Remove-Item -Path $item.AccessPath -Credential $Credential -Force
+                            $null = Remove-Item -Path "$($item.AccessPath)" -Credential $Credential -Force
 
                             Write-PSFMessage -Message "Removing vhd" -Level Verbose
-                            $null = Remove-Item -Path $item.CloneLocation -Credential $Credential -Force
+                            $null = Remove-Item -Path "$($item.CloneLocation)" -Credential $Credential -Force
                         }
                         else {
                             Write-PSFMessage -Message "Removing vhd access path" -Level Verbose
-                            $command = [scriptblock]::Create("Remove-Item -Path $($item.AccessPath) -Force")
+                            $command = [scriptblock]::Create("Remove-Item -Path '$($item.AccessPath)' -Force")
                             $null = Invoke-PSFCommand -ComputerName $item.HostName -ScriptBlock $command -Credential $Credential
 
                             Write-PSFMessage -Message "Removing vhd" -Level Verbose
-                            $command = [scriptblock]::Create("Remove-Item -Path $($item.CloneLocation) -Force")
+                            $command = [scriptblock]::Create("Remove-Item -Path '$($item.CloneLocation)' -Force")
                             $null = Invoke-PSFCommand -ComputerName $item.HostName -ScriptBlock $command -Credential $Credential
                         }
                     }

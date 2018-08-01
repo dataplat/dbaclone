@@ -184,7 +184,7 @@
                     # Check the result
                     if ($resultPSRemote.Result) {
 
-                        $command = [scriptblock]::Create("Import-Module PSDatabaseClone")
+                        $command = [scriptblock]::Create("Import-Module PSDatabaseClone -Force")
 
                         try {
                             Invoke-PSFCommand -ComputerName $computer -ScriptBlock $command -Credential $Credential
@@ -237,15 +237,15 @@
                             }
                         }
                         else {
-                            $command = [scriptblock]::Create("Test-Path -Path $($item.ImageLocation)")
+                            $command = [scriptblock]::Create("Test-Path -Path '$($item.ImageLocation)'")
                             $result = Invoke-PSFCommand -ComputerName $computer -ScriptBlock $command -Credential $Credential
 
                             if ($result) {
-                                $command = [scriptblock]::Create("Remove-Item -Path $($item.ImageLocation) -Force")
+                                $command = [scriptblock]::Create("Remove-Item -Path '$($item.ImageLocation)' -Force")
                                 $result = Invoke-PSFCommand -ComputerName $computer -ScriptBlock $command -Credential $Credential
                             }
                             else {
-                                Write-PSFMessage -Message "Couldn't find image $($item.ImageLocation)" -Level Verbose
+                                Write-PSFMessage -Message "Couldn't find image '$($item.ImageLocation)'" -Level Verbose
                             }
                         }
                     }
