@@ -273,7 +273,7 @@
                         $imageData = $imageData | Where-Object {$_.ImageID -ne $item.ImageID}
 
                         # Set the image file
-                        $jsonImageFile = "JSONFolder:\images.json"
+                        $jsonImageFile = "PSDCJSONFolder:\images.json"
 
                         # Convert the data back to JSON
                         if ($newImageData.Count -ge 1) {
