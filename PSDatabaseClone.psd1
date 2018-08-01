@@ -74,7 +74,8 @@
     'Get-PSDCImage',
     'Convert-PSDCLocalUncPathToLocalPath',
     'New-PSDCVhdDisk',
-    'Initialize-PSDCVhdDisk'
+    'Initialize-PSDCVhdDisk',
+    'Test-PSDCRemoting'
 
     # Cmdlets to export from this module
     CmdletsToExport    = ''
