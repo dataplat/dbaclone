@@ -297,9 +297,6 @@
                             Clear-Content -Path $jsonCloneFile
                         }
 
-                        # Remove the PS Drive
-                        $null = Remove-PSDrive -Name JSONFolder
-
                     }
                 }
 
