@@ -543,7 +543,14 @@
                 [array]$images = $null
 
                 # Get all the images
-                $images = Get-PSDCImage
+                try{
+                    $images = Get-PSDCImage
+                }
+                catch{
+                    Stop-PSFFunction -Message "Couldn't get images" -Target $imageName -ErrorRecord $_
+                    return
+                }
+
 
                 # Setup the new image id
                 if ($images.Count -ge 1) {
