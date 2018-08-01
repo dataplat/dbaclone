@@ -3,7 +3,7 @@
     ModuleToProcess    = 'PSDatabaseClone.psm1'
 
     # Version number of this module.
-    ModuleVersion      = '0.1.0.0'
+    ModuleVersion      = '0.1.47'
 
     # ID used to uniquely identify this module
     GUID               = '747980ca-0d3d-4529-b4fd-e6cdd059c62a'
