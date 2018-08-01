@@ -287,7 +287,7 @@
                         $newCloneData = $cloneData | Where-Object {$_.CloneID -ne $item.CloneID}
 
                         # Set the clone file
-                        $jsonCloneFile = "JSONFolder:\clones.json"
+                        $jsonCloneFile = "PSDCJSONFolder:\clones.json"
 
                         # Convert the data back to JSON
                         if($newCloneData.Count -ge 1){
