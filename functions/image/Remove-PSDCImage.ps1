@@ -272,14 +272,8 @@
 
                         $imageData = $imageData | Where-Object {$_.ImageID -ne $item.ImageID}
 
-                        # Get the json file
-                        $jsonFolder = Get-PSFConfigValue -FullName psdatabaseclone.informationstore.path
-
-                        # Create a PS Drive
-                        $null = New-PSDrive -Name JSONFolder -Root $jsonFolder -Credential $Credential -PSProvider FileSystem
-
                         # Set the image file
-                        $jsonImageFile = JSONFolder:\images.json
+                        $jsonImageFile = "JSONFolder:\images.json"
 
                         # Convert the data back to JSON
                         if ($newImageData.Count -ge 1) {
@@ -288,9 +282,6 @@
                         else {
                             Clear-Content -Path $jsonImageFile
                         }
-
-                        # Remove the PS Drive
-                        $null = Remove-PSDrive -Name JSONFolder
 
                     }
                 }
