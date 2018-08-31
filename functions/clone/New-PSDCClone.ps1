@@ -161,12 +161,6 @@
 
                 # Setup the computer object
                 $computer = [PsfComputer]$server.Name
-
-                # Check if Hyper-V enabled for the SQL instance
-                if (-not (Test-PSDCHyperVEnabled -HostName $computer.ComputerName -Credential $Credential)) {
-                    Stop-PSFFunction -Message "Hyper-V is not enabled on host." -ErrorRecord $_ -Target $computer -Continue
-                    return
-                }
             }
             catch {
                 Stop-PSFFunction -Message "Could not connect to Sql Server instance $instance" -ErrorRecord $_ -Target $instance
