@@ -87,15 +87,20 @@
             Write-PSFMessage -Message "Vhd is already mounted" -Level Warning
 
             # retrieve the specific disk
-            $disk = $disks | Where-Object {$_.Location -eq $Path}
+            $disk = $disks | Where-Object Location -eq $Path
         }
         else {
-            if ($PSCmdlet.ShouldProcess($disk, "Mounting disk")) {
+            if ($PSCmdlet.ShouldProcess("Mounting disk")) {
                 # Mount the vhd
                 try {
                     Write-PSFMessage -Message "Mounting disk $disk" -Level Verbose
 
-                    $disk = Mount-VHD -Path $Path -PassThru | Get-Disk
+                    #$disk = Mount-VHD -Path $Path -PassThru | Get-Disk
+                    # Mount the disk
+                    Mount-DiskImage -ImagePath $Path
+
+                    # Get the disk
+                    $disk = Get-Disk | Where-Object Location -eq $Path
                 }
                 catch {
                     Stop-PSFFunction -Message "Couldn't mount vhd" -Target $Path -ErrorRecord $_ -Continue
@@ -123,7 +128,8 @@
             }
             catch {
                 # Dismount the drive
-                Dismount-VHD -Path $Path
+                #Dismount-VHD -Path $Path
+                Dismount-DiskImage -DiskImage $Path
 
                 Stop-PSFFunction -Message "Couldn't create the partition" -Target $disk -ErrorRecord $_ -Continue
             }
