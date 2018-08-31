@@ -15,8 +15,14 @@
     .PARAMETER FileName
         The file name of the VHD
 
+    .PARAMETER VhdType
+        The type of the harddisk. This can either by VHD (version 1) or VHDX (version 2)
+        The default is VHDX.
+
     .PARAMETER Size
-        The size of the VHD.
+        The size of the VHD in MB.
+        If no size is used the default will be set to the type of VHD.
+        The default for VHD is 2 TB and for VHDX 64TB
 
     .PARAMETER FixedSize
         Set the VHD to have a fixed size or not.
@@ -63,7 +69,9 @@
         [string]$Destination,
         [string]$Name,
         [string]$FileName,
-        [uint64]$Size = 64TB,
+        [ValidateSet('VHD', 'VHDX')]
+        [string]$VhdType,
+        [uint64]$Size,
         [switch]$FixedSize,
         [switch]$ReadOnly,
         [switch]$Force,
@@ -84,13 +92,42 @@
             }
         }
 
+        # Check the vhd type
+        if (-not $VhdType) {
+            Write-PSFMessage -Message "Setting vhd type to 'VHD" -Level Verbose
+            $VhdType = 'VHDX'
+        }
+
+        # Check the size of the file
+        if (-not $Size) {
+            switch ($VhdType) {
+                'VHD' { $Size = 2TB }
+                'VHDX' { $Size = 64TB }
+            }
+
+            # Make sure the size in MB instead of some other version
+            $Size = $Size / 1MB
+        }
+        else {
+            if ($VhdType -eq 'VHD' -and $size -gt 2TB) {
+                Stop-PSFFunction -Message "Size cannot exceed 2TB when using VHD type."
+            }
+            elseif ($VhdType -eq 'VHDX' -and $size -gt 64TB) {
+                Stop-PSFFunction -Message "Size cannot exceed 64TB when using VHDX type."
+            }
+
+            if ($Size -lt 3MB) {
+                Stop-PSFFunction -Message "The size of the vhd cannot be smaller than 3MB" -Continue
+            }
+        }
+
         # Check the name and file name parameters
         if (-not $Name -and -not $FileName) {
             Stop-PSFFunction -Message "Either set the Name or FileName parameter"
         }
         else {
             if (-not $FileName) {
-                $FileName = "$Name.vhdx"
+                $FileName = "$Name.$($VhdType.ToLower())"
                 Write-PSFMessage -Message "Setting file name to $FileName" -Level Verbose
             }
             elseif ($FileName) {
@@ -112,13 +149,21 @@
 
         # Check if the file does not yet exist
         if (Test-Path $vhdPath) {
-            Stop-PSFFunction -Message "The vhd file already exists" -Continue
+            if(-not $Force){
+                Stop-PSFFunction -Message "The vhd file already exists" -Continue
+            }
+            else{
+                try{
+                    Remove-Item -Path $vhdPath -Force:$Force
+                }
+                catch{
+                    Stop-PSFFunction -Message "Could not remove VHD '$vhdPath'" -Continue -ErrorRecord $_
+                }
+            }
         }
 
-        # Check the size of the file
-        if ($Size -lt 3MB) {
-            Stop-PSFFunction -Message "The size of the vhd cannot be smaller than 3MB" -Continue
-        }
+        # Set the location where to save the diskpart command
+        $diskpartScriptFile = "$($MyInvocation.MyCommand.Module.ModuleBase)\DiskPartCommand.txt"
     }
 
     process {
@@ -129,11 +174,18 @@
             # Check if the file needs to have a fixed size
             try {
                 if ($FixedSize) {
-                    $null = New-VHD -Path $vhdPath -SizeBytes $Size -Fixed
+                    $command = "create vdisk file='$vhdPath' maximum=$Size type=fixed"
                 }
                 else {
-                    $null = New-VHD -Path $vhdPath -SizeBytes $Size -Dynamic
+                    $command = "create vdisk file='$vhdPath' maximum=$Size type=expandable"
                 }
+
+                # Set the content of the diskpart script file
+                Set-Content -Path $diskpartScriptFile -Value $command -Force
+
+                $script = [ScriptBlock]::Create("diskpart /s $diskpartScriptFile")
+                Invoke-PSFCommand -ScriptBlock $script
+
             }
             catch {
                 Stop-PSFFunction -Message "Something went wrong creating the vhd" -ErrorRecord $_ -Continue
@@ -142,6 +194,9 @@
     }
 
     end {
+        # Clean up the script file for diskpart
+        Remove-Item $diskpartScriptFile -Force
+
         # Test if there are any errors
         if (Test-PSFFunctionInterrupt) { return }
 
