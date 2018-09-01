@@ -1,6 +1,6 @@
 ﻿@{
     # Script module or binary module file associated with this manifest
-    ModuleToProcess    = 'PSDatabaseClone.psm1'
+    RootModule         = 'PSDatabaseClone.psm1'
 
     # Version number of this module.
     ModuleVersion      = '0.1.47'

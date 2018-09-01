@@ -112,8 +112,6 @@
         $DestinationCredential,
         [System.Management.Automation.PSCredential]
         $PSDCSqlCredential,
-        [Parameter(Mandatory = $true)]
-        [ValidateNotNullOrEmpty()]
         [string]$ImageNetworkPath,
         [string]$ImageLocalPath,
         [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
@@ -128,6 +126,12 @@
         # Check if the setup has ran
         if (-not (Get-PSFConfigValue -FullName psdatabaseclone.setup.status)) {
             Stop-PSFFunction -Message "The module setup has NOT yet successfully run. Please run 'Set-PSDCConfiguration'"
+            return
+        }
+
+        # Checking parameters
+        if (-not $ImageNetworkPath) {
+            Stop-PSFFunction -Message "Please enter the network path where to save the images"
             return
         }
 
@@ -207,12 +211,6 @@
             }
         }
 
-        # Check if Hyper-V is enabled
-        if (-not (Test-PSDCHyperVEnabled -HostName $uriHost -Credential $DestinationCredential)) {
-            Stop-PSFFunction -Message "Hyper-V is not enabled on the host." -ErrorRecord $_ -Target $uriHost
-            return
-        }
-
         # Get the local path from the network path
         if (-not $ImageLocalPath) {
             if ($PSCmdlet.ShouldProcess($ImageNetworkPath, "Converting UNC path to local path")) {
@@ -232,11 +230,44 @@
                     }
 
                     Write-PSFMessage -Message "Converted '$ImageNetworkPath' to '$ImageLocalPath'" -Level Verbose
+
                 }
                 catch {
                     Stop-PSFFunction -Message "Something went wrong getting the local image path" -Target $ImageNetworkPath
                     return
                 }
+            }
+        }
+        else {
+            # Cleanup the values in the network path
+            if ($ImageLocalPath.EndsWith("\")) {
+                $ImageLocalPath = $ImageLocalPath.Substring(0, $ImageLocalPath.Length - 1)
+            }
+
+            # Check if the assigned value in the local path corresponds to the one retrieved
+            try {
+                # Check if computer is local
+                if ($computer.IsLocalhost) {
+                    $convertedLocalPath = Convert-PSDCLocalUncPathToLocalPath -UncPath $ImageNetworkPath -EnableException
+                }
+                else {
+                    $command = "Convert-PSDCLocalUncPathToLocalPath -UncPath `"$ImageNetworkPath`" -EnableException"
+                    $commandGetLocalPath = [ScriptBlock]::Create($command)
+                    $convertedLocalPath = Invoke-PSFCommand -ComputerName $computer -ScriptBlock $commandGetLocalPath -Credential $DestinationCredential
+                }
+
+                Write-PSFMessage -Message "Converted '$ImageNetworkPath' to '$ImageLocalPath'" -Level Verbose
+
+                # Check if the ImageLocalPath and convertedLocalPath are the same
+                if ($ImageLocalPath -ne $convertedLocalPath) {
+                    Stop-PSFFunction -Message "The local path '$ImageLocalPath' is not the same location as the network path '$ImageNetworkPath'" -Target $ImageNetworkPath
+                    return
+                }
+
+            }
+            catch {
+                Stop-PSFFunction -Message "Something went wrong getting the local image path" -Target $ImageNetworkPath
+                return
             }
         }
 
@@ -463,7 +494,7 @@
                     $restore = Restore-DbaDatabase -SqlInstance $DestinationSqlInstance -SqlCredential $DestinationSqlCredential `
                         -DatabaseName $tempDbName -Path $lastFullBackup `
                         -DestinationDataDirectory $imageDataFolder `
-                        -DestinationLogDirectory $imageLogFolder
+                        -DestinationLogDirectory $imageLogFolder -WithReplace
                 }
                 catch {
                     Stop-PSFFunction -Message "Couldn't restore database $db as $tempDbName on $DestinationSqlInstance" -Target $restore -ErrorRecord $_ -Continue
@@ -489,13 +520,13 @@
                     # Check if computer is local
                     if ($computer.IsLocalhost) {
                         # Dismount the VHD
-                        $null = Dismount-VHD -Path $vhdPath
+                        $null = Dismount-DiskImage -ImagePath $vhdPath
 
                         # Remove the access path
                         $null = Remove-Item -Path $accessPath -Force
                     }
                     else {
-                        $command = [ScriptBlock]::Create("Dismount-VHD -Path $vhdPath")
+                        $command = [ScriptBlock]::Create("Dismount-DiskImage -ImagePath $vhdPath")
                         $null = Invoke-PSFCommand -ComputerName $computer -ScriptBlock $command -Credential $DestinationCredential
 
                         $command = [ScriptBlock]::Create("Remove-Item -Path $accessPath -Force")
@@ -543,10 +574,10 @@
                 [array]$images = $null
 
                 # Get all the images
-                try{
+                try {
                     $images = Get-PSDCImage
                 }
-                catch{
+                catch {
                     Stop-PSFFunction -Message "Couldn't get images" -Target $imageName -ErrorRecord $_
                     return
                 }

@@ -207,7 +207,6 @@
                 HostName      = $result.HostName
             }
         }
-
     }
 
     end {

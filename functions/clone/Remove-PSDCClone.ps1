@@ -224,14 +224,14 @@
                     try {
 
                         if ($computer.IsLocalhost) {
-                            $null = Dismount-VHD -Path $item.CloneLocation -Credential $Credential
+                            $null = Dismount-DiskImage -ImagePath $item.CloneLocation
                         }
                         else {
                             $command = [ScriptBlock]::Create("Test-Path -Path '$($item.CloneLocation)'")
                             Write-PSFMessage -Message "Dismounting disk '$($item.CloneLocation)' from $($item.HostName)" -Level Verbose
                             $result = Invoke-PSFCommand -ComputerName $item.HostName -ScriptBlock $command -Credential $Credential
                             #if (-not $result) {
-                            $command = [scriptblock]::Create("Dismount-VHD -Path '$($item.CloneLocation)'")
+                            $command = [scriptblock]::Create("Dismount-DiskImage -ImagePath '$($item.CloneLocation)'")
                             $null = Invoke-PSFCommand -ComputerName $item.HostName -ScriptBlock $command -Credential $Credential
                             #}
                         }
