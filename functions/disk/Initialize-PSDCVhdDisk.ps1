@@ -95,7 +95,6 @@
                 try {
                     Write-PSFMessage -Message "Mounting disk $disk" -Level Verbose
 
-                    #$disk = Mount-VHD -Path $Path -PassThru | Get-Disk
                     # Mount the disk
                     Mount-DiskImage -ImagePath $Path
 
@@ -128,7 +127,6 @@
             }
             catch {
                 # Dismount the drive
-                #Dismount-VHD -Path $Path
                 Dismount-DiskImage -DiskImage $Path
 
                 Stop-PSFFunction -Message "Couldn't create the partition" -Target $disk -ErrorRecord $_ -Continue
