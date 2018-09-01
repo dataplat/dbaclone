@@ -203,6 +203,7 @@
                 # Set the variable for the information store
                 $InformationStore = 'File'
             }
+
         }
 
         # Unregister any configurations
@@ -376,9 +377,6 @@
             Set-PSFConfig -Module PSDatabaseClone -Name informationstore.credential -Value $Credential
         }
 
-        # Set if Hyper-V is enabled
-        Set-PSFConfig -Module PSDatabaseClone -Name hyperv.enabled -Value (Test-PSDCHyperVEnabled) -Validation bool
-
         # Set the information store mode
         Set-PSFConfig -Module PSDatabaseClone -Name informationstore.mode -Value $InformationStore
 
@@ -390,9 +388,9 @@
         Get-PSFConfig -FullName psdatabaseclone.database.server | Register-PSFConfig -Scope SystemDefault
         Get-PSFConfig -FullName psdatabaseclone.database.name | Register-PSFConfig -Scope SystemDefault
 
-        Get-PSFConfig -FullName psdatabaseclone.hyperv.enabled | Register-PSFConfig -Scope SystemDefault
-
-        #Get-PSFConfig -FullName psdatabaseclone.database.credential | Register-PSFConfig -Scope SystemDefault
+        # Set the path to the diskpart script file
+        Set-PSFConfig -Module PSDatabaseClone -Name diskpart.scriptfile -Value "$env:APPDATA\psdatabaseclone\diskpartcommand.txt" -Validation string
+        Get-PSFConfig -FullName psdatabaseclone.diskpart.scriptfile | Register-PSFConfig -Scope SystemDefault
 
         # Check if all the settings have been made
         if ($InformationStore -eq 'SQL') {
@@ -423,6 +421,8 @@
 
         # Set the overall status in the configurations
         Get-PSFConfig -FullName psdatabaseclone.setup.status | Register-PSFConfig -Scope SystemDefault
+
+
     }
 
     end {

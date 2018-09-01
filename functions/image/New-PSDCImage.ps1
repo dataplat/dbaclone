@@ -300,12 +300,6 @@
             Stop-PSFFunction -Message "Please supply a database to create an image for" -Target $SourceSqlInstance -Continue
         }
 
-        # Check if Hyper-V is enabled
-        if (-not (Test-PSDCHyperVEnabled -HostName $uriHost -Credential $DestinationCredential)) {
-            Stop-PSFFunction -Message "Hyper-V is not enabled on the host." -ErrorRecord $_ -Target $uriHost
-            return
-        }
-
         # Set time stamp
         $timestamp = Get-Date -format "yyyyMMddHHmmss"
 
@@ -500,7 +494,7 @@
                     $restore = Restore-DbaDatabase -SqlInstance $DestinationSqlInstance -SqlCredential $DestinationSqlCredential `
                         -DatabaseName $tempDbName -Path $lastFullBackup `
                         -DestinationDataDirectory $imageDataFolder `
-                        -DestinationLogDirectory $imageLogFolder
+                        -DestinationLogDirectory $imageLogFolder -WithReplace
                 }
                 catch {
                     Stop-PSFFunction -Message "Couldn't restore database $db as $tempDbName on $DestinationSqlInstance" -Target $restore -ErrorRecord $_ -Continue
@@ -526,13 +520,13 @@
                     # Check if computer is local
                     if ($computer.IsLocalhost) {
                         # Dismount the VHD
-                        $null = Dismount-VHD -Path $vhdPath
+                        $null = Dismount-DiskImage -ImagePath $vhdPath
 
                         # Remove the access path
                         $null = Remove-Item -Path $accessPath -Force
                     }
                     else {
-                        $command = [ScriptBlock]::Create("Dismount-VHD -Path $vhdPath")
+                        $command = [ScriptBlock]::Create("Dismount-DiskImage -ImagePath $vhdPath")
                         $null = Invoke-PSFCommand -ComputerName $computer -ScriptBlock $command -Credential $DestinationCredential
 
                         $command = [ScriptBlock]::Create("Remove-Item -Path $accessPath -Force")
