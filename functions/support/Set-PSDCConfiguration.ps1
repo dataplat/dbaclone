@@ -390,6 +390,7 @@
 
         # Set the path to the diskpart script file
         Set-PSFConfig -Module PSDatabaseClone -Name diskpart.scriptfile -Value "$env:APPDATA\psdatabaseclone\diskpartcommand.txt" -Validation string
+        New-Item -Path "$env:APPDATA\psdatabaseclone" -ItemType Directory
         Get-PSFConfig -FullName psdatabaseclone.diskpart.scriptfile | Register-PSFConfig -Scope SystemDefault
 
         # Check if all the settings have been made
