@@ -13,7 +13,7 @@ shallow_clone: true
 
 environment:
   environment: development
-  version: 0.1.$(appveyor_build_number)
+  version: 0.2.$(appveyor_build_number)
   appveyor_rdp_password: Psd@tabaseclone2018
 
 matrix:
