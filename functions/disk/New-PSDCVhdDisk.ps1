@@ -167,7 +167,7 @@
 
         if(-not (Test-Path -Path $diskpartScriptFile)){
             try{
-                New-Item -Path $diskpartScriptFile -ItemType File
+                $null = New-Item -Path $diskpartScriptFile -ItemType File
             }
             catch{
                 Stop-PSFFunction -Message "Could not create diskpart script file" -ErrorRecord $_ -Continue
