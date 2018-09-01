@@ -110,6 +110,12 @@
     )
 
     begin {
+        # Check if the setup has ran
+        if (-not (Get-PSFConfigValue -FullName psdatabaseclone.setup.status)) {
+            Stop-PSFFunction -Message "The module setup has NOT yet successfully run. Please run 'Set-PSDCConfiguration'"
+            return
+        }
+
         # Get the information store
         $informationStore = Get-PSFConfigValue -FullName psdatabaseclone.informationstore.mode
 
@@ -145,6 +151,9 @@
         if ($Disabled) {
             $active = 0
         }
+
+        # Set the location where to save the diskpart command
+        $diskpartScriptFile = Get-PSFConfigValue -FullName psdatabaseclone.diskpart.scriptfile -Fallback "$env:APPDATA\psdatabaseclone\diskpartcommand.txt"
     }
 
     process {
@@ -351,9 +360,15 @@
                     try {
                         Write-PSFMessage -Message "Creating clone from $ParentVhd" -Level Verbose
 
+                        $command = "create vdisk file='$Destination\$CloneName.vhdx' parent='$ParentVhd'"
+
                         # Check if computer is local
                         if ($computer.IsLocalhost) {
-                            $vhd = New-VHD -ParentPath $ParentVhd -Path "$Destination\$CloneName.vhdx" -Differencing
+                            # Set the content of the diskpart script file
+                            Set-Content -Path $diskpartScriptFile -Value $command -Force
+
+                            $script = [ScriptBlock]::Create("diskpart /s $diskpartScriptFile")
+                            $null = Invoke-PSFCommand -ScriptBlock $script
                         }
                         else {
                             $command = [ScriptBlock]::Create("New-VHD -ParentPath $ParentVhd -Path `"$Destination\$CloneName.vhdx`" -Differencing")
@@ -366,7 +381,7 @@
 
                     }
                     catch {
-                        Stop-PSFFunction -Message "Could not create clone" -Target $vhd -Continue
+                        Stop-PSFFunction -Message "Could not create clone" -Target $vhd -Continue -ErrorRecord $_
                     }
                 }
 
@@ -378,14 +393,14 @@
                         # Check if computer is local
                         if ($computer.IsLocalhost) {
                             # Mount the disk
-                            $null = Mount-VHD -Path "$Destination\$CloneName.vhdx" -NoDriveLetter
+                            $null = Mount-DiskImage -ImagePath "$Destination\$CloneName.vhdx"
 
                             # Get the disk based on the name of the vhd
                             $disk = Get-Disk | Where-Object {$_.Location -eq "$Destination\$CloneName.vhdx"}
                         }
                         else {
                             # Mount the disk
-                            $command = [ScriptBlock]::Create("Mount-VHD -Path `"$Destination\$CloneName.vhdx`" -NoDriveLetter")
+                            $command = [ScriptBlock]::Create("Mount-DiskImage -ImagePath `"$Destination\$CloneName.vhdx`"")
                             $null = Invoke-PSFCommand -ComputerName $computer -ScriptBlock $command -Credential $Credential
 
                             # Get the disk based on the name of the vhd
