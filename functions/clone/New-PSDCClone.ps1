@@ -154,6 +154,15 @@
 
         # Set the location where to save the diskpart command
         $diskpartScriptFile = Get-PSFConfigValue -FullName psdatabaseclone.diskpart.scriptfile -Fallback "$env:APPDATA\psdatabaseclone\diskpartcommand.txt"
+
+        if(-not (Test-Path -Path $diskpartScriptFile)){
+            try{
+                $null = New-Item -Path $diskpartScriptFile -ItemType File
+            }
+            catch{
+                Stop-PSFFunction -Message "Could not create diskpart script file" -ErrorRecord $_ -Continue
+            }
+        }
     }
 
     process {
