@@ -163,7 +163,7 @@
         }
 
         # Set the location where to save the diskpart command
-        $diskpartScriptFile = "$($MyInvocation.MyCommand.Module.ModuleBase)\DiskPartCommand.txt"
+        $diskpartScriptFile = Get-PSFConfigValue -FullName psdatabaseclone.diskpart.scriptfile -Fallback "$env:APPDATA\psdatabaseclone\diskpartcommand.txt"
     }
 
     process {
