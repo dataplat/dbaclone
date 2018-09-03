@@ -378,6 +378,7 @@
                 }
             }
 
+
             if ($PSCmdlet.ShouldProcess("$imageName.vhdx", "Initializing the vhd")) {
                 # Try to initialize the vhd
                 try {
