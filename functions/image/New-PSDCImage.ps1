@@ -60,6 +60,9 @@
     .PARAMETER UseLastFullBackup
         Use the last full backup created for the database
 
+    .PARAMETER CopyOnlyBackup
+        Create a backup as COPY_ONLY
+
     .PARAMETER Force
         Forcefully execute commands when needed
 
@@ -118,6 +121,7 @@
         [object[]]$Database,
         [switch]$CreateFullBackup,
         [switch]$UseLastFullBackup,
+        [switch]$CopyOnlyBackup,
         [switch]$Force,
         [switch]$EnableException
     )
@@ -341,13 +345,10 @@
 
             if ($CreateFullBackup) {
                 if ($PSCmdlet.ShouldProcess($db, "Creating full backup for database $db")) {
+
                     # Create the backup
                     Write-PSFMessage -Message "Creating new full backup for database $db" -Level Verbose
-                    $null = Backup-DbaDatabase -SqlInstance $SourceSqlInstance -SqlCredential $SourceSqlCredential -Database $db.Name
-
-                    # Get the last full backup
-                    Write-PSFMessage -Message "Trying to retrieve the last full backup for $db" -Level Verbose
-                    $lastFullBackup = Get-DbaBackupHistory -SqlServer $SourceSqlInstance -SqlCredential $SourceSqlCredential -Databases $db.Name -LastFull
+                    $lastFullBackup = Backup-DbaDatabase -SqlInstance $SourceSqlInstance -SqlCredential $SourceSqlCredential -Database $db.Name -CopyOnly:$CopyOnlyBackup
                 }
             }
             elseif ($UseLastFullBackup) {
@@ -376,6 +377,7 @@
                     Stop-PSFFunction -Message "Couldn't create vhd $imageName" -Target "$imageName.vhd" -ErrorRecord $_ -Continue
                 }
             }
+
 
             if ($PSCmdlet.ShouldProcess("$imageName.vhdx", "Initializing the vhd")) {
                 # Try to initialize the vhd
