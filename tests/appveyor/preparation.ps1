@@ -41,6 +41,9 @@ if(-not (Test-Path -Path $script:jsonfolder)){
     $null = New-Item -Path $script:jsonfolder -ItemType Directory -Force
 }
 
+# Create share
+$null = New-SmbShare -Name "images" -Path $script:imagefolder -FullAccess "Everyone"
+
 # Creating config files
 Write-Host -Object "appveyor.prep: Creating configurations files" -ForegroundColor DarkGreen
 
