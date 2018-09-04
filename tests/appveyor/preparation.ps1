@@ -21,11 +21,6 @@ Install-Module -Name dbatools -Force | Out-Null
 Write-Host -Object "appveyor.prep: Install PSFramework" -ForegroundColor DarkGreen
 Install-Module -Name PSFramework -Force | Out-Null
 
-# Get Hyper-V-PowerShell
-#Write-Host -Object "appveyor.prep: Install Hyper-V-PowerShell" -ForegroundColor DarkGreen
-#Install-WindowsFeature -Name Hyper-V-PowerShell | Out-Null
-#Install-WindowsFeature RSAT-Hyper-V-Tools -IncludeAllSubFeature | Out-Null
-
 # Creating folder
 Write-Host -Object "appveyor.prep: Creating image and clone directories" -ForegroundColor DarkGreen
 if(-not (Test-Path -Path $script:workingfolder)){
