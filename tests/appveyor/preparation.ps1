@@ -26,27 +26,33 @@ Install-Module -Name PSFramework -Force | Out-Null
 #Install-WindowsFeature -Name Hyper-V-PowerShell | Out-Null
 #Install-WindowsFeature RSAT-Hyper-V-Tools -IncludeAllSubFeature | Out-Null
 
-# Creating config files
-Write-Host -Object "appveyor.prep: Creating configurations files" -ForegroundColor DarkGreen
-$configPath = "C:\projects\config"
-
-$null = New-Item -Path "$configPath\hosts.json" -Force:$Force
-$null = New-Item -Path "$configPath\images.json" -Force:$Force
-$null = New-Item -Path "$configPath\clones.json" -Force:$Force
-
 # Creating folder
 Write-Host -Object "appveyor.prep: Creating image and clone directories" -ForegroundColor DarkGreen
-$imageFolder = "C:\projects\images"
-$null = New-Item -Path $imageFolder -ItemType Directory -Force:$Force
+if(-not (Test-Path -Path $script:workingfolder)){
+    $null = New-Item -Path $script:workingfolder -ItemType Directory -Force
+}
+if(-not (Test-Path -Path $script:imagefolder)){
+    $null = New-Item -Path $script:imagefolder -ItemType Directory -Force
+}
+if(-not (Test-Path -Path $script:clonefolder)){
+    $null = New-Item -Path $script:clonefolder -ItemType Directory -Force
+}
+if(-not (Test-Path -Path $script:jsonfolder)){
+    $null = New-Item -Path $script:jsonfolder -ItemType Directory -Force
+}
 
-$cloneFolder = "C:\projects\clones"
-$null = New-Item -Path $cloneFolder -ItemType Directory -Force:$Force
+# Creating config files
+Write-Host -Object "appveyor.prep: Creating configurations files" -ForegroundColor DarkGreen
+
+$null = New-Item -Path "$($script:jsonfolder)\hosts.json" -Force:$Force
+$null = New-Item -Path "$($script:jsonfolder)\images.json" -Force:$Force
+$null = New-Item -Path "$($script:jsonfolder)\clones.json" -Force:$Force
 
 # Setting configurations
 Write-Host -Object "appveyor.prep: Setting configurations" -ForegroundColor DarkGreen
 Set-PSFConfig -Module PSDatabaseClone -Name setup.status -Value $true -Validation bool
 Set-PSFConfig -Module PSDatabaseClone -Name informationstore.mode -Value 'File'
-Set-PSFConfig -Module PSDatabaseClone -Name informationstore.path -Value "$configPath" -Validation string
+Set-PSFConfig -Module PSDatabaseClone -Name informationstore.path -Value "$($script:jsonfolder)" -Validation string
 
 # Registering configurations
 Write-Host -Object "appveyor.prep: Registering configurations" -ForegroundColor DarkGreen
