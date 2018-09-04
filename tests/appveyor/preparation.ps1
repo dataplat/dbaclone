@@ -27,7 +27,7 @@ if (-not (Test-Path -Path $script:workingfolder)) {
     $null = New-Item -Path $script:workingfolder -ItemType Directory -Force
 
     $accessRule = New-Object System.Security.AccessControl.FilesystemAccessrule("Everyone", "FullControl", "Allow")
-    $acl = Get-Acl $($script:workingfolder).FullName
+    $acl = Get-Acl $script:workingfolder
 
     # Add this access rule to the ACL
     $acl.SetAccessRule($accessRule)
