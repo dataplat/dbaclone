@@ -110,10 +110,10 @@
             }
         }
         else {
-            if ($VhdType -eq 'VHD' -and $size -gt 2TB) {
+            if ($VhdType -eq 'VHD' -and $Size -gt 2TB) {
                 Stop-PSFFunction -Message "Size cannot exceed 2TB when using VHD type."
             }
-            elseif ($VhdType -eq 'VHDX' -and $size -gt 64TB) {
+            elseif ($VhdType -eq 'VHDX' -and $Size -gt 64TB) {
                 Stop-PSFFunction -Message "Size cannot exceed 64TB when using VHDX type."
             }
 
