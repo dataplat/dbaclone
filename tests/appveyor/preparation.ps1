@@ -24,7 +24,7 @@ Install-Module -Name PSFramework -Force | Out-Null
 # Creating folder
 Write-Host -Object "appveyor.prep: Creating image and clone directories" -ForegroundColor DarkGreen
 if (-not (Test-Path -Path $script:workingfolder)) {
-    $null = New-Item -Path $script:workingfolder -ItemType Directory -Force
+    New-Item -Path $script:workingfolder -ItemType Directory -Force
 
     $accessRule = New-Object System.Security.AccessControl.FilesystemAccessrule("Everyone", "FullControl", "Allow")
     $acl = Get-Acl $script:workingfolder
