@@ -57,6 +57,8 @@ Set-PSFConfig -Module PSDatabaseClone -Name setup.status -Value $true -Validatio
 Set-PSFConfig -Module PSDatabaseClone -Name informationstore.mode -Value 'File'
 Set-PSFConfig -Module PSDatabaseClone -Name informationstore.path -Value "$($script:jsonfolder)" -Validation string
 
+Set-PSFConfig -Module psdatabaseclone -Name diskpart.scriptfile -Value $script:workingfolder
+
 # Registering configurations
 Write-Host -Object "appveyor.prep: Registering configurations" -ForegroundColor DarkGreen
 Get-PSFConfig -FullName psdatabaseclone.setup.status | Register-PSFConfig -Scope SystemDefault
