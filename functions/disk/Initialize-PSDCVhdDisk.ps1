@@ -63,7 +63,7 @@
         [System.Management.Automation.PSCredential]
         $Credential,
         [ValidateSet('GPT', 'MBR')]
-        [string]$PartitionStyle = 'GPT',
+        [string]$PartitionStyle,
         [int]$AllocationUnitSize = 64KB,
         [switch]$EnableException
     )
@@ -72,6 +72,12 @@
         # Check the path to the vhd
         if (-not (Test-Path -Path $Path -Credential $Credential)) {
             Stop-PSFFunction -Message "Vhd path cannot be found" -Target $Path -Continue
+        }
+
+        # Check the partition style
+        if(-not $PartitionStyle){
+            Write-PFSMessage -Message "Setting partition style to 'GPT'"
+            $PartitionStyle = 'GPT'
         }
     }
 
@@ -111,6 +117,7 @@
             # Check if the disk is already initialized
             if ($disk.PartitionStyle -eq 'RAW') {
                 try {
+                    'RAW'
                     Write-PSFMessage -Message "Initializing disk $disk" -Level Verbose
                     $disk | Initialize-Disk -PartitionStyle $PartitionStyle -Confirm:$false
                 }
