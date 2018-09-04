@@ -8,14 +8,12 @@ elseif (Test-Path "$PSScriptRoot\constants.local.ps1") {
     . "$PSScriptRoot\constants.local.ps1"
 }
 else {
-    $script:instance1 = "localhost\sql2008r2sp2"
-    $script:instance2 = "localhost\sql2016"
-    $script:instance3 = "localhost\sql2017"
-    $script:instance1_detailed = "localhost,1433\sql2008r2sp2" #Just to make sure things parse a port properly
     $script:appveyorlabrepo = "C:\github\appveyor-lab"
-    $instances = @($script:instance1, $script:instance2)
 
     $script:jsonfolder = "C:\projects\config"
+
+    $script:workingfolder = "C:\projects"
+
     $script:imagefolder = "C:\projects\images"
     $script:clonefolder = "C:\projects\clones"
 }
