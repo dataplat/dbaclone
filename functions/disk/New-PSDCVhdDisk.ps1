@@ -63,13 +63,14 @@
     #>
 
     [CmdLetBinding(SupportsShouldProcess = $true)]
+    [OutputType('System.String')]
 
     param(
         [parameter(Mandatory = $true)]
         [string]$Destination,
         [string]$Name,
         [string]$FileName,
-        [ValidateSet('VHD', 'VHDX')]
+        [ValidateSet('VHD', 'VHDX', 'vhd', 'vhdx')]
         [string]$VhdType,
         [uint64]$Size,
         [switch]$FixedSize,
@@ -94,19 +95,19 @@
 
         # Check the vhd type
         if (-not $VhdType) {
-            Write-PSFMessage -Message "Setting vhd type to 'VHD" -Level Verbose
+            Write-PSFMessage -Message "Setting vhd type to 'VHDX'" -Level Verbose
             $VhdType = 'VHDX'
         }
+
+        # Make sure thevalue is in uppercase all th time
+        $VhdType = $VhdType.ToUpper()
 
         # Check the size of the file
         if (-not $Size) {
             switch ($VhdType) {
-                'VHD' { $Size = 2TB }
+                'VHD' { $Size = 2048MB }
                 'VHDX' { $Size = 64TB }
             }
-
-            # Make sure the size in MB instead of some other version
-            $Size = $Size / 1MB
         }
         else {
             if ($VhdType -eq 'VHD' -and $size -gt 2TB) {
@@ -120,6 +121,9 @@
                 Stop-PSFFunction -Message "The size of the vhd cannot be smaller than 3MB" -Continue
             }
         }
+
+        # Make sure the size in MB instead of some other version
+        $Size = $Size / 1MB
 
         # Check the name and file name parameters
         if (-not $Name -and -not $FileName) {
