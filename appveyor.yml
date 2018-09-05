@@ -13,7 +13,7 @@ shallow_clone: true
 
 environment:
   environment: development
-  version: 0.1.$(appveyor_build_number)
+  version: 0.2.$(appveyor_build_number)
   appveyor_rdp_password: Psd@tabaseclone2018
 
 matrix:
@@ -32,5 +32,5 @@ test_script:
 #    - master
 #    - development
 
-on_finish:
-  - ps: $blockRdp = $true; iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))
+#on_finish:
+#  - ps: $blockRdp = $true; iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))
