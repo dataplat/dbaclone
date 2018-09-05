@@ -15,7 +15,7 @@ Describe "$commandname Unit Tests" {
     }
 
     Context "Create image with defaults and a new backup" {
-        $image = New-PSDCImage -SourceSqlInstance localhost -DestinationSqlInstance localhost -ImageNetworkPath \\localhost\images -Database DB1 -CreateFullBackup -CopyOnlyBackup
+        $image = New-PSDCImage -SourceSqlInstance localhost -DestinationSqlInstance localhost -ImageNetworkPath "\\localhost\C$\projects\" -Database DB1 -CreateFullBackup -CopyOnlyBackup
 
         It "Image object cannot be null" {
             $image | Should Not Be $null
