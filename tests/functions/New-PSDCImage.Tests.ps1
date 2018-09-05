@@ -10,7 +10,7 @@ Describe "$commandname Unit Tests" {
         # Create database if it doesn't exist
         if ($databases.Name -notcontains 'DB1') {
             # Create the database
-            Invoke-DbaSqlCmd -SqlInstance localhost -Database master -Query "CREATE DATABASE DB1"
+            Invoke-DbaSqlQuery -SqlInstance localhost -Database master -Query "CREATE DATABASE [DB1]"
         }
     }
 
