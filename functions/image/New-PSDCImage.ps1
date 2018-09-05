@@ -381,7 +381,7 @@
                         $null = New-PSDCVhdDisk -Destination $imagePath -Name $imageName -VhdType $VhdType
                     }
                     else {
-                        $command = [ScriptBlock]::Create("New-PSDCVhdDisk -Destination '$imagePath' -FileName $imageName -VhdType $VhdType")
+                        $command = [ScriptBlock]::Create("New-PSDCVhdDisk -Destination '$imagePath' -Name $imageName -VhdType $VhdType")
                         $null = Invoke-PSFCommand -ComputerName $computer -ScriptBlock $command -Credential $DestinationCredential
                     }
 
