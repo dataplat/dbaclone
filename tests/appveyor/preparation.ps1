@@ -25,15 +25,6 @@ Install-Module -Name PSFramework -Force | Out-Null
 Write-Host -Object "appveyor.prep: Creating image and clone directories" -ForegroundColor DarkGreen
 if (-not (Test-Path -Path $script:workingfolder)) {
     $null = New-Item -Path $script:workingfolder -ItemType Directory -Force
-
-    $accessRule = New-Object System.Security.AccessControl.FilesystemAccessrule("Everyone", "FullControl", "Allow")
-    $acl = Get-Acl $script:workingfolder
-
-    # Add this access rule to the ACL
-    $acl.SetAccessRule($accessRule)
-
-    # Write the changes to the object
-    Set-Acl -Path $script:workingfolder -AclObject $acl
 }
 if (-not (Test-Path -Path $script:imagefolder)) {
     $null = New-Item -Path $script:imagefolder -ItemType Directory -Force
@@ -45,8 +36,13 @@ if (-not (Test-Path -Path $script:jsonfolder)) {
     $null = New-Item -Path $script:jsonfolder -ItemType Directory -Force
 }
 
-# Create share
-$null = New-SmbShare -Name "images" -Path $script:imagefolder -FullAccess "Everyone"
+# Set permissions on folders
+$accessRule = New-Object System.Security.AccessControl.FilesystemAccessrule("Everyone", "FullControl", "Allow")
+$acl = Get-Acl $script:imagefolder
+# Add this access rule to the ACL
+$acl.SetAccessRule($accessRule)
+# Write the changes to the object
+Set-Acl -Path $script:imagefolder -AclObject $acl
 
 # Creating config files
 Write-Host -Object "appveyor.prep: Creating configurations files" -ForegroundColor DarkGreen

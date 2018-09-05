@@ -10,12 +10,12 @@ Describe "$commandname Unit Tests" {
         # Create database if it doesn't exist
         if ($databases.Name -notcontains 'DB1') {
             # Create the database
-            Invoke-DbaSqlCmd -SqlInstance localhost -Database master -Query "CREATE DATABASE DB1"
+            Invoke-DbaSqlQuery -SqlInstance localhost -Database master -Query "CREATE DATABASE [DB1]"
         }
     }
 
     Context "Create image with defaults and a new backup" {
-        $image = New-PSDCImage -SourceSqlInstance localhost -DestinationSqlInstance localhost -ImageNetworkPath \\localhost\images -Database DB1 -CreateFullBackup -CopyOnlyBackup
+        $image = New-PSDCImage -SourceSqlInstance localhost -DestinationSqlInstance localhost -ImageNetworkPath "\\localhost\C$\projects\" -Database DB1 -CreateFullBackup -CopyOnlyBackup
 
         It "Image object cannot be null" {
             $image | Should Not Be $null
