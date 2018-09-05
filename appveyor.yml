@@ -23,8 +23,8 @@ build_script:
 # grab appveyor lab files and needed requirements for tests in CI
 - ps: .\tests\appveyor\preparation.ps1
 
-before_test:
-- icacls C:\projects /inheritance:r /grant Everyone:F
+#before_test:
+#- icacls C:\projects /inheritance:r /grant Everyone:F
 
 test_script:
 # Test with PowerShell and Pester
