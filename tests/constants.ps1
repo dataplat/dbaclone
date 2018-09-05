@@ -10,9 +10,9 @@ elseif (Test-Path "$PSScriptRoot\constants.local.ps1") {
 else {
     $script:appveyorlabrepo = "C:\github\appveyor-lab"
 
-    $script:jsonfolder = "C:\projects\config"
-
     $script:workingfolder = "C:\projects"
+
+    $script:jsonfolder = "C:\projects\config"
 
     $script:imagefolder = "C:\projects\images"
     $script:clonefolder = "C:\projects\clones"

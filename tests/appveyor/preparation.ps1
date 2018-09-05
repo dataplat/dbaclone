@@ -36,13 +36,13 @@ if (-not (Test-Path -Path $script:jsonfolder)) {
     $null = New-Item -Path $script:jsonfolder -ItemType Directory -Force
 }
 
-# Set permissions on folders
+<# # Set permissions on folders
 $accessRule = New-Object System.Security.AccessControl.FilesystemAccessrule("Everyone", "FullControl", "Allow")
 $acl = Get-Acl $script:workingfolder
 # Add this access rule to the ACL
 $acl.SetAccessRule($accessRule)
 # Write the changes to the object
-Set-Acl -Path $script:workingfolder -AclObject $acl
+Set-Acl -Path $script:workingfolder -AclObject $acl #>
 
 # Create share
 $null = New-SmbShare -Name "images" -Path $script:imagefolder -FullAccess "Everyone"
