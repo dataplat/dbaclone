@@ -54,6 +54,10 @@
     .PARAMETER Database
         Databases to create an image of
 
+    .PARAMETER VhdType
+        The type of the harddisk. This can either by VHD (version 1) or VHDX (version 2)
+        The default is VHDX.
+
     .PARAMETER CreateFullBackup
         Create a new full backup of the database. The backup will be saved in the default backup directory
 
@@ -99,6 +103,7 @@
         The image is written to c:\Temp\images
     #>
     [CmdLetBinding(SupportsShouldProcess = $true)]
+    [OutputType('PSDCImage')]
 
     param(
         [parameter(Mandatory = $true)]
@@ -119,6 +124,8 @@
         [string]$ImageLocalPath,
         [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [object[]]$Database,
+        [ValidateSet('VHD', 'VHDX', 'vhd', 'vhdx')]
+        [string]$VhdType,
         [switch]$CreateFullBackup,
         [switch]$UseLastFullBackup,
         [switch]$CopyOnlyBackup,
@@ -137,6 +144,12 @@
         if (-not $ImageNetworkPath) {
             Stop-PSFFunction -Message "Please enter the network path where to save the images"
             return
+        }
+
+        # Check the vhd type
+        if (-not $VhdType) {
+            Write-PSFMessage -Message "Setting vhd type to 'VHDX'" -Level Verbose
+            $VhdType = 'VHDX'
         }
 
         # Get the information store
@@ -164,10 +177,10 @@
             }
         }
 
-        Write-PSFMessage -Message "Started image creation" -Level Output
+        Write-PSFMessage -Message "Started image creation" -Level Verbose
 
         # Try connecting to the instance
-        Write-PSFMessage -Message "Attempting to connect to Sql Server $SourceSqlInstance.." -Level Output
+        Write-PSFMessage -Message "Attempting to connect to Sql Server $SourceSqlInstance.." -Level Verbose
         try {
             $sourceServer = Connect-DbaInstance -SqlInstance $SourceSqlInstance -SqlCredential $SourceSqlCredential
         }
@@ -341,7 +354,7 @@
             $accessPath = "$ImageLocalPath\$imageName"
 
             # Setup the vhd path
-            $vhdPath = "$($accessPath).vhdx"
+            $vhdPath = "$($accessPath).$($VhdType.ToLower())"
 
             if ($CreateFullBackup) {
                 if ($PSCmdlet.ShouldProcess($db, "Creating full backup for database $db")) {
@@ -358,31 +371,31 @@
                 $lastFullBackup = Get-DbaBackupHistory -SqlServer $SourceSqlInstance -SqlCredential $SourceSqlCredential -Databases $db.Name -LastFull
             }
 
-            if ($PSCmdlet.ShouldProcess("$imageName.vhdx", "Creating the vhd")) {
+            if ($PSCmdlet.ShouldProcess("$imageName", "Creating the vhd")) {
                 # try to create the new VHD
                 try {
-                    Write-PSFMessage -Message "Create the vhd $imageName.vhdx" -Level Verbose
+                    Write-PSFMessage -Message "Create the vhd $imageName" -Level Verbose
 
                     # Check if computer is local
                     if ($computer.IsLocalhost) {
-                        $null = New-PSDCVhdDisk -Destination $imagePath -FileName "$imageName.vhdx"
+                        $null = New-PSDCVhdDisk -Destination $imagePath -Name $imageName -VhdType $VhdType
                     }
                     else {
-                        $command = [ScriptBlock]::Create("New-PSDCVhdDisk -Destination $imagePath -FileName '$imageName.vhdx'")
+                        $command = [ScriptBlock]::Create("New-PSDCVhdDisk -Destination '$imagePath' -FileName $imageName -VhdType $VhdType")
                         $null = Invoke-PSFCommand -ComputerName $computer -ScriptBlock $command -Credential $DestinationCredential
                     }
 
                 }
                 catch {
-                    Stop-PSFFunction -Message "Couldn't create vhd $imageName" -Target "$imageName.vhd" -ErrorRecord $_ -Continue
+                    Stop-PSFFunction -Message "Couldn't create vhd(x) $imageName" -Target $imageName -ErrorRecord $_ -Continue
                 }
             }
 
 
-            if ($PSCmdlet.ShouldProcess("$imageName.vhdx", "Initializing the vhd")) {
+            if ($PSCmdlet.ShouldProcess("$imageName", "Initializing the vhd")) {
                 # Try to initialize the vhd
                 try {
-                    Write-PSFMessage -Message "Initializing the vhd $imageName.vhdx" -Level Verbose
+                    Write-PSFMessage -Message "Initializing the vhd $imageName" -Level Verbose
 
                     # Check if computer is local
                     if ($computer.IsLocalhost) {

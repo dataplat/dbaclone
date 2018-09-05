@@ -23,9 +23,17 @@ build_script:
 # grab appveyor lab files and needed requirements for tests in CI
 - ps: .\tests\appveyor\preparation.ps1
 
+#before_test:
+#- icacls C:\projects /inheritance:r /grant Everyone:F
+
 test_script:
 # Test with PowerShell and Pester
 - ps: .\tests\pester.ps1
+
+#branches:
+#  only:
+#    - master
+#    - development
 
 #on_finish:
 #  - ps: $blockRdp = $true; iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))
