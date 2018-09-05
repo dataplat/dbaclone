@@ -24,7 +24,7 @@ build_script:
 - ps: .\tests\appveyor\preparation.ps1
 
 before_Test:
-  icacls C:\projects /inheritance:r /grant Everyone:F
+- icacls C:\projects /inheritance:r /grant Everyone:F
 
 test_script:
 # Test with PowerShell and Pester
