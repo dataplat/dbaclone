@@ -80,6 +80,11 @@
     )
 
     begin {
+        # Check if the console is run in Administrator mode
+        if ( -not (Test-PSDCElevated) ) {
+            Stop-PSFFunction -Message "Module requires elevation. Please run the console in Administrator mode"
+        }
+
         # Check the destination path
         if (-not (Test-Path $Destination)) {
             if ($PSCmdlet.ShouldProcess($Destination, "Creating destination directory")) {

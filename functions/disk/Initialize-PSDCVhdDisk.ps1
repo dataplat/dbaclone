@@ -71,6 +71,12 @@
     )
 
     begin {
+
+        # Check if the console is run in Administrator mode
+        if ( -not (Test-PSDCElevated) ) {
+            Stop-PSFFunction -Message "Module requires elevation. Please run the console in Administrator mode"
+        }
+
         # Check the path to the vhd
         if (-not (Test-Path -Path $Path -Credential $Credential)) {
             Stop-PSFFunction -Message "Vhd path $Path cannot be found" -Target $Path -Continue
