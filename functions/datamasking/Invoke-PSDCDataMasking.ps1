@@ -1,5 +1,9 @@
 function Invoke-PSDCDataMasking {
 
+    function GenerateRandomName {
+
+    }
+
     [string]$IBAN = "^[A-Z]{2}(?:[ ]?[0-9]){18,20}$"
     [string]$BBAN = "^([A-Z]{2}[ \\-]?[0-9]{2})(?=(?:[ \\-]?[A-Z0-9]){9,30}$)((?:[ \\-]?[A-Z0-9]{3,5}){2,7})([ \\-]?[A-Z0-9]{1,3})?$";
 
