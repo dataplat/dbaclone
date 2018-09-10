@@ -75,8 +75,7 @@
     'Convert-PSDCLocalUncPathToLocalPath',
     'New-PSDCVhdDisk',
     'Initialize-PSDCVhdDisk',
-    'Test-PSDCRemoting',
-    'Invoke-PSDCDataMasking'
+    'Test-PSDCRemoting'
 
     # Cmdlets to export from this module
     CmdletsToExport    = ''
