@@ -283,7 +283,7 @@
             # Setup the path to the sql file
             if ($newDatabase) {
                 try {
-                    $path = "$($MyInvocation.MyCommand.Module.ModuleBase)\internal\resources\database.sql"
+                    $path = "$($MyInvocation.MyCommand.Module.ModuleBase)\internal\resources\database\database.sql"
                     $query = [System.IO.File]::ReadAllText($path)
 
                     # Create the objects
