@@ -32,7 +32,6 @@ test_script:
 
 branches:
   only:
-    - master
     - development
 
 #on_finish:
