@@ -1,14 +1,11 @@
 function New-PSDCMaskingConfiguration {
     <#
     .SYNOPSIS
-        New-PSDCImage creates a new image
+        PSDCMaskingConfiguration creates a new table configuration file
 
     .DESCRIPTION
-        New-PSDCImage will create a new image based on a SQL Server database
-
-        The command will either create a full backup or use the last full backup to create the image.
-
-        Every image is created with the name of the database and a time stamp yyyyMMddHHmmss i.e "DB1_20180622171819.vhdx"
+        PSDCMaskingConfiguration is able to generate the table configuration file
+        This file is important to apply any data masking to the data in a database
 
     .PARAMETER SqlInstance
         SQL Server name or SMO object representing the SQL Server to connect to.
@@ -140,53 +137,62 @@ function New-PSDCMaskingConfiguration {
             }
 
             # Loop through the tables
-            foreach ($table in $TableCollection) {
+            foreach ($tbl in $TableCollection) {
+                $tbl.Name
                 # Create the column array
                 $columns = @()
 
                 # Get the columns
                 if (-not $Column) {
-                    $ColumnCollection = $table.Columns
+                    $ColumnCollection = $tbl.Columns
                 }
                 else {
-                    $ColumnCollection = $table.Columns | Where-Object Name -in $Column
+                    $ColumnCollection = $tbl.Columns | Where-Object Name -in $Column
                 }
 
                 # Loop through each of the columns
-                foreach ($column in $ColumnCollection) {
+                foreach ($cln in $ColumnCollection) {
+                    "- $($cln.Name)"
                     $maskingType = $null
 
                     # Get the masking type
-                    $maskingType = $columnTypes | Where-Object {$column.Name -in $_.Synonim} | Select-Object TypeName -ExpandProperty TypeName
+                    $maskingType = $columnTypes | Where-Object {$cln.Name -in $_.Synonim} | Select-Object TypeName -ExpandProperty TypeName
 
                     # Check if the type found is not empty and add it to the array
                     if ($null -ne $maskingType) {
                         $columns += [PSCustomObject]@{
-                            Name        = $column.Name
+                            Name        = $cln.Name
                             MaskingType = $maskingType.ToString()
                         }
                     }
 
                 } # End for each columns
-
+                $columns
                 # Check if something needs to be generated
                 if ($columns.Count -ge 1) {
                     $results += [PSCustomObject]@{
-                        Name    = $table.Name
+                        Name    = $tbl.Name
                         Columns = $columns
                     }
+                }
+                else{
+                    Write-PSFMessage -Message "No columns match any of the masking column types" -Level Verbose
                 }
 
             } # End for each table
 
             # Write the data to the destination
-            try {
-                Set-Content -Path "$Destination\$($db.Name).tables.json" -Value ($results | ConvertTo-Json)
+            if ($results.Count -ge 1) {
+                try {
+                    Set-Content -Path "$Destination\$($db.Name).tables.json" -Value ($results | ConvertTo-Json)
+                }
+                catch {
+                    Stop-PSFFunction -Message "Something went wrong writing the results to the destination" -Target $Destination -Continue
+                }
             }
-            catch {
-                Stop-PSFFunction -Message "Something went wrong writing the results to the destination" -Target $Destination -Continue
+            else {
+                Write-PSFMessage -Message "No entries to save" -Level Verbose
             }
-
 
         } # End for each database
 
