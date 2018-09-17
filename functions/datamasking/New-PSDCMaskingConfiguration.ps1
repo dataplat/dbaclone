@@ -138,7 +138,6 @@ function New-PSDCMaskingConfiguration {
 
             # Loop through the tables
             foreach ($tbl in $TableCollection) {
-                $tbl.Name
                 # Create the column array
                 $columns = @()
 
@@ -152,7 +151,6 @@ function New-PSDCMaskingConfiguration {
 
                 # Loop through each of the columns
                 foreach ($cln in $ColumnCollection) {
-                    "- $($cln.Name)"
                     $maskingType = $null
 
                     # Get the masking type
@@ -167,7 +165,7 @@ function New-PSDCMaskingConfiguration {
                     }
 
                 } # End for each columns
-                $columns
+
                 # Check if something needs to be generated
                 if ($columns.Count -ge 1) {
                     $results += [PSCustomObject]@{
