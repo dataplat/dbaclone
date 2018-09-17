@@ -158,9 +158,18 @@ function New-PSDCMaskingConfiguration {
 
                     # Check if the type found is not empty and add it to the array
                     if ($null -ne $maskingType) {
-                        $columns += [PSCustomObject]@{
-                            Name        = $cln.Name
-                            MaskingType = $maskingType.ToString()
+                        if ($maskingType -eq "Creditcard") {
+                            $columns += [PSCustomObject]@{
+                                Name        = $cln.Name
+                                MaskingType = $maskingType.ToString()
+                                SubType     = "MasterCard"
+                            }
+                        }
+                        else {
+                            $columns += [PSCustomObject]@{
+                                Name        = $cln.Name
+                                MaskingType = $maskingType.ToString()
+                            }
                         }
                     }
 
@@ -173,8 +182,8 @@ function New-PSDCMaskingConfiguration {
                         Columns = $columns
                     }
                 }
-                else{
-                    Write-PSFMessage -Message "No columns match any of the masking column types" -Level Verbose
+                else {
+                    Write-PSFMessage -Message "No columns match for masking in table $($tbl.Name)" -Level Verbose
                 }
 
             } # End for each table
@@ -182,14 +191,14 @@ function New-PSDCMaskingConfiguration {
             # Write the data to the destination
             if ($results.Count -ge 1) {
                 try {
-                    Set-Content -Path "$Destination\$($db.Name).tables.json" -Value ($results | ConvertTo-Json)
+                    Set-Content -Path "$Destination\$($db.Name).tables.json" -Value ($results | ConvertTo-Json -Depth 5)
                 }
                 catch {
                     Stop-PSFFunction -Message "Something went wrong writing the results to the destination" -Target $Destination -Continue
                 }
             }
             else {
-                Write-PSFMessage -Message "No entries to save" -Level Verbose
+                Write-PSFMessage -Message "No tables to save for database $($db.Name)" -Level Verbose
             }
 
         } # End for each database

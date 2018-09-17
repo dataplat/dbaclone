@@ -83,5 +83,12 @@
             "Longitude",
             "Lon"
         ]
+    },
+    {
+        "TypeName": "Creditcard",
+        "Synonim": [
+            "Creditcard",
+            "CreditcardNumber"
+        ]
     }
 ]
