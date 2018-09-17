@@ -46,7 +46,7 @@
     )
 
     # Assemblies that must be loaded prior to importing this module
-    RequiredAssemblies = @("bin\PSDatabaseClone.dll", "bin\Fare.dll", "bin\Faker.dll")
+    RequiredAssemblies = @("bin\PSDatabaseClone.dll", "bin\Bogus.dll")
 
     # Script files (.ps1) that are run in the caller's environment prior to
     # importing this module
@@ -75,7 +75,8 @@
     'Convert-PSDCLocalUncPathToLocalPath',
     'New-PSDCVhdDisk',
     'Initialize-PSDCVhdDisk',
-    'Test-PSDCRemoting'
+    'Test-PSDCRemoting',
+    'New-PSDCMaskingConfiguration'
 
     # Cmdlets to export from this module
     CmdletsToExport    = ''
