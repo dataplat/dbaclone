@@ -37,6 +37,9 @@ function New-PSDCMaskingConfiguration {
         Destination where to save the generated JSON files.
         Th naming conventio will be "databasename.tables.json"
 
+    .PARAMETER Locale
+        Set the local to enable certain settings in the masking
+
     .PARAMETER Force
         Forcefully execute commands when needed
 
@@ -88,6 +91,7 @@ function New-PSDCMaskingConfiguration {
         [object[]]$Column,
         [parameter(Mandatory = $true)]
         [string]$Destination,
+        [string]$Locale = 'en',
         [switch]$Force
     )
 
@@ -158,27 +162,134 @@ function New-PSDCMaskingConfiguration {
 
                 # Loop through each of the columns
                 foreach ($cln in $ColumnCollection) {
-                    $maskingType = $null
+                    # Skip identity columns
+                    if ((-not $cln.Identity) -and (-not $cln.IsForeignKey)) {
+                        $maskingType = $null
 
-                    # Get the masking type
-                    $maskingType = $columnTypes | Where-Object {$cln.Name -in $_.Synonim} | Select-Object TypeName -ExpandProperty TypeName
+                        # Get the masking type
+                        $maskingType = $columnTypes | Where-Object {$cln.Name -in $_.Synonim} | Select-Object TypeName -ExpandProperty TypeName
 
-                    # Check if the type found is not empty and add it to the array
-                    if ($null -ne $maskingType) {
-                        if ($maskingType -eq "Creditcard") {
-                            $columns += [PSCustomObject]@{
-                                Name        = $cln.Name
-                                MaskingType = $maskingType.ToString()
-                                SubType     = "MasterCard"
+                        $columnLength = $cln.Properties['Length'].Value
+                        $columnType = $cln.DataType.Name
+
+                        # Check the maskingtype
+                        switch ($maskingType.ToLower()) {
+                            "firstname" {
+                                $columns += [PSCustomObject]@{
+                                    Name        = $cln.Name
+                                    ColumnType  = $columnType.ToLower()
+                                    MaxLength   = $columnLength
+                                    MaskingType = "Name"
+                                    SubType     = "Firstname"
+                                }
                             }
-                        }
-                        else {
-                            $columns += [PSCustomObject]@{
-                                Name        = $cln.Name
-                                MaskingType = $maskingType.ToString()
+                            "lastname" {
+                                $columns += [PSCustomObject]@{
+                                    Name        = $cln.Name
+                                    ColumnType  = $columnType.ToLower()
+                                    MaxLength   = $columnLength
+                                    MaskingType = "Name"
+                                    SubType     = "Lastname"
+                                }
                             }
-                        }
-                    }
+                            "creditcard" {
+                                $columns += [PSCustomObject]@{
+                                    Name        = $cln.Name
+                                    ColumnType  = $columnType.ToLower()
+                                    MaxLength   = $columnLength
+                                    MaskingType = "Finance"
+                                    SubType     = "MasterCard"
+                                }
+                            }
+                            "address" {
+                                $columns += [PSCustomObject]@{
+                                    Name        = $cln.Name
+                                    ColumnType  = $columnType.ToLower()
+                                    MaxLength   = $columnLength
+                                    MaskingType = "Address"
+                                    SubType     = "StreetAddress"
+                                }
+                            }
+                            "city" {
+                                $columns += [PSCustomObject]@{
+                                    Name        = $cln.Name
+                                    ColumnType  = $columnType.ToLower()
+                                    MaxLength   = $columnLength
+                                    MaskingType = "Address"
+                                    SubType     = "City"
+                                }
+                            }
+                            "zipcode" {
+                                $columns += [PSCustomObject]@{
+                                    Name        = $cln.Name
+                                    ColumnType  = $columnType.ToLower()
+                                    MaxLength   = $columnLength
+                                    MaskingType = "Address"
+                                    SubType     = "Zipcode"
+                                }
+                            }
+                            default {
+                                $type = "Random"
+
+                                switch ($columnType.ToLower()) {
+                                    "bigint" {
+                                        $subType = "Number"
+                                        $maxLength = 9223372036854775807
+                                    }
+                                    "int" {
+                                        $subType = "Number"
+                                        $maxLength = 2147483647
+                                    }
+                                    "date" {
+                                        $subType = "Date"
+                                        $maxLength = $null
+                                    }
+                                    "datetime" {
+                                        $subType = "Date"
+                                        $maxLength = $null
+                                    }
+                                    "datetime2" {
+                                        $subType = "Date"
+                                        $maxLength = $null
+                                    }
+                                    "float" {
+                                        $subType = "Float"
+                                        $maxLength = $null
+                                    }
+                                    "int" {
+                                        $subType = "Int"
+                                        $maxLength = 2147483647
+                                    }
+                                    "smallint" {
+                                        $subType = "Number"
+                                        $maxLength = 32767
+                                    }
+                                    "smalldatetime" {
+                                        $subType = "Date"
+                                        $maxLength = $null
+                                    }
+                                    "tinyint" {
+                                        $subType = "Number"
+                                        $maxLength = 255
+                                    }
+                                    {$_ -eq 'varchar', 'char'} {
+                                        $subType = "String"
+                                        $maxLength = $columnLength
+                                    }
+                                }
+
+                                $columns += [PSCustomObject]@{
+                                    Name        = $cln.Name
+                                    ColumnType  = $columnType.ToLower()
+                                    MaxLength   = $maxLength
+                                    MaskingType = $type
+                                    SubType     = $subType
+                                }
+                            }
+
+                        } # End switch
+
+                    } # End if identity
 
                 } # End for each columns
 
