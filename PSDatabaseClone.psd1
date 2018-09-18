@@ -64,19 +64,20 @@
 
     # Functions to export from this module
     FunctionsToExport  =
+    'Convert-PSDCLocalUncPathToLocalPath',
+    'Get-PSDCClone',
+    'Get-PSDCImage',
+    'Initialize-PSDCVhdDisk',
+    'Invoke-PSDCDataMasking'
     'Invoke-PSDCRepairClone',
     'New-PSDCClone',
     'New-PSDCImage',
+    'New-PSDCMaskingConfiguration',
+    'New-PSDCVhdDisk',
     'Remove-PSDCClone',
     'Remove-PSDCImage',
     'Set-PSDCConfiguration',
-    'Get-PSDCClone',
-    'Get-PSDCImage',
-    'Convert-PSDCLocalUncPathToLocalPath',
-    'New-PSDCVhdDisk',
-    'Initialize-PSDCVhdDisk',
-    'Test-PSDCRemoting',
-    'New-PSDCMaskingConfiguration'
+    'Test-PSDCRemoting'
 
     # Cmdlets to export from this module
     CmdletsToExport    = ''
