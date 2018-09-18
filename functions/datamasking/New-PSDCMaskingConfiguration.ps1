@@ -19,6 +19,11 @@ function New-PSDCMaskingConfiguration {
         Windows Authentication will be used if SqlCredential is not specified. SQL Server does not accept Windows credentials being passed as credentials.
         To connect as a different Windows user, run PowerShell as that user.
 
+    .PARAMETER Credential
+        Allows you to login to servers or folders
+        To use:
+        $scred = Get-Credential, then pass $scred object to the -Credential parameter.
+
     .PARAMETER Database
         Databases to process through
 
@@ -75,6 +80,8 @@ function New-PSDCMaskingConfiguration {
         [object]$SqlInstance,
         [System.Management.Automation.PSCredential]
         $SqlCredential,
+        [System.Management.Automation.PSCredential]
+        $Credential,
         [parameter(Mandatory = $true)]
         [object[]]$Database,
         [object[]]$Table,
@@ -107,7 +114,7 @@ function New-PSDCMaskingConfiguration {
         # Check if the destination is accessible
         if (-not (Test-Path -Path $Destination)) {
             try {
-                $null = New-Item -Path $Destination -ItemType Directory -Force:$Force
+                $null = New-Item -Path $Destination -ItemType Directory -Credential $Credential -Force:$Force
             }
             catch {
                 Stop-PSFFunction -Message "Could not create destination directory" -ErrorRecord $_ -Target $Destination
@@ -191,7 +198,7 @@ function New-PSDCMaskingConfiguration {
             # Write the data to the destination
             if ($results.Count -ge 1) {
                 try {
-                    Set-Content -Path "$Destination\$($db.Name).tables.json" -Value ($results | ConvertTo-Json -Depth 5)
+                    Set-Content -Path "$Destination\$($db.Name).tables.json" -Credential $Credential -Value ($results | ConvertTo-Json -Depth 5)
                 }
                 catch {
                     Stop-PSFFunction -Message "Something went wrong writing the results to the destination" -Target $Destination -Continue
@@ -205,8 +212,5 @@ function New-PSDCMaskingConfiguration {
 
     } # End process
 
-    end {
-        if (Test-PSFFunctionInterrupt) { return }
-    }
 
 }
