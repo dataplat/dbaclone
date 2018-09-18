@@ -68,7 +68,7 @@
     'Get-PSDCClone',
     'Get-PSDCImage',
     'Initialize-PSDCVhdDisk',
-    'Invoke-PSDCDataMasking'
+    'Invoke-PSDCDataMasking',
     'Invoke-PSDCRepairClone',
     'New-PSDCClone',
     'New-PSDCImage',
