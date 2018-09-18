@@ -265,7 +265,7 @@
                         try {
                             $query = "DELETE FROM dbo.Image WHERE ImageID = $($item.ImageID)"
 
-                            $null = Invoke-DbaSqlQuery -SqlInstance $pdcSqlInstance -SqlCredential $pdcCredential -Database $pdcDatabase -Query $query
+                            $null = Invoke-DbaQuery -SqlInstance $pdcSqlInstance -SqlCredential $pdcCredential -Database $pdcDatabase -Query $query
                         }
                         catch {
                             Stop-PSFFunction -Message "Couldn't remove image '$($item.ImageLocation)' from database" -ErrorRecord $_ -Target $query
