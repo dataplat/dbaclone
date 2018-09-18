@@ -1,4 +1,7 @@
-﻿# Add all things you want to run after importing the main code
+﻿# Check if window is in elevated mode
+if ( -not (Test-PSDCElevated) ) {
+    Stop-PSFFunction -Message "Module requires elevation. Please run the console in Administrator mode" -FunctionName 'Pre Import'
+}
 
 # Load Configurations
 foreach ($file in (Get-ChildItem "$ModuleRoot\internal\configurations\*.ps1" -ErrorAction Ignore)) {
@@ -18,7 +21,7 @@ foreach ($file in (Get-ChildItem "$ModuleRoot\internal\tepp\*.tepp.ps1" -ErrorAc
 
 # Check if the setup has run successfully
 if(-not (Get-PSFConfigValue -FullName psdatabaseclone.setup.status -Fallback $false)){
-    Write-PSFMessage -Message "Setup for the module has not yet run. Starting" -Level Host
+    Write-PSFMessage -Message "Setup for the module has not yet run. Starting.." -Level Host
 
     Set-PSDCConfiguration -InputPrompt
 }

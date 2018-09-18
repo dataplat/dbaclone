@@ -269,7 +269,7 @@
                     Write-PSFMessage -Message "Creating database $Database on $SqlInstance" -Level Verbose
 
                     # Executing the query
-                    Invoke-DbaSqlQuery -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database master -Query $query
+                    Invoke-DbaQuery -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database master -Query $query
                 }
                 catch {
                     Stop-PSFFunction -Message "Couldn't create database $Database on $SqlInstance" -ErrorRecord $_ -Target $SqlInstance
@@ -283,7 +283,7 @@
             # Setup the path to the sql file
             if ($newDatabase) {
                 try {
-                    $path = "$($MyInvocation.MyCommand.Module.ModuleBase)\internal\scripts\database.sql"
+                    $path = "$($MyInvocation.MyCommand.Module.ModuleBase)\internal\resources\database\database.sql"
                     $query = [System.IO.File]::ReadAllText($path)
 
                     # Create the objects
@@ -291,7 +291,7 @@
                         Write-PSFMessage -Message "Creating database objects" -Level Verbose
 
                         # Executing the query
-                        Invoke-DbaSqlQuery -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database $Database -Query $query
+                        Invoke-DbaQuery -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database $Database -Query $query
                     }
                     catch {
                         Stop-PSFFunction -Message "Couldn't create database objects" -ErrorRecord $_ -Target $SqlInstance

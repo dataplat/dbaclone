@@ -89,6 +89,11 @@
     )
 
     begin {
+        # Check if the console is run in Administrator mode
+        if ( -not (Test-PSDCElevated) ) {
+            Stop-PSFFunction -Message "Module requires elevation. Please run the console in Administrator mode"
+        }
+
         # Check if the setup has ran
         if (-not (Get-PSFConfigValue -FullName psdatabaseclone.setup.status)) {
             Stop-PSFFunction -Message "The module setup has NOT yet successfully run. Please run 'Set-PSDCConfiguration'"
@@ -260,7 +265,7 @@
                         try {
                             $query = "DELETE FROM dbo.Image WHERE ImageID = $($item.ImageID)"
 
-                            $null = Invoke-DbaSqlQuery -SqlInstance $pdcSqlInstance -SqlCredential $pdcCredential -Database $pdcDatabase -Query $query
+                            $null = Invoke-DbaQuery -SqlInstance $pdcSqlInstance -SqlCredential $pdcCredential -Database $pdcDatabase -Query $query
                         }
                         catch {
                             Stop-PSFFunction -Message "Couldn't remove image '$($item.ImageLocation)' from database" -ErrorRecord $_ -Target $query

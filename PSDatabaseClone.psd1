@@ -46,7 +46,7 @@
     )
 
     # Assemblies that must be loaded prior to importing this module
-    RequiredAssemblies = @("bin\PSDatabaseClone.dll")
+    RequiredAssemblies = @("bin\PSDatabaseClone.dll", "bin\Bogus.dll")
 
     # Script files (.ps1) that are run in the caller's environment prior to
     # importing this module
@@ -64,17 +64,19 @@
 
     # Functions to export from this module
     FunctionsToExport  =
+    'Convert-PSDCLocalUncPathToLocalPath',
+    'Get-PSDCClone',
+    'Get-PSDCImage',
+    'Initialize-PSDCVhdDisk',
+    'Invoke-PSDCDataMasking',
     'Invoke-PSDCRepairClone',
     'New-PSDCClone',
     'New-PSDCImage',
+    'New-PSDCMaskingConfiguration',
+    'New-PSDCVhdDisk',
     'Remove-PSDCClone',
     'Remove-PSDCImage',
     'Set-PSDCConfiguration',
-    'Get-PSDCClone',
-    'Get-PSDCImage',
-    'Convert-PSDCLocalUncPathToLocalPath',
-    'New-PSDCVhdDisk',
-    'Initialize-PSDCVhdDisk',
     'Test-PSDCRemoting'
 
     # Cmdlets to export from this module

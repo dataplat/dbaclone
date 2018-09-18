@@ -134,6 +134,11 @@
     )
 
     begin {
+        # Check if the console is run in Administrator mode
+        if ( -not (Test-PSDCElevated) ) {
+            Stop-PSFFunction -Message "Module requires elevation. Please run the console in Administrator mode"
+        }
+
         # Check if the setup has ran
         if (-not (Get-PSFConfigValue -FullName psdatabaseclone.setup.status)) {
             Stop-PSFFunction -Message "The module setup has NOT yet successfully run. Please run 'Set-PSDCConfiguration'"
@@ -290,7 +295,7 @@
 
         # Check the image local path
         if ($PSCmdlet.ShouldProcess("Verifying image local path")) {
-            if ((Test-DbaSqlPath -Path $ImageLocalPath -SqlInstance $SourceSqlInstance -SqlCredential $DestinationCredential) -ne $true) {
+            if ((Test-DbaPath -Path $ImageLocalPath -SqlInstance $SourceSqlInstance -SqlCredential $DestinationCredential) -ne $true) {
                 Stop-PSFFunction -Message "Image local path $ImageLocalPath is not valid directory or can't be reached." -Target $SourceSqlInstance
                 return
             }
@@ -577,7 +582,7 @@
                     try {
                         Write-PSFMessage -Message "Saving image information in database" -Level Verbose
 
-                        $result += Invoke-DbaSqlQuery -SqlInstance $pdcSqlInstance -SqlCredential $pdcCredential -Database $pdcDatabase -Query $query -EnableException
+                        $result += Invoke-DbaQuery -SqlInstance $pdcSqlInstance -SqlCredential $pdcCredential -Database $pdcDatabase -Query $query -EnableException
                         $imageID = $result.ImageID
                     }
                     catch {
