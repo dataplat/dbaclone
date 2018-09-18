@@ -3,7 +3,7 @@
     RootModule         = 'PSDatabaseClone.psm1'
 
     # Version number of this module.
-    ModuleVersion      = '0.1.47'
+    ModuleVersion      = '0.3.1'
 
     # ID used to uniquely identify this module
     GUID               = '747980ca-0d3d-4529-b4fd-e6cdd059c62a'
