@@ -1,4 +1,4 @@
-function Invoke-PSDCDataMasking {
+﻿function Invoke-PSDCDataMasking {
     <#
     .SYNOPSIS
         Invoke-PSDCDataMasking generates random data for tables
@@ -115,11 +115,6 @@ function Invoke-PSDCDataMasking {
         foreach ($table in $tables) {
             # Get the data
             $data = $server.Databases[$Database].Query("SELECT TOP(10) * FROM $($table.Name)") | ConvertTo-DbaDataTable
-            #$data = Invoke-DbaQuery -SqlInstance $SqlInstance -Database $Database -Query "SELECT TOP(10) * FROM $($table.Name)" | ConvertTo-DbaDataTable
-
-            <# FOR DEBUG PURPOSES
-            $data | ft
-            #>
 
             # Loop through each of the rows and change them
             foreach ($row in $data) {
@@ -190,10 +185,6 @@ function Invoke-PSDCDataMasking {
 
             } # End for each row
 
-            <# FOR DEBUG PURPOSES
-            $data = Invoke-DbaQuery -SqlInstance $SqlInstance -Database $Database -Query "SELECT TOP(10) * FROM $($table.Name)" | ConvertTo-DbaDataTable
-            $data | ft
-            #>
         } # End for each table
 
     } # End process

@@ -1,4 +1,4 @@
-function Test-PSDCElevated {
+﻿function Test-PSDCElevated {
     <#
     .SYNOPSIS
         Test-PSDCElevated tests if the command window is elevated

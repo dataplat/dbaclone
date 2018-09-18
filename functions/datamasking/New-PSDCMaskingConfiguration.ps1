@@ -1,4 +1,4 @@
-function New-PSDCMaskingConfiguration {
+﻿function New-PSDCMaskingConfiguration {
     <#
     .SYNOPSIS
         PSDCMaskingConfiguration creates a new table configuration file
