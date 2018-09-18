@@ -295,7 +295,7 @@
 
         # Check the image local path
         if ($PSCmdlet.ShouldProcess("Verifying image local path")) {
-            if ((Test-DbaSqlPath -Path $ImageLocalPath -SqlInstance $SourceSqlInstance -SqlCredential $DestinationCredential) -ne $true) {
+            if ((Test-DbaPath -Path $ImageLocalPath -SqlInstance $SourceSqlInstance -SqlCredential $DestinationCredential) -ne $true) {
                 Stop-PSFFunction -Message "Image local path $ImageLocalPath is not valid directory or can't be reached." -Target $SourceSqlInstance
                 return
             }
