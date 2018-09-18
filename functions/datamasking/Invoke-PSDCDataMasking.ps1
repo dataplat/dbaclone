@@ -114,7 +114,7 @@ function Invoke-PSDCDataMasking {
 
         foreach ($table in $tables) {
             # Get the data
-            $data = Invoke-DbaSqlQuery -SqlInstance $SqlInstance -Database $Database -Query "SELECT TOP(10) * FROM $($table.Name)" | ConvertTo-DbaDataTable
+            $data = Invoke-DbaQuery -SqlInstance $SqlInstance -Database $Database -Query "SELECT TOP(10) * FROM $($table.Name)" | ConvertTo-DbaDataTable
 
             <# FOR DEBUG PURPOSES
             $data | ft
@@ -179,7 +179,7 @@ function Invoke-PSDCDataMasking {
                 $query = $query.Substring(0, ($query.Length -5))
 
                 try{
-                    Invoke-DbaSqlQuery -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database $Database -Query $query
+                    Invoke-DbaQuery -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database $Database -Query $query
                 }
                 catch{
                     Stop-PSFFunction -Message "Could not execute the query" -Target $query -Continue
@@ -189,7 +189,7 @@ function Invoke-PSDCDataMasking {
             } # End for each row
 
             <# FOR DEBUG PURPOSES
-            $data = Invoke-DbaSqlQuery -SqlInstance $SqlInstance -Database $Database -Query "SELECT TOP(10) * FROM $($table.Name)" | ConvertTo-DbaDataTable
+            $data = Invoke-DbaQuery -SqlInstance $SqlInstance -Database $Database -Query "SELECT TOP(10) * FROM $($table.Name)" | ConvertTo-DbaDataTable
             $data | ft
             #>
         } # End for each table
