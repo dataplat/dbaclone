@@ -140,10 +140,14 @@
     process {
         if (Test-PSFFunctionInterrupt) { return }
 
+        #Create the result array
+        $results = @()
+
         # Loop through the databases
         foreach ($db in $DatabaseCollection) {
+
             #Create the result array
-            $results = @()
+            $tables = @()
 
             # Get the tables
             if (-not $Table) {
@@ -301,7 +305,7 @@
 
                 # Check if something needs to be generated
                 if ($columns.Count -ge 1) {
-                    $results += [PSCustomObject]@{
+                    $tables += [PSCustomObject]@{
                         Name    = $tbl.Name
                         Columns = $columns
                     }
@@ -312,20 +316,31 @@
 
             } # End for each table
 
-            # Write the data to the destination
-            if ($results.Count -ge 1) {
-                try {
-                    Set-Content -Path "$Destination\$($db.Name).tables.json" -Credential $Credential -Value ($results | ConvertTo-Json -Depth 5)
-                }
-                catch {
-                    Stop-PSFFunction -Message "Something went wrong writing the results to the destination" -Target $Destination -Continue
+            # Check if something needs to be generated
+            if ($tables.Count -ge 1) {
+                $results += [PSCustomObject]@{
+                    Name    = $db.Name
+                    Tables = $tables
                 }
             }
             else {
-                Write-PSFMessage -Message "No tables to save for database $($db.Name)" -Level Verbose
+                Write-PSFMessage -Message "No columns match for masking in table $($tbl.Name)" -Level Verbose
             }
 
         } # End for each database
+
+        # Write the data to the destination
+        if ($results.Count -ge 1) {
+            try {
+                Set-Content -Path "$Destination\$($db.Name).tables.json" -Credential $Credential -Value ($results | ConvertTo-Json -Depth 5)
+            }
+            catch {
+                Stop-PSFFunction -Message "Something went wrong writing the results to the destination" -Target $Destination -Continue
+            }
+        }
+        else {
+            Write-PSFMessage -Message "No tables to save for database $($db.Name)" -Level Verbose
+        }
 
     } # End process
 
