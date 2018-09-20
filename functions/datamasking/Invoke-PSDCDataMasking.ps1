@@ -33,7 +33,7 @@
     .PARAMETER Column
         Columns to process. By default all the columns will be processed
 
-    .PARAMETER MaskingFile
+    .PARAMETER MaskingConfigFile
         Configuration file that contains the which tables and columns need to be masked
 
     .PARAMETER Locale
@@ -58,7 +58,7 @@
         https://psdatabaseclone.org/
 
     .EXAMPLE
-        Invoke-PSDCDataMasking -SqlInstance SQLDB1 -Database DB1 -MaskingFile C:\Temp\DB1.tables.json
+        Invoke-PSDCDataMasking -SqlInstance SQLDB1 -Database DB1 -MaskingConfigFile C:\Temp\DB1.tables.json
 
         Apply the data masking configuration from the file "DB1.tables.json" to the database
     #>
@@ -77,7 +77,7 @@
         [parameter(Mandatory = $true)]
         [object]$Database,
         [parameter(Mandatory = $true)]
-        [string]$MaskingFile,
+        [string]$MaskingConfigFile,
         [string]$Locale = 'en',
         [switch]$Force
     )
@@ -94,13 +94,13 @@
         }
 
         # Check if the destination is accessible
-        if (-not (Test-Path -Path $MaskingFile -Credential $Credential)) {
-            Stop-PSFFunction -Message "Could not find masking config file" -ErrorRecord $_ -Target $MaskingFile
+        if (-not (Test-Path -Path $MaskingConfigFile -Credential $Credential)) {
+            Stop-PSFFunction -Message "Could not find masking config file" -ErrorRecord $_ -Target $MaskingConfigFile
             return
         }
 
         # Get all the items that should be processed
-        $tables = Get-Content -Path $MaskingFile -Credential $Credential | ConvertFrom-Json
+        $tables = Get-Content -Path $MaskingConfigFile -Credential $Credential | ConvertFrom-Json
 
         # Set defaults
         $charString = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
