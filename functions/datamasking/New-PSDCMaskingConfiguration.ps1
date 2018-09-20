@@ -307,6 +307,7 @@
                 if ($columns.Count -ge 1) {
                     $tables += [PSCustomObject]@{
                         Name    = $tbl.Name
+                        Schema  = $tbl.Schema
                         Columns = $columns
                     }
                 }
@@ -319,7 +320,7 @@
             # Check if something needs to be generated
             if ($tables.Count -ge 1) {
                 $results += [PSCustomObject]@{
-                    Name    = $db.Name
+                    Name   = $db.Name
                     Tables = $tables
                 }
             }
