@@ -43,7 +43,7 @@ $null = New-Item -Path "$($jsonfolder)\clones.json" -Force:$Force
 Write-Host "Setting configurations" -ForegroundColor Cyan
 Set-PSFConfig -Module PSDatabaseClone -Name setup.status -Value $true -Validation bool
 Set-PSFConfig -Module PSDatabaseClone -Name informationstore.mode -Value 'File'
-Set-PSFConfig -Module PSDatabaseClone -Name informationstore.path -Value "$($jsonfolder)" -Validation string
+Set-PSFConfig -Module PSDatabaseClone -Name informationstore.path -Value $($jsonfolder) -Validation string
 Set-PSFConfig -Module psdatabaseclone -Name diskpart.scriptfile -Value $workingfolder
 
 # Registering configurations

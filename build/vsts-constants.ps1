@@ -1,5 +1,5 @@
 ﻿# constants
-$publishDir = New-Item -Path $env:SYSTEM_DEFAULTWORKINGDIRECTORY -Name publish -ItemType Directory
+$publishDir = $env:SYSTEM_DEFAULTWORKINGDIRECTORY
 $rootPath = "$($publishDir.FullName)\psdc"
 $workingfolder = "$rootPath"
 $jsonfolder = "$rootPath\config"
