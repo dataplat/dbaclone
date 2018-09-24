@@ -1,0 +1,11 @@
+TOPIC
+	about_PSDatabaseClone
+	
+SHORT DESCRIPTION
+	Explains how to use the PSDatabaseClone powershell module
+	
+LONG DESCRIPTION
+	<Insert Content here>
+
+KEYWORDS
+	PSDatabaseClone

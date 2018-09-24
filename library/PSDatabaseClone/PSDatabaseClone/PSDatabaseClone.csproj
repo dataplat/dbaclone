@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net4.5.2</TargetFramework>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <OutputPath>..\..\..\PSDatabaseClone\bin</OutputPath>
+    <DocumentationFile>..\..\..\PSDatabaseClone\bin\PSDatabaseClone.xml</DocumentationFile>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Release)|$(Platform)'=='Debug|AnyCPU'">
+    <OutputPath>..\..\..\PSDatabaseClone\bin</OutputPath>
+    <DocumentationFile>..\..\..\PSDatabaseClone\bin\PSDatabaseClone.xml</DocumentationFile>
+  </PropertyGroup>
+  
+  <PropertyGroup>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+  </PropertyGroup>
+  
+  <ItemGroup>
+    <Folder Include="Parameter\" />
+  </ItemGroup>
+
+</Project>
