@@ -5,8 +5,7 @@ Install-Module PSFramework -Force -SkipPublisherCheck
 Write-Host "Installing dbatools" -ForegroundColor Cyan
 Install-Module dbatools -Force -SkipPublisherCheck
 
-$publishDir = New-Item -Path $env:SYSTEM_DEFAULTWORKINGDIRECTORY -Name publish -ItemType Directory
-. "$($publishDir.FullName)\build\vsts-constants.ps1"
+. "$PSScriptRoot\..\..\..\build\vsts-constants.ps1"
 
 # Creating folder
 Write-Host -Object "Creating image and clone directories" -ForegroundColor Cyan
