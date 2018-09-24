@@ -1,11 +1,11 @@
+Write-Host "Installing dbatools" -ForegroundColor Cyan
+Install-Module dbatools -Force -SkipPublisherCheck
 Write-Host "Installing Pester" -ForegroundColor Cyan
 Install-Module Pester -Force -SkipPublisherCheck
 Write-Host "Installing PSFramework" -ForegroundColor Cyan
 Install-Module PSFramework -Force -SkipPublisherCheck
-Write-Host "Install PSScriptAnalyzer" -ForegroundColor Cyan
+Write-Host "Installing PSScriptAnalyzer" -ForegroundColor Cyan
 Install-Module -Name PSScriptAnalyzer -Force -SkipPublisherCheck
-Write-Host "Installing dbatools" -ForegroundColor Cyan
-Install-Module dbatools -Force -SkipPublisherCheck
 
 . "$PSScriptRoot\vsts-constants.ps1"
 
@@ -47,7 +47,7 @@ Set-PSFConfig -Module PSDatabaseClone -Name informationstore.path -Value "$($jso
 Set-PSFConfig -Module psdatabaseclone -Name diskpart.scriptfile -Value $workingfolder
 
 # Registering configurations
-Write-Host -Object "appveyor.prep: Registering configurations" -ForegroundColor Cyan
+Write-Host -Object "Registering configurations" -ForegroundColor Cyan
 Get-PSFConfig -FullName psdatabaseclone.setup.status | Register-PSFConfig -Scope SystemDefault
 Get-PSFConfig -FullName psdatabaseclone.informationstore.mode | Register-PSFConfig -Scope SystemDefault
 Get-PSFConfig -FullName psdatabaseclone.informationstore.path | Register-PSFConfig -Scope SystemDefault
