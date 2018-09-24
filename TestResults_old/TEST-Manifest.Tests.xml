@@ -1,0 +1,32 @@
+﻿<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<test-results xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="nunit_schema_2.5.xsd" name="Pester" total="7" errors="0" failures="0" not-run="0" inconclusive="0" ignored="0" skipped="0" invalid="0" date="2018-09-24" time="16:33:02">
+  <environment user="sander" machine-name="STADPC" cwd="Development:\PowerShell\PSDatabaseClone" user-domain="STADPC" platform="Microsoft Windows 10 Pro|C:\WINDOWS|\Device\Harddisk0\Partition4" nunit-version="2.5.8.0" os-version="10.0.17134" clr-version="4.0.30319.42000" />
+  <culture-info current-culture="en-US" current-uiculture="en-US" />
+  <test-suite type="TestFixture" name="Pester" executed="True" result="Success" success="True" time="0.1903" asserts="0" description="Pester">
+    <results>
+      <test-suite type="TestFixture" name="C:\Users\sande\OneDrive\_Development\PowerShell\PSDatabaseClone\PSDatabaseClone\tests\general\Manifest.Tests.ps1" executed="True" result="Success" success="True" time="0.1903" asserts="0" description="C:\Users\sande\OneDrive\_Development\PowerShell\PSDatabaseClone\PSDatabaseClone\tests\general\Manifest.Tests.ps1">
+        <results>
+          <test-suite type="TestFixture" name="Validating the module manifest" executed="True" result="Success" success="True" time="0.1903" asserts="0" description="Validating the module manifest">
+            <results>
+              <test-suite type="TestFixture" name="Basic resources validation" executed="True" result="Success" success="True" time="0.1209" asserts="0" description="Basic resources validation">
+                <results>
+                  <test-case description="Exports all functions in the public folder" name="Validating the module manifest.Basic resources validation.Exports all functions in the public folder" time="0.0791" asserts="0" success="True" result="Success" executed="True" />
+                  <test-case description="Exports no function that isn't also present in the public folder" name="Validating the module manifest.Basic resources validation.Exports no function that isn't also present in the public folder" time="0.0096" asserts="0" success="True" result="Success" executed="True" />
+                  <test-case description="Exports none of its internal functions" name="Validating the module manifest.Basic resources validation.Exports none of its internal functions" time="0.0112" asserts="0" success="True" result="Success" executed="True" />
+                  <test-case description="Has the same version as the psm1 file" name="Validating the module manifest.Basic resources validation.Has the same version as the psm1 file" time="0.021" asserts="0" success="True" result="Success" executed="True" />
+                </results>
+              </test-suite>
+              <test-suite type="TestFixture" name="Individual file validation" executed="True" result="Success" success="True" time="0.0694" asserts="0" description="Individual file validation">
+                <results>
+                  <test-case description="The root module file exists" name="Validating the module manifest.Individual file validation.The root module file exists" time="0.0414" asserts="0" success="True" result="Success" executed="True" />
+                  <test-case description="The file bin\PSDatabaseClone.dll should exist" name="Validating the module manifest.Individual file validation.The file bin\PSDatabaseClone.dll should exist" time="0.019" asserts="0" success="True" result="Success" executed="True" />
+                  <test-case description="The file bin\Bogus.dll should exist" name="Validating the module manifest.Individual file validation.The file bin\Bogus.dll should exist" time="0.0089" asserts="0" success="True" result="Success" executed="True" />
+                </results>
+              </test-suite>
+            </results>
+          </test-suite>
+        </results>
+      </test-suite>
+    </results>
+  </test-suite>
+</test-results>
