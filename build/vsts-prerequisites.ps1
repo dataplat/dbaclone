@@ -26,11 +26,11 @@ if (-not (Test-Path -Path $jsonfolder)) {
 
 # Set permissions on folders
 $accessRule = New-Object System.Security.AccessControl.FilesystemAccessrule("Everyone", "FullControl", "Allow")
-$acl = Get-Acl $imagefolder
+$acl = Get-Acl $workingfolder
 # Add this access rule to the ACL
 $acl.SetAccessRule($accessRule)
 # Write the changes to the object
-Set-Acl -Path $imagefolder -AclObject $acl
+Set-Acl -Path $workingfolder -AclObject $acl
 
 # Creating config files
 Write-Host "Creating configurations files" -ForegroundColor Cyan
