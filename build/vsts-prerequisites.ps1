@@ -51,3 +51,4 @@ Write-Host -Object "Registering configurations" -ForegroundColor Cyan
 Get-PSFConfig -FullName psdatabaseclone.setup.status | Register-PSFConfig -Scope SystemDefault
 Get-PSFConfig -FullName psdatabaseclone.informationstore.mode | Register-PSFConfig -Scope SystemDefault
 Get-PSFConfig -FullName psdatabaseclone.informationstore.path | Register-PSFConfig -Scope SystemDefault
+Get-PSFConfig -FullName psdatabaseclone.psdatabaseclone.diskpart.scriptfile | Register-PSFConfig -Scope SystemDefault
