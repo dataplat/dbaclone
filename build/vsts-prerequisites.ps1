@@ -7,7 +7,7 @@ Install-Module dbatools -Force -SkipPublisherCheck
 
 # Importing constants
 $rootPath = Split-Path (Split-Path $PSScriptRoot -Parent) -Parent
-. "..\PSDatabaseClone\PSDatabaseClone\tests\constants.ps1"
+. "constants.ps1"
 
 # Creating folder
 Write-Host -Object "Creating image and clone directories" -ForegroundColor Cyan
