@@ -5,13 +5,8 @@ Install-Module PSFramework -Force -SkipPublisherCheck
 Write-Host "Installing dbatools" -ForegroundColor Cyan
 Install-Module dbatools -Force -SkipPublisherCheck
 
-# Importing constants
-$rootPath = Split-Path (Split-Path $PSScriptRoot -Parent) -Parent
-#. "constants.ps1"
-$workingfolder = "$rootPath\projects"
-$jsonfolder = "$rootPath\projects\config"
-$imagefolder = "$rootPath\projects\images"
-$clonefolder = "$rootPath\projects\clones"
+
+. "$($publishDir.FullName)\build\vsts-constants.ps1"
 
 # Creating folder
 Write-Host -Object "Creating image and clone directories" -ForegroundColor Cyan

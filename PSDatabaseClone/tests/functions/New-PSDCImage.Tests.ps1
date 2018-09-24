@@ -1,5 +1,5 @@
 $commandname = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-. "$PSScriptRoot\..\constants.ps1"
+#. "$PSScriptRoot\..\constants.ps1"
 
 Describe "$commandname Unit Tests" {
 

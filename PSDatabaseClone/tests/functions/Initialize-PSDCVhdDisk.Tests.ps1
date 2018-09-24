@@ -1,15 +1,15 @@
 $commandname = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-. "$PSScriptRoot\..\constants.ps1"
+#. "$PSScriptRoot\..\constants.ps1"
 
 Describe "$commandname Unit Tests" {
 
     BeforeAll{
-        New-PSDCVhdDisk -Destination $script:imagefolder -Name "TestImage1" -Size 1GB
-        New-PSDCVhdDisk -Destination $script:imagefolder -Name "TestImage2"
+        New-PSDCVhdDisk -Destination $imagefolder -Name "TestImage1" -Size 1GB
+        New-PSDCVhdDisk -Destination $imagefolder -Name "TestImage2"
     }
 
     Context "Initialize disk with MBR" {
-        $disk = Initialize-PSDCVhdDisk -Path "$($script:imagefolder)\TestImage1.vhdx" -PartitionStyle MBR
+        $disk = Initialize-PSDCVhdDisk -Path "$($imagefolder)\TestImage1.vhdx" -PartitionStyle MBR
 
         It "Disk Should be online" {
             $disk.Disk.IsOffline | Should Be $false
@@ -39,7 +39,7 @@ Describe "$commandname Unit Tests" {
     }
 
     Context "Initialize disk with GPT" {
-        $disk = Initialize-PSDCVhdDisk -Path "$($script:imagefolder)\TestImage2.vhdx" -PartitionStyle GPT
+        $disk = Initialize-PSDCVhdDisk -Path "$($imagefolder)\TestImage2.vhdx" -PartitionStyle GPT
 
         It "Disk Should be online" {
             $disk.Disk.IsOffline | Should Be $false
@@ -59,11 +59,11 @@ Describe "$commandname Unit Tests" {
     }
 
     AfterAll{
-        Dismount-DiskImage -ImagePath "$($script:imagefolder)\TestImage1.vhdx"
-        Dismount-DiskImage -ImagePath "$($script:imagefolder)\TestImage2.vhdx"
+        Dismount-DiskImage -ImagePath "$($imagefolder)\TestImage1.vhdx"
+        Dismount-DiskImage -ImagePath "$($imagefolder)\TestImage2.vhdx"
 
-        $null = Remove-Item -Path "$($script:imagefolder)\TestImage1.vhdx" -Force
-        $null = Remove-Item -Path "$($script:imagefolder)\TestImage2.vhdx" -Force
+        $null = Remove-Item -Path "$($imagefolder)\TestImage1.vhdx" -Force
+        $null = Remove-Item -Path "$($imagefolder)\TestImage2.vhdx" -Force
     }
 
 }
