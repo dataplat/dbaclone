@@ -1,0 +1,42 @@
+# See http://www.appveyor.com/docs/appveyor-yml for many more options
+version: 0.3.{build}
+
+cache:
+- C:\ProgramData\chocolatey\bin -> appveyor.yml
+- C:\ProgramData\chocolatey\lib -> appveyor.yml
+- C:\Program Files\WindowsPowerShell\Modules\PSScriptAnalyzer -> appveyor.yml
+- C:\Program Files\WindowsPowerShell\Modules\Pester -> appveyor.yml
+- C:\Program Files\WindowsPowerShell\Modules\PSFramework -> appveyor.yml
+- C:\Program Files\WindowsPowerShell\Modules\dbatools -> appveyor.yml
+
+shallow_clone: true
+
+environment:
+  environment: development
+  version: 0.3.$(appveyor_build_number)
+  appveyor_rdp_password: Psd@tabaseclone2018
+
+matrix:
+  fast_finish: true
+
+before_build:
+- ps: .\build\appveyor-prerequisites.ps1
+
+build_script:
+# grab appveyor lab files and needed requirements for tests in CI
+#- ps: .\tests\appveyor\preparation.ps1
+- ps: .\build\appveyor-build.ps1
+
+#before_test:
+#- icacls C:\projects /inheritance:r /grant Everyone:F
+
+test_script:
+# Test with PowerShell and Pester
+- ps: .\build\appveyor-validate.ps1
+
+branches:
+  only:
+    - development
+
+#on_finish:
+#  - ps: $blockRdp = $true; iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))
