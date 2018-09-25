@@ -26,7 +26,6 @@ before_build:
 
 build_script:
 # grab appveyor lab files and needed requirements for tests in CI
-#- ps: .\tests\appveyor\preparation.ps1
 - ps: .\build\appveyor-build.ps1
 
 #before_test:
@@ -40,5 +39,5 @@ branches:
   only:
     - development
 
-#on_finish:
-#  - ps: $blockRdp = $true; iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))
+on_finish:
+  - ps: $blockRdp = $true; iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))
