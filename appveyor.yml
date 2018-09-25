@@ -22,6 +22,7 @@ matrix:
 
 before_build:
 - ps: .\build\appveyor-prerequisites.ps1
+- icacls "c:\projects\PSDatabaseClone" /grant Everyone:(OI)(CI)F /T
 
 build_script:
 # grab appveyor lab files and needed requirements for tests in CI
