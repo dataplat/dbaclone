@@ -10,7 +10,7 @@ param (
 
 # Prepare publish folder
 Write-PSFMessage -Level Important -Message "Creating and populating publishing directory"
-$publishDir = New-Item -Path $env:SYSTEM_DEFAULTWORKINGDIRECTORY -Name publish -ItemType Directory
+$publishDir = New-Item -Path "C:\Projects" -Name publish -ItemType Directory
 Copy-Item -Path "$($env:SYSTEM_DEFAULTWORKINGDIRECTORY)\PSDatabaseClone" -Destination $publishDir.FullName -Recurse -Force
 
 # Create commands.ps1
@@ -29,7 +29,7 @@ $text = @()
 foreach ($line in (Get-Content "$($PSScriptRoot)\filesBefore.txt" | Where-Object { $_ -notlike "#*" }))
 {
 	if ([string]::IsNullOrWhiteSpace($line)) { continue }
-	
+
 	$basePath = Join-Path "$($publishDir.FullName)\PSDatabaseClone" $line
 	foreach ($entry in (Resolve-PSFPath -Path $basePath))
 	{
@@ -48,7 +48,7 @@ $text = @()
 foreach ($line in (Get-Content "$($PSScriptRoot)\filesAfter.txt" | Where-Object { $_ -notlike "#*" }))
 {
 	if ([string]::IsNullOrWhiteSpace($line)) { continue }
-	
+
 	$basePath = Join-Path "$($publishDir.FullName)\PSDatabaseClone" $line
 	foreach ($entry in (Resolve-PSFPath -Path $basePath))
 	{
