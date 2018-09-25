@@ -9,11 +9,10 @@ cache:
 - C:\Program Files\WindowsPowerShell\Modules\PSFramework -> appveyor.yml
 - C:\Program Files\WindowsPowerShell\Modules\dbatools -> appveyor.yml
 
-clone_folder: c:\projects\PSDatabaseClone
-
 shallow_clone: true
 
 environment:
+  workingfolder: c:\projects\PSDatabaseClone
   environment: development
   version: 0.3.$(appveyor_build_number)
   appveyor_rdp_password: Psd@tabaseclone2018
