@@ -22,14 +22,14 @@ matrix:
 
 before_build:
 - ps: .\build\appveyor-prerequisites.ps1
-- icacls "c:\projects\PSDatabaseClone" /grant Everyone:(OI)(CI)F /T
+
 
 build_script:
 # grab appveyor lab files and needed requirements for tests in CI
 - ps: .\build\appveyor-build.ps1
 
 #before_test:
-#- icacls C:\projects /inheritance:r /grant Everyone:F
+#- icacls "c:\projects\PSDatabaseClone" /grant Everyone:(OI)(CI)F /T /Q
 
 test_script:
 # Test with PowerShell and Pester

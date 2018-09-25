@@ -12,6 +12,8 @@ Install-Module -Name PSScriptAnalyzer -Force -SkipPublisherCheck
 
 . "$PSScriptRoot\appveyor-constants.ps1"
 
+icacls "c:\projects\PSDatabaseClone" /grant Everyone:(OI)(CI)F /T
+
 # Creating folder
 Write-Host -Object "Creating image and clone directories" -ForegroundColor Cyan
 if (-not (Test-Path -Path $workingfolder)) {
