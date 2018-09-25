@@ -13,7 +13,7 @@ Write-PSFMessage -Level Important -Message "Creating and populating publishing d
 $publishDir = New-Item -Path "C:\Projects" -Name publish -ItemType Directory
 Copy-Item -Path "$($env:SYSTEM_DEFAULTWORKINGDIRECTORY)\PSDatabaseClone" -Destination $publishDir.FullName -Recurse -Force
 
-# Create commands.ps1
+<# # Create commands.ps1
 $text = @()
 Get-ChildItem -Path "$($publishDir.FullName)\PSDatabaseClone\internal\functions\" -Recurse -File -Filter "*.ps1" | ForEach-Object {
 	$text += [System.IO.File]::ReadAllText($_.FullName)
@@ -62,4 +62,4 @@ foreach ($line in (Get-Content "$($PSScriptRoot)\filesAfter.txt" | Where-Object 
 if ($text) { $text -join "`n`n" | Set-Content -Path "$($publishDir.FullName)\PSDatabaseClone\resourcesAfter.ps1" }
 
 # Publish to Gallery
-Publish-Module -Path "$($publishDir.FullName)\PSDatabaseClone" -NuGetApiKey $ApiKey -Force
+Publish-Module -Path "$($publishDir.FullName)\PSDatabaseClone" -NuGetApiKey $ApiKey -Force #>

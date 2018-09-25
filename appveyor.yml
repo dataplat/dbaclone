@@ -9,6 +9,8 @@ cache:
 - C:\Program Files\WindowsPowerShell\Modules\PSFramework -> appveyor.yml
 - C:\Program Files\WindowsPowerShell\Modules\dbatools -> appveyor.yml
 
+clone_folder: c:\projects\PSDatabaseClone
+
 shallow_clone: true
 
 environment:
