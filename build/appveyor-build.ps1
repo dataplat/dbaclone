@@ -9,9 +9,9 @@ param (
 )
 
 # Prepare publish folder
-Write-PSFMessage -Level Important -Message "Creating and populating publishing directory"
+<# Write-PSFMessage -Level Important -Message "Creating and populating publishing directory"
 $publishDir = New-Item -Path "C:\Projects" -Name publish -ItemType Directory
-Copy-Item -Path "$($env:SYSTEM_DEFAULTWORKINGDIRECTORY)\PSDatabaseClone" -Destination $publishDir.FullName -Recurse -Force
+Copy-Item -Path "$($env:SYSTEM_DEFAULTWORKINGDIRECTORY)\PSDatabaseClone" -Destination $publishDir.FullName -Recurse -Force #>
 
 <# # Create commands.ps1
 $text = @()

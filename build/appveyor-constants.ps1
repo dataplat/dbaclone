@@ -1,8 +1,7 @@
 ﻿# constants
 #$publishDir = "C:\Projects"
-$publishDir = $env:workingfolder
-Write-Host "Working folder: $publishDir"
-$workingfolder = "$($publishDir)\psdc"
+Write-Host "Working folder: $($env:workingfolder)"
+$workingfolder = "$($env:workingfolder)\psdc"
 $jsonfolder = "$workingfolder\config"
 $imagefolder = "$workingfolder\images"
 $clonefolder = "$workingfolder\clones"
