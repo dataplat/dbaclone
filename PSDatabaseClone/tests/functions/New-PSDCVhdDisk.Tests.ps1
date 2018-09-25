@@ -1,5 +1,5 @@
 $commandname = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-. "$PSScriptRoot\..\..\..\build\vsts-constants.ps1"
+. "$PSScriptRoot\..\..\..\build\appveyor-constants.ps1"
 
 Describe "$commandname Unit Tests" {
     Context "Create new VHD with defaults" {
