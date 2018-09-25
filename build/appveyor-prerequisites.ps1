@@ -1,3 +1,6 @@
+Add-AppveyorTest -Name "appveyor.prerequisites" -Framework NUnit -FileName "appveyor-prerequisites.ps1" -Outcome Running
+$sw = [system.diagnostics.stopwatch]::startNew()
+
 Write-Host "Installing dbatools" -ForegroundColor Cyan
 Install-Module dbatools -Force -SkipPublisherCheck
 Write-Host "Installing Pester" -ForegroundColor Cyan
@@ -7,7 +10,7 @@ Install-Module PSFramework -Force -SkipPublisherCheck
 Write-Host "Installing PSScriptAnalyzer" -ForegroundColor Cyan
 Install-Module -Name PSScriptAnalyzer -Force -SkipPublisherCheck
 
-. "$PSScriptRoot\vsts-constants.ps1"
+. "$PSScriptRoot\appveyor-constants.ps1"
 
 # Creating folder
 Write-Host -Object "Creating image and clone directories" -ForegroundColor Cyan
@@ -52,3 +55,6 @@ Get-PSFConfig -FullName psdatabaseclone.setup.status | Register-PSFConfig -Scope
 Get-PSFConfig -FullName psdatabaseclone.informationstore.mode | Register-PSFConfig -Scope SystemDefault
 Get-PSFConfig -FullName psdatabaseclone.informationstore.path | Register-PSFConfig -Scope SystemDefault
 Get-PSFConfig -FullName psdatabaseclone.psdatabaseclone.diskpart.scriptfile | Register-PSFConfig -Scope SystemDefault
+
+$sw.Stop()
+Update-AppveyorTest -Name "appveyor-prerequisites" -Framework NUnit -FileName "appveyor-prerequisites.ps1" -Outcome Passed -Duration $sw.ElapsedMilliseconds
