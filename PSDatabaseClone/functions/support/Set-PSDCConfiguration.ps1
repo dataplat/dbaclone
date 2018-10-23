@@ -390,7 +390,23 @@
 
         # Set the path to the diskpart script file
         Set-PSFConfig -Module PSDatabaseClone -Name diskpart.scriptfile -Value "$env:APPDATA\psdatabaseclone\diskpartcommand.txt" -Validation string
-        New-Item -Path "$env:APPDATA\psdatabaseclone" -ItemType Directory
+
+        # Check if the path exists and create it if neccesary
+        if (Test-Path -Path "$env:APPDATA\psdatabaseclone") {
+            if (-not $Force) {
+                Write-PSFMessage -Message "PSDatabaClone working directory already exists" -Level Verbose
+            }
+            else {
+                try {
+                    New-Item -Path "$env:APPDATA\psdatabaseclone" -ItemType Directory -Force:$Force
+                }
+                catch {
+                    Stop-PSFFunction -Message "Something went wrong creating the working directory" -ErrorRecord $_ -Continue
+                }
+            }
+        }
+
+        # Set the configuration
         Get-PSFConfig -FullName psdatabaseclone.diskpart.scriptfile | Register-PSFConfig -Scope SystemDefault
 
         # Check if all the settings have been made
