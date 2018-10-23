@@ -17,16 +17,36 @@ Install-Module -Name PSScriptAnalyzer -Force -SkipPublisherCheck
 # Creating folder
 Write-Host -Object "Creating image and clone directories" -ForegroundColor Cyan
 if (-not (Test-Path -Path $workingfolder)) {
-    $null = New-Item -Path $workingfolder -ItemType Directory -Force
+    try{
+        $null = New-Item -Path $workingfolder -ItemType Directory -Force
+    }
+    catch{
+        Write-Error -Message "$($_)"
+    }
 }
 if (-not (Test-Path -Path $imagefolder)) {
-    $null = New-Item -Path $imagefolder -ItemType Directory -Force
+    try{
+        $null = New-Item -Path $imagefolder -ItemType Directory -Force
+    }
+    catch{
+        Write-Error -Message "$($_)"
+    }
 }
 if (-not (Test-Path -Path $clonefolder)) {
-    $null = New-Item -Path $clonefolder -ItemType Directory -Force
+    try{
+        $null = New-Item -Path $clonefolder -ItemType Directory -Force
+    }
+    catch{
+        Write-Error -Message "$($_)"
+    }
 }
 if (-not (Test-Path -Path $jsonfolder)) {
-    $null = New-Item -Path $jsonfolder -ItemType Directory -Force
+    try{
+        $null = New-Item -Path $jsonfolder -ItemType Directory -Force
+    }
+    catch{
+        Write-Error -Message "$($_)"
+    }
 }
 
 <# # Set permissions on folders
