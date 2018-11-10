@@ -250,10 +250,10 @@
                 try {
                     # Check if computer is local
                     if ($computer.IsLocalhost) {
-                        $ImageLocalPath = Convert-PSDCLocalUncPathToLocalPath -UncPath $ImageNetworkPath -EnableException
+                        $ImageLocalPath = Convert-PSDCUncPathToLocalPath -UncPath $ImageNetworkPath -EnableException
                     }
                     else {
-                        $command = "Convert-PSDCLocalUncPathToLocalPath -UncPath `"$ImageNetworkPath`" -EnableException"
+                        $command = "Convert-PSDCUncPathToLocalPath -UncPath `"$ImageNetworkPath`" -EnableException"
                         $commandGetLocalPath = [ScriptBlock]::Create($command)
                         $ImageLocalPath = Invoke-PSFCommand -ComputerName $computer -ScriptBlock $commandGetLocalPath -Credential $DestinationCredential
 
@@ -281,10 +281,10 @@
             try {
                 # Check if computer is local
                 if ($computer.IsLocalhost) {
-                    $convertedLocalPath = Convert-PSDCLocalUncPathToLocalPath -UncPath $ImageNetworkPath -EnableException
+                    $convertedLocalPath = Convert-PSDCUncPathToLocalPath -UncPath $ImageNetworkPath -EnableException
                 }
                 else {
-                    $command = "Convert-PSDCLocalUncPathToLocalPath -UncPath `"$ImageNetworkPath`" -EnableException"
+                    $command = "Convert-PSDCUncPathToLocalPath -UncPath `"$ImageNetworkPath`" -EnableException"
                     $commandGetLocalPath = [ScriptBlock]::Create($command)
                     $convertedLocalPath = Invoke-PSFCommand -ComputerName $computer -ScriptBlock $commandGetLocalPath -Credential $DestinationCredential
                 }

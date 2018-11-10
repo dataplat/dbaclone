@@ -40,7 +40,7 @@
     # FormatsToProcess = @('xml\PSDatabaseClone.Format.ps1xml')
 
     # Functions to export from this module
-    FunctionsToExport = 'Convert-PSDCLocalUncPathToLocalPath',
+    FunctionsToExport = 'Convert-PSDCUncPathToLocalPath',
 		'Get-PSDCClone',
 		'Get-PSDCImage',
 		'Initialize-PSDCVhdDisk',

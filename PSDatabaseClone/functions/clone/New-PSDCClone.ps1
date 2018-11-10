@@ -229,10 +229,10 @@
                         try {
                             # Check if computer is local
                             if ($computer.IsLocalhost) {
-                                $Destination = Convert-PSDCLocalUncPathToLocalPath -UncPath $Destination
+                                $Destination = Convert-PSDCUncPathToLocalPath -UncPath $Destination
                             }
                             else {
-                                $command = [ScriptBlock]::Create("Convert-PSDCLocalUncPathToLocalPath -UncPath `"$Destination`"")
+                                $command = [ScriptBlock]::Create("Convert-PSDCUncPathToLocalPath -UncPath `"$Destination`"")
                                 $Destination = Invoke-PSFCommand -ComputerName $computer -ScriptBlock $command -Credential $Credential
                             }
                         }
@@ -283,8 +283,11 @@
 
                 # Take apart the vhd directory
                 if ($PSCmdlet.ShouldProcess($ParentVhd, "Setting up parent VHD variables")) {
-                    if ($computer.IsLocalhost) {
-                        if (Test-Path -Path $ParentVhd) {
+                    $uri = new-object System.Uri($ParentVhd)
+                    $vhdComputer = [PsfComputer]$uri.Host
+
+                    if ($vhdComputer.IsLocalhost) {
+                        if ((Test-Path -Path $ParentVhd)) {
                             $parentVhdFileName = $ParentVhd.Split("\")[-1]
                             $parentVhdFile = $parentVhdFileName.Split(".")[0]
                         }
@@ -294,7 +297,7 @@
                     }
                     else {
                         $command = [scriptblock]::Create("Test-Path -Path '$ParentVhd'")
-                        $result = Invoke-PSFCommand -ComputerName $computer -ScriptBlock $command -Credential $Credential
+                        $result = Invoke-PSFCommand -ComputerName $vhdComputer -ScriptBlock $command -Credential $Credential
                         if ($result) {
                             $parentVhdFileName = $ParentVhd.Split("\")[-1]
                             $parentVhdFile = $parentVhdFileName.Split(".")[0]
@@ -331,9 +334,9 @@
                 # Check if access path is already present
                 if ($PSCmdlet.ShouldProcess($accessPath, "Testing existence access path $accessPath and create it")) {
                     if ($computer.IsLocalhost) {
-                        if (-not (Test-Path -Path $accessPath -Credential $Credential)) {
+                        if (-not (Test-Path -Path $accessPath)) {
                             try {
-                                $null = New-Item -Path $accessPath -ItemType Directory -Credential $Credential -Force
+                                $null = New-Item -Path $accessPath -ItemType Directory -Force
                             }
                             catch {
                                 Stop-PSFFunction -Message "Couldn't create access path directory" -ErrorRecord $_ -Target $accessPath -Continue
@@ -383,6 +386,7 @@
 
                             $script = [ScriptBlock]::Create("diskpart /s $diskpartScriptFile")
                             $null = Invoke-PSFCommand -ScriptBlock $script
+                            $script
                         }
                         else {
                             $command = [ScriptBlock]::Create("New-VHD -ParentPath $ParentVhd -Path `"$Destination\$CloneName.vhdx`" -Differencing")
@@ -408,7 +412,7 @@
                         if ($computer.IsLocalhost) {
                             # Mount the disk
                             $null = Mount-DiskImage -ImagePath "$Destination\$CloneName.vhdx"
-
+                            "$Destination\$CloneName.vhdx"
                             # Get the disk based on the name of the vhd
                             $disk = Get-Disk | Where-Object {$_.Location -eq "$Destination\$CloneName.vhdx"}
                         }
