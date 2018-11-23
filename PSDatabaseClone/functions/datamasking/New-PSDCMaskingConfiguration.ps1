@@ -133,7 +133,7 @@
         }
 
         # Get the databases
-        $DatabaseCollection = $server.Databases | Where-Object Name -in $Database
+        [array]$DatabaseCollection = $server.Databases | Where-Object Name -in $Database
 
     }
 
@@ -151,14 +151,19 @@
 
             # Get the tables
             if (-not $Table) {
-                $TableCollection = $db.Tables
+                [array]$TableCollection = $db.Tables
             }
             else {
-                $TableCollection = $db.Tables | Where-Object Name -in $Table
+                [array]$TableCollection = $db.Tables | Where-Object Name -in $Table
+            }
+
+            if($TableCollection.Count -lt 1){
+                Stop-PSFFunction -Message "The database does not contain any tables" -Target $db -Continue
             }
 
             # Loop through the tables
             foreach ($tbl in $TableCollection) {
+                $tbl.Name
                 # Create the column array
                 $columns = @()
 
@@ -172,6 +177,7 @@
 
                 # Loop through each of the columns
                 foreach ($cln in $ColumnCollection) {
+                    "- $($cln.Name)"
                     # Skip identity columns
                     if ((-not $cln.Identity) -and (-not $cln.IsForeignKey)) {
                         $maskingType = $null
@@ -180,14 +186,15 @@
                         $maskingType = $columnTypes | Where-Object {$cln.Name -in $_.Synonim} | Select-Object TypeName -ExpandProperty TypeName
 
                         $columnLength = $cln.Properties['Length'].Value
-                        $columnType = $cln.DataType.Name
+                        $columnType = $cln.DataType.Name.ToLower()
+                        "ColumnType $columnType"
 
                         # Check the maskingtype
                         switch ($maskingType.ToLower()) {
                             "firstname" {
                                 $columns += [PSCustomObject]@{
                                     Name        = $cln.Name
-                                    ColumnType  = $columnType.ToLower()
+                                    ColumnType  = $columnType
                                     MaxLength   = $columnLength
                                     MaskingType = "Name"
                                     SubType     = "Firstname"
@@ -196,7 +203,7 @@
                             "lastname" {
                                 $columns += [PSCustomObject]@{
                                     Name        = $cln.Name
-                                    ColumnType  = $columnType.ToLower()
+                                    ColumnType  = $columnType
                                     MaxLength   = $columnLength
                                     MaskingType = "Name"
                                     SubType     = "Lastname"
@@ -205,7 +212,7 @@
                             "creditcard" {
                                 $columns += [PSCustomObject]@{
                                     Name        = $cln.Name
-                                    ColumnType  = $columnType.ToLower()
+                                    ColumnType  = $columnType
                                     MaxLength   = $columnLength
                                     MaskingType = "Finance"
                                     SubType     = "MasterCard"
@@ -214,7 +221,7 @@
                             "address" {
                                 $columns += [PSCustomObject]@{
                                     Name        = $cln.Name
-                                    ColumnType  = $columnType.ToLower()
+                                    ColumnType  = $columnType
                                     MaxLength   = $columnLength
                                     MaskingType = "Address"
                                     SubType     = "StreetAddress"
@@ -223,7 +230,7 @@
                             "city" {
                                 $columns += [PSCustomObject]@{
                                     Name        = $cln.Name
-                                    ColumnType  = $columnType.ToLower()
+                                    ColumnType  = $columnType
                                     MaxLength   = $columnLength
                                     MaskingType = "Address"
                                     SubType     = "City"
@@ -232,7 +239,7 @@
                             "zipcode" {
                                 $columns += [PSCustomObject]@{
                                     Name        = $cln.Name
-                                    ColumnType  = $columnType.ToLower()
+                                    ColumnType  = $columnType
                                     MaxLength   = $columnLength
                                     MaskingType = "Address"
                                     SubType     = "Zipcode"
@@ -241,7 +248,7 @@
                             default {
                                 $type = "Random"
 
-                                switch ($columnType.ToLower()) {
+                                switch ($columnType) {
                                     "bigint" {
                                         $subType = "Number"
                                         $maxLength = 9223372036854775807
@@ -290,7 +297,7 @@
 
                                 $columns += [PSCustomObject]@{
                                     Name        = $cln.Name
-                                    ColumnType  = $columnType.ToLower()
+                                    ColumnType  = $columnType
                                     MaxLength   = $maxLength
                                     MaskingType = $type
                                     SubType     = $subType
