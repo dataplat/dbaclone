@@ -101,95 +101,105 @@
         }
 
         # Get all the items that should be processed
-        $tables = Get-Content -Path $MaskingConfigFile -Credential $Credential | ConvertFrom-Json
+        [array]$tables = Get-Content -Path $MaskingConfigFile -Credential $Credential | ConvertFrom-Json
 
         # Set defaults
         $charString = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
+
+        # Create the faker objects
+        $faker = New-Object Bogus.Faker($Locale)
     }
 
     process {
         if (Test-PSFFunctionInterrupt) { return }
 
-        # Create the faker objects
-        $faker = New-Object Bogus.Faker($Locale)
-
         foreach ($table in $tables.Tables) {
-            # Get the data
-            $query = "SELECT * FROM [$($table.Schema)].[$($table.Name)]"
-            #$data = Invoke-DbaQuery -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database $Database -Query $query | ConvertTo-DbaDataTable
-            $data = $server.Databases[$Database].Query($query) | ConvertTo-DbaDataTable
-
-            # Loop through each of the rows and change them
-            foreach ($row in $data.Rows) {
-
-                $query = "UPDATE [$($table.Schema)].[$($table.Name)] SET "
-
-                foreach ($column in $table.Columns) {
-                    $newValue = $null
-                    switch ($column.MaskingType.ToLower()) {
-
-                        {$_ -in 'name', 'address', 'creditcard'} {
-                            $newValue = $faker.$($column.MaskingType).$($column.SubType)()
-                        }
-                        {$_ -in 'date', 'datetime', 'datetime2', 'smalldatetime'} {
-                            $newValue = ($faker.Date.Past()).ToString("yyyyMMdd")
-                        }
-                        "number" {
-                            $newValue = $faker.$($column.MaskingType).$($column.SubType)($column.MaxLength)
-                        }
-                        "shuffle" {
-                            $newValue = ($row.($column.Name) -split '' | Sort-Object {Get-Random}) -join ''
-                        }
-                        "string" {
-                            $newValue = $faker.$($column.MaskingType).String2($column.MaxLength, $charString)
-                        }
-
-                    } # End switch
-
-                    $query += "$($column.Name) = '" + $newValue.Replace("'", "''") + "',"
-
-                } # End for each column
-
-                # Clean up query
-                $query = $query.Substring(0, ($query.Length - 1))
-
-                # Add where statement
-                $query += " WHERE "
-
-                # Loop hrough columns to setup rest of where statement
-                foreach ($column in $table.Columns) {
-
-                    switch ($column.MaskingType.ToLower()) {
-                        {$_ -in 'name', 'address', 'creditcard'} {
-                            $query += "$($column.Name) = '" + ($row.$($column.Name)).Replace("'", "''") + "' AND "
-                        }
-                        {$_ -in 'date', 'datetime', 'datetime2', 'smalldatetime'} {
-                            $query += "$($column.Name) = '" + ($row.$($column.Name)).Replace("'", "''") + "',"
-                        }
-                        "number" {
-                            $query += "$($column.Name) = " + $faker.$($column.MaskingType).$($column.SubType)($column.MaxLength) + ","
-                        }
-                        "string" {
-                            $query += "$($column.Name) = '" + ($row.$($column.Name)).Replace("'", "''") + "',"
-                        }
-
-                    } # End switch
-
-                }
-
-                # Clean up query
-                $query = $query.Substring(0, ($query.Length - 5))
-
+            # Check if table is present in database
+            if ($table.Name -in $server.Databases[$Database].Tables.Name) {
+                # Get the data
                 try {
-                    #Invoke-DbaQuery -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database $Database -Query $query
-                    $server.Databases[$Database].Query($query)
+                    $query = "SELECT * FROM [$($table.Schema)].[$($table.Name)]"
+                    $data = $server.Databases[$Database].Query($query) | ConvertTo-DbaDataTable
                 }
                 catch {
-                    Stop-PSFFunction -Message "Could not execute the query" -Target $query -Continue
+                    Stop-PSFFunction -Message "Something went wrong retrieving the data from table $($table.Name)" -Target $Database
                 }
 
+                # Loop through each of the rows and change them
+                foreach ($row in $data.Rows) {
 
-            } # End for each row
+                    $query = "UPDATE [$($table.Schema)].[$($table.Name)] SET "
+
+                    # Loop thorough the columns
+                    foreach ($column in $table.Columns) {
+                        $query += "$($column.Name) = "
+
+                        switch ($column.MaskingType.ToLower()) {
+                            {$_ -in 'name', 'address', 'finance'} {
+                                $newValue = $faker.$($column.MaskingType).$($column.SubType)()
+                            }
+                            {$_ -in 'date', 'datetime', 'datetime2', 'smalldatetime'} {
+                                $newValue = ($faker.Date.Past()).ToString("yyyyMMdd")
+                            }
+                            "number" {
+                                $newValue = $faker.$($column.MaskingType).$($column.SubType)($column.MaxLength)
+                            }
+                            "shuffle" {
+                                $newValue = ($row.($column.Name) -split '' | Sort-Object {Get-Random}) -join ''
+                            }
+                            "string" {
+                                $newValue = $faker.$($column.MaskingType).String2($column.MaxLength, $charString)
+                            }
+                        } # End switch
+
+                        # Setup the column art of the SET statement
+                        if ($newValue.Gettype().Name -eq 'DateTime', 'String') {
+                            $query += "'" + $newValue.Replace("'", "''") + "',"
+                        }
+                        elseif ($newValue.Gettype().Name -in 'Double', 'Int32', 'Int64') {
+                            $query += "$newValue,"
+                        }
+
+                    } # End for each column
+
+                    # Clean up query
+                    $query = $query.Substring(0, ($query.Length - 1))
+
+                    # Add where statement
+                    $query += " WHERE "
+
+                    # Loop hrough columns to setup rest of where statement
+                    foreach ($column in $table.Columns) {
+                        # Get the original  value
+                        $oldValue = $row.$($column.Name)
+
+                        # Check the type
+                        if ($oldValue.Gettype().Name -eq 'DateTime', 'String') {
+                            $query += "$($column.Name) = '" + ($row.$($column.Name)).Replace("'", "''") + "' AND "
+                        }
+                        elseif ($newValue.Gettype().Name -in 'Double', 'Int32', 'Int64') {
+                            $query += "$($column.Name) = $($row.$($column.Name)) AND "
+                        }
+
+                    }
+
+                    # Clean up query
+                    $query = $query.Substring(0, ($query.Length - 5))
+
+                    # Execute the query
+                    try {
+                        $server.Databases[$Database].Query($query)
+                    }
+                    catch {
+                        Stop-PSFFunction -Message "Could not execute the query" -Target $query -Continue
+                    }
+
+                } # End for each row
+
+            } # End table check
+            else {
+                Stop-PSFFunction -Message "Table $($table.Name) is not present" -Target $Database -Continue
+            }
 
         } # End for each table
 
