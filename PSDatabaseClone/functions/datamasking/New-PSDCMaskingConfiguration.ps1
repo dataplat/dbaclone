@@ -215,7 +215,7 @@
                                         ColumnType  = $columnType
                                         MaxLength   = $columnLength
                                         MaskingType = "Finance"
-                                        SubType     = "MasterCard"
+                                        SubType     = "CreditcardNumber"
                                     }
                                 }
                                 "address" {
@@ -274,10 +274,6 @@
                                 "float" {
                                     $subType = "Float"
                                     $maxLength = $null
-                                }
-                                "int" {
-                                    $subType = "Int"
-                                    $maxLength = 2147483647
                                 }
                                 "smallint" {
                                     $subType = "Number"
