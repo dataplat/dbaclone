@@ -120,24 +120,27 @@
             $data = $server.Databases[$Database].Query($query) | ConvertTo-DbaDataTable
 
             # Loop through each of the rows and change them
-            foreach ($row in $data) {
+            foreach ($row in $data.Rows) {
 
                 $query = "UPDATE [$($table.Schema)].[$($table.Name)] SET "
 
                 foreach ($column in $table.Columns) {
                     $newValue = $null
-                    switch($column.MaskingType.ToLower()){
+                    switch ($column.MaskingType.ToLower()) {
 
                         {$_ -in 'name', 'address', 'creditcard'} {
                             $newValue = $faker.$($column.MaskingType).$($column.SubType)()
                         }
-                        {$_ -in 'date', 'datetime', 'datetime2', 'smalldatetime'}{
+                        {$_ -in 'date', 'datetime', 'datetime2', 'smalldatetime'} {
                             $newValue = ($faker.Date.Past()).ToString("yyyyMMdd")
                         }
-                        "number"{
+                        "number" {
                             $newValue = $faker.$($column.MaskingType).$($column.SubType)($column.MaxLength)
                         }
-                        "string"{
+                        "shuffle" {
+                            $newValue = ($row.($column.Name) -split '' | Sort-Object {Get-Random}) -join ''
+                        }
+                        "string" {
                             $newValue = $faker.$($column.MaskingType).String2($column.MaxLength, $charString)
                         }
 
@@ -148,7 +151,7 @@
                 } # End for each column
 
                 # Clean up query
-                $query = $query.Substring(0, ($query.Length -1))
+                $query = $query.Substring(0, ($query.Length - 1))
 
                 # Add where statement
                 $query += " WHERE "
@@ -156,17 +159,17 @@
                 # Loop hrough columns to setup rest of where statement
                 foreach ($column in $table.Columns) {
 
-                    switch($column.MaskingType.ToLower()){
+                    switch ($column.MaskingType.ToLower()) {
                         {$_ -in 'name', 'address', 'creditcard'} {
                             $query += "$($column.Name) = '" + ($row.$($column.Name)).Replace("'", "''") + "' AND "
                         }
-                        {$_ -in 'date', 'datetime', 'datetime2', 'smalldatetime'}{
+                        {$_ -in 'date', 'datetime', 'datetime2', 'smalldatetime'} {
                             $query += "$($column.Name) = '" + ($row.$($column.Name)).Replace("'", "''") + "',"
                         }
-                        "number"{
+                        "number" {
                             $query += "$($column.Name) = " + $faker.$($column.MaskingType).$($column.SubType)($column.MaxLength) + ","
                         }
-                        "string"{
+                        "string" {
                             $query += "$($column.Name) = '" + ($row.$($column.Name)).Replace("'", "''") + "',"
                         }
 
@@ -175,13 +178,13 @@
                 }
 
                 # Clean up query
-                $query = $query.Substring(0, ($query.Length -5))
+                $query = $query.Substring(0, ($query.Length - 5))
 
-                try{
+                try {
                     #Invoke-DbaQuery -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database $Database -Query $query
                     $server.Databases[$Database].Query($query)
                 }
-                catch{
+                catch {
                     Stop-PSFFunction -Message "Could not execute the query" -Target $query -Continue
                 }
 
