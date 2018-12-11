@@ -158,28 +158,30 @@
 
         # Check if the file does not yet exist
         if (Test-Path $vhdPath) {
-            if(-not $Force){
+            if (-not $Force) {
                 Stop-PSFFunction -Message "The vhd file already exists" -Continue
             }
-            else{
-                try{
+            else {
+                try {
                     Remove-Item -Path $vhdPath -Force:$Force
                 }
-                catch{
+                catch {
                     Stop-PSFFunction -Message "Could not remove VHD '$vhdPath'" -Continue -ErrorRecord $_
                 }
             }
         }
 
         # Set the location where to save the diskpart command
-        $diskpartScriptFile = Get-PSFConfigValue -FullName psdatabaseclone.diskpart.scriptfile #-Fallback "$env:APPDATA\psdatabaseclone\diskpartcommand.txt"
+        $diskpartScriptFile = Get-PSFConfigValue -FullName psdatabaseclone.diskpart.scriptfile -Fallback "$env:APPDATA\psdatabaseclone\diskpartcommand.txt"
 
-        if(-not (Test-Path -Path $diskpartScriptFile)){
-            try{
-                $null = New-Item -Path $diskpartScriptFile -ItemType File
-            }
-            catch{
-                Stop-PSFFunction -Message "Could not create diskpart script file" -ErrorRecord $_ -Continue
+        if (-not (Test-Path -Path $diskpartScriptFile)) {
+            if ($PSCmdlet.ShouldProcess($diskpartScriptFile, "Creating dispart file")) {
+                try {
+                    $null = New-Item -Path $diskpartScriptFile -ItemType File
+                }
+                catch {
+                    Stop-PSFFunction -Message "Could not create diskpart script file" -ErrorRecord $_ -Continue
+                }
             }
         }
     }
