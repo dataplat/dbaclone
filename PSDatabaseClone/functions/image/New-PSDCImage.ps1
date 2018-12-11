@@ -399,10 +399,10 @@
 
                     # Check if computer is local
                     if ($computer.IsLocalhost) {
-                        $null = New-PSDCVhdDisk -Destination $imagePath -Name $imageName -VhdType $VhdType
+                        $null = New-PSDCVhdDisk -Destination $imagePath -Name $imageName -VhdType $VhdType -EnableException
                     }
                     else {
-                        $command = [ScriptBlock]::Create("New-PSDCVhdDisk -Destination '$imagePath' -Name $imageName -VhdType $VhdType")
+                        $command = [ScriptBlock]::Create("New-PSDCVhdDisk -Destination '$imagePath' -Name $imageName -VhdType $VhdType -EnableException")
                         $null = Invoke-PSFCommand -ComputerName $computer -ScriptBlock $command -Credential $DestinationCredential
                     }
 
@@ -420,10 +420,10 @@
 
                     # Check if computer is local
                     if ($computer.IsLocalhost) {
-                        $diskResult = Initialize-PSDCVhdDisk -Path $vhdPath -Credential $DestinationCredential
+                        $diskResult = Initialize-PSDCVhdDisk -Path $vhdPath -Credential $DestinationCredential -EnableException
                     }
                     else {
-                        $command = [ScriptBlock]::Create("Initialize-PSDCVhdDisk -Path $vhdPath")
+                        $command = [ScriptBlock]::Create("Initialize-PSDCVhdDisk -Path $vhdPath -EnableException")
                         $diskResult = Invoke-PSFCommand -ComputerName $computer -ScriptBlock $command -Credential $DestinationCredential
                     }
                 }
