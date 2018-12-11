@@ -204,7 +204,7 @@
                 Set-Content -Path $diskpartScriptFile -Value $command -Force
 
                 $script = [ScriptBlock]::Create("diskpart /s $diskpartScriptFile")
-                Invoke-PSFCommand -ScriptBlock $script
+                $null = Invoke-PSFCommand -ScriptBlock $script
 
             }
             catch {
@@ -215,7 +215,7 @@
 
     end {
         # Clean up the script file for diskpart
-        Remove-Item $diskpartScriptFile -Force
+        Remove-Item $diskpartScriptFile -Force -Confirm:$false
 
         # Test if there are any errors
         if (Test-PSFFunctionInterrupt) { return }
