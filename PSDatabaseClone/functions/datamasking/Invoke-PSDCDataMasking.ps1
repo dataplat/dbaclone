@@ -174,10 +174,10 @@
                         $oldValue = $row.$($column.Name)
 
                         # Check the type
-                        if ($oldValue.Gettype().Name -eq 'DateTime', 'String') {
+                        if ($column.IsStringType) {
                             $query += "$($column.Name) = '" + ($row.$($column.Name)).Replace("'", "''") + "' AND "
                         }
-                        elseif ($newValue.Gettype().Name -in 'Double', 'Int32', 'Int64') {
+                        else {
                             $query += "$($column.Name) = $($row.$($column.Name)) AND "
                         }
 
