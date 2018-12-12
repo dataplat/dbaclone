@@ -33,7 +33,7 @@
     .PARAMETER Column
         Columns to process. By default all the columns will be processed
 
-    .PARAMETER MaskingConfigFile
+    .PARAMETER FilePath
         Configuration file that contains the which tables and columns need to be masked
 
     .PARAMETER Locale
@@ -58,7 +58,7 @@
         https://psdatabaseclone.org/
 
     .EXAMPLE
-        Invoke-PSDCDataMasking -SqlInstance SQLDB1 -Database DB1 -MaskingConfigFile C:\Temp\DB1.tables.json
+        Invoke-PSDCDataMasking -SqlInstance SQLDB1 -Database DB1 -FilePath C:\Temp\DB1.tables.json
 
         Apply the data masking configuration from the file "DB1.tables.json" to the database
     #>
