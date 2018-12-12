@@ -33,7 +33,7 @@
     .PARAMETER Column
         Columns to process. By default all the columns will be processed
 
-    .PARAMETER MaskingConfigFile
+    .PARAMETER FilePath
         Configuration file that contains the which tables and columns need to be masked
 
     .PARAMETER Locale
@@ -58,7 +58,7 @@
         https://psdatabaseclone.org/
 
     .EXAMPLE
-        Invoke-PSDCDataMasking -SqlInstance SQLDB1 -Database DB1 -MaskingConfigFile C:\Temp\DB1.tables.json
+        Invoke-PSDCDataMasking -SqlInstance SQLDB1 -Database DB1 -FilePath C:\Temp\DB1.tables.json
 
         Apply the data masking configuration from the file "DB1.tables.json" to the database
     #>
@@ -75,9 +75,10 @@
         [System.Management.Automation.PSCredential]
         $Credential,
         [parameter(Mandatory = $true)]
-        [object]$Database,
+        [string[]]$Database,
         [parameter(Mandatory = $true)]
-        [string]$MaskingConfigFile,
+        [Alias('Path', 'FullName')]
+        [object]$FilePath,
         [string]$Locale = 'en',
         [switch]$Force,
         [switch]$EnableException
@@ -95,13 +96,13 @@
         }
 
         # Check if the destination is accessible
-        if (-not (Test-Path -Path $MaskingConfigFile -Credential $Credential)) {
+        if (-not (Test-Path -Path $FilePath -Credential $Credential)) {
             Stop-PSFFunction -Message "Could not find masking config file" -ErrorRecord $_ -Target $MaskingConfigFile
             return
         }
 
         # Get all the items that should be processed
-        [array]$tables = Get-Content -Path $MaskingConfigFile -Credential $Credential | ConvertFrom-Json
+        [array]$tables = Get-Content -Path $FilePath -Credential $Credential | ConvertFrom-Json
 
         # Set defaults
         $charString = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
@@ -111,102 +112,102 @@
     }
 
     process {
-        if (Test-PSFFunctionInterrupt) { return }
+        if (Test-PSFFunctionInterrupt) {
+            return
+        }
 
-        foreach ($table in $tables.Tables) {
-            # Check if table is present in database
-            if ($table.Name -in $server.Databases[$Database].Tables.Name) {
-                # Get the data
-                try {
-                    $query = "SELECT * FROM [$($table.Schema)].[$($table.Name)]"
-                    $data = $server.Databases[$Database].Query($query) | ConvertTo-DbaDataTable
-                }
-                catch {
-                    Stop-PSFFunction -Message "Something went wrong retrieving the data from table $($table.Name)" -Target $Database
-                }
-
-                # Loop through each of the rows and change them
-                foreach ($row in $data.Rows) {
-
-                    $query = "UPDATE [$($table.Schema)].[$($table.Name)] SET "
-
-                    # Loop thorough the columns
-                    foreach ($column in $table.Columns) {
-                        $query += "$($column.Name) = "
-
-                        switch ($column.MaskingType.ToLower()) {
-                            {$_ -in 'name', 'address', 'finance'} {
-                                $newValue = $faker.$($column.MaskingType).$($column.SubType)()
-                            }
-                            {$_ -in 'date', 'datetime', 'datetime2', 'smalldatetime'} {
-                                $newValue = ($faker.Date.Past()).ToString("yyyyMMdd")
-                            }
-                            "number" {
-                                $newValue = $faker.$($column.MaskingType).$($column.SubType)($column.MaxLength)
-                            }
-                            "shuffle" {
-                                $newValue = ($row.($column.Name) -split '' | Sort-Object {Get-Random}) -join ''
-                            }
-                            "string" {
-                                $newValue = $faker.$($column.MaskingType).String2($column.MaxLength, $charString)
-                            }
-                        } # End switch
-
-                        # Setup the column art of the SET statement
-                        if ($newValue.Gettype().Name -eq 'DateTime', 'String') {
-                            $query += "'" + $newValue.Replace("'", "''") + "',"
-                        }
-                        elseif ($newValue.Gettype().Name -in 'Double', 'Int32', 'Int64') {
-                            $query += "$newValue,"
-                        }
-
-                    } # End for each column
-
-                    # Clean up query
-                    $query = $query.Substring(0, ($query.Length - 1))
-
-                    # Add where statement
-                    $query += " WHERE "
-
-                    # Loop hrough columns to setup rest of where statement
-                    foreach ($column in $table.Columns) {
-                        # Get the original  value
-                        $oldValue = $row.$($column.Name)
-
-                        # Check the type
-                        if ($oldValue.Gettype().Name -eq 'DateTime', 'String') {
-                            $query += "$($column.Name) = '" + ($row.$($column.Name)).Replace("'", "''") + "' AND "
-                        }
-                        elseif ($newValue.Gettype().Name -in 'Double', 'Int32', 'Int64') {
-                            $query += "$($column.Name) = $($row.$($column.Name)) AND "
-                        }
-
-                    }
-
-                    # Clean up query
-                    $query = $query.Substring(0, ($query.Length - 5))
-
-                    # Execute the query
-                    try {
-                        $server.Databases[$Database].Query($query)
-                    }
-                    catch {
-                        Stop-PSFFunction -Message "Could not execute the query" -Target $query -Continue
-                    }
-
-                } # End for each row
-
-            } # End table check
-            else {
-                Stop-PSFFunction -Message "Table $($table.Name) is not present" -Target $Database -Continue
+        # Get all the items that should be processed
+        try {
+            $tables = Get-Content -Path $FilePath -Credential $Credential -ErrorAction Stop | ConvertFrom-Json -ErrorAction Stop
+        }
+        catch {
+            Stop-PSFFunction -Message "Could not parse masking config file" -ErrorRecord $_ -Target $FilePath
+            return
+        }
+        foreach ($instance in $SqlInstance) {
+            try {
+                $server = Connect-DbaInstance -SqlInstance $instance -SqlCredential $SqlCredential
+            }
+            catch {
+                Stop-PSFFunction -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
-        } # End for each table
+            foreach ($db in (Get-DbaDatabase -SqlInstance $server -Database $Database)) {
+                foreach ($table in $tables.Tables) {
+                    if ($table.Name -in $db.Tables.Name) {
+                        try {
 
-    } # End process
+                            $query = "SELECT * FROM [$($table.Schema)].[$($table.Name)]"
 
-    end {
-
+                            $data = $db.Query($query) | ConvertTo-DbaDataTable
+                        }
+                        catch {
+                            Stop-PSFFunction -Message "Something went wrong retrieving the data from table $($table.Name)" -Target $Database
+                        }
+                        # Loop through each of the rows and change them
+                        foreach ($row in $data.Rows) {
+                            $updates = $wheres = @()
+                            # Loop thorough the columns
+                            foreach ($column in $table.Columns) {
+                                $newValue = switch ($column.MaskingType.ToLower()) {
+                                    { $_ -in 'name', 'address', 'finance' } {
+                                        $faker.$($column.MaskingType).$($column.SubType)()
+                                    }
+                                    { $_ -in 'date', 'datetime', 'datetime2', 'smalldatetime' } {
+                                        ($faker.Date.Past()).ToString("yyyyMMdd")
+                                    }
+                                    "number" {
+                                        $faker.$($column.MaskingType).$($column.SubType)($column.MaxLength)
+                                    }
+                                    "shuffle" {
+                                        ($row.($column.Name) -split '' | Sort-Object {
+                                                Get-Random
+                                            }) -join ''
+                                    }
+                                    "string" {
+                                        $faker.$($column.MaskingType).String2($column.MaxLength, $charString)
+                                    }
+                                    default {
+                                        if (-not $column.MaxLength) {
+                                            $column.MaxLength = 10
+                                        }
+                                        if ($column.ColumnType -in 'date', 'datetime', 'datetime2', 'smalldatetime') {
+                                            ($faker.Date.Past()).ToString("yyyyMMdd")
+                                        }
+                                        else {
+                                            $faker.Random.String2(1, $column.MaxLength, $charString)
+                                        }
+                                    }
+                                }
+                                $oldValue = ($row.$($column.Name)).Tostring().Replace("'", "''")
+                                $newValue = ($newValue).Tostring().Replace("'", "''")
+                                $updates += "[$($column.Name)] = '$newValue'"
+                                $wheres += "[$($column.Name)] = '$oldValue'"
+                            }
+                            $updatequery = "UPDATE [$($table.Schema)].[$($table.Name)] SET $($updates -join ', ') WHERE $($wheres -join ' AND ')"
+                            try {
+                                Write-PSFMessage -Level Debug -Message $updatequery
+                                $db.Query($updatequery)
+                                [pscustomobject]@{
+                                    SqlInstance = $db.Parent.Name
+                                    Database    = $db.Name
+                                    Schema      = $table.Schema
+                                    Table       = $table.Name
+                                    Query       = $updatequery
+                                    Status      = "Success"
+                                }
+                            }
+                            catch {
+                                Stop-PSFFunction -Message "Could not execute the query: $updatequery" -Target $updatequery -Continue
+                            }
+                        }
+                    }
+                    else {
+                        Stop-PSFFunction -Message "Table $($table.Name) is not present" -Target $Database -Continue
+                    }
+                }
+            }
+        }
     }
 
 }

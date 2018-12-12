@@ -179,8 +179,15 @@
                     if ((-not $cln.Identity) -and (-not $cln.IsForeignKey)) {
                         $maskingType = $null
 
-                        $columnLength = $cln.Properties['Length'].Value
+                        $columnLength = $cln.DataType.MaximumLength
                         $columnType = $cln.DataType.Name.ToLower()
+
+                        if ($cln.DataType.IsStringType -or ($cln.DataType.Name.ToString() -in 'datetime', 'datetime2', 'date')) {
+                            $isStringType = 1
+                        }
+                        else {
+                            $isStringType = 0
+                        }
 
                         # Get the masking type with the synonims
                         $maskingType = $columnTypes | Where-Object {$cln.Name -in $_.Synonim}
@@ -192,58 +199,34 @@
                             # Check the maskingtype
                             switch ($maskingType.ToLower()) {
                                 "firstname" {
-                                    $columns += [PSCustomObject]@{
-                                        Name        = $cln.Name
-                                        ColumnType  = $columnType
-                                        MaxLength   = $columnLength
-                                        MaskingType = "Name"
-                                        SubType     = "Firstname"
-                                    }
+                                    $type = "Name"
+                                    $subType = "Firstname"
+                                    $maxLength = $columnLength
                                 }
                                 "lastname" {
-                                    $columns += [PSCustomObject]@{
-                                        Name        = $cln.Name
-                                        ColumnType  = $columnType
-                                        MaxLength   = $columnLength
-                                        MaskingType = "Name"
-                                        SubType     = "Lastname"
-                                    }
+                                    $type = "Name"
+                                    $subType = "Lastname"
+                                    $maxLength = $columnLength
                                 }
                                 "creditcard" {
-                                    $columns += [PSCustomObject]@{
-                                        Name        = $cln.Name
-                                        ColumnType  = $columnType
-                                        MaxLength   = $columnLength
-                                        MaskingType = "Finance"
-                                        SubType     = "CreditcardNumber"
-                                    }
+                                    $type = "Finance"
+                                    $subType = "CreditcardNumber"
+                                    $maxLength = $columnLength
                                 }
                                 "address" {
-                                    $columns += [PSCustomObject]@{
-                                        Name        = $cln.Name
-                                        ColumnType  = $columnType
-                                        MaxLength   = $columnLength
-                                        MaskingType = "Address"
-                                        SubType     = "StreetAddress"
-                                    }
+                                    $type = "Address"
+                                    $subType = "StreetAddress"
+                                    $maxLength = $columnLength
                                 }
                                 "city" {
-                                    $columns += [PSCustomObject]@{
-                                        Name        = $cln.Name
-                                        ColumnType  = $columnType
-                                        MaxLength   = $columnLength
-                                        MaskingType = "Address"
-                                        SubType     = "City"
-                                    }
+                                    $type = "Address"
+                                    $subType = "City"
+                                    $maxLength = $columnLength
                                 }
                                 "zipcode" {
-                                    $columns += [PSCustomObject]@{
-                                        Name        = $cln.Name
-                                        ColumnType  = $columnType
-                                        MaxLength   = $columnLength
-                                        MaskingType = "Address"
-                                        SubType     = "Zipcode"
-                                    }
+                                    $type = "Address"
+                                    $subType = "Zipcode"
+                                    $maxLength = $columnLength
                                 }
                             }
                         }
@@ -287,21 +270,23 @@
                                     $subType = "Number"
                                     $maxLength = 255
                                 }
-                                {$_ -eq 'varchar', 'char'} {
+                                {$_ -in 'varchar', 'char'} {
                                     $subType = "String"
                                     $maxLength = $columnLength
                                 }
-                            }
 
-                            $columns += [PSCustomObject]@{
-                                Name        = $cln.Name
-                                ColumnType  = $columnType
-                                MaxLength   = $maxLength
-                                MaskingType = $type
-                                SubType     = $subType
-                            }
+                            } # End switch
 
                         } # End if masking type
+
+                        $columns += [PSCustomObject]@{
+                            Name         = $cln.Name
+                            ColumnType   = $columnType
+                            MaxLength    = $maxLength
+                            MaskingType  = $type
+                            SubType      = $subType
+                            IsStringType = $isStringType
+                        }
 
                     } # End if identity
 

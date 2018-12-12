@@ -86,6 +86,8 @@
         Create a new clone on SQLDB1 and SQLDB2 for the databases DB1 with the latest image
     #>
     [CmdLetBinding(DefaultParameterSetName = 'ByLatest', SupportsShouldProcess = $true)]
+    [OutputType('PSDCClone')]
+
     param(
         [parameter(Mandatory = $true)]
         [ValidateNotNullOrEmpty()]
@@ -386,7 +388,6 @@
 
                             $script = [ScriptBlock]::Create("diskpart /s $diskpartScriptFile")
                             $null = Invoke-PSFCommand -ScriptBlock $script
-                            $script
                         }
                         else {
                             $command = [ScriptBlock]::Create("New-VHD -ParentPath $ParentVhd -Path `"$Destination\$CloneName.vhdx`" -Differencing")
@@ -412,7 +413,7 @@
                         if ($computer.IsLocalhost) {
                             # Mount the disk
                             $null = Mount-DiskImage -ImagePath "$Destination\$CloneName.vhdx"
-                            "$Destination\$CloneName.vhdx"
+
                             # Get the disk based on the name of the vhd
                             $disk = Get-Disk | Where-Object {$_.Location -eq "$Destination\$CloneName.vhdx"}
                         }
