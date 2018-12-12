@@ -57,8 +57,14 @@
         Stop-PSFFunction -Message "The path $UncPath is not a valid UNC path" -Target $UncPath
     }
 
-    # Get the local shares from the coputer
-    $localShares = Get-SmbShare
+    # Get the local shares from the computer
+    if (Get-Command "Get-SmbShare" -ErrorAction SilentlyContinue) {
+        $localShares = Get-SmbShare
+    }
+    else{
+        $localShares = Invoke-PSFCommand -ScriptBlock {Get-CimInstance -Class Win32_Share} | Select-Object Name, Path, Description
+    }
+
 
     # Split up the unc path
     $uncArray = $uri.AbsolutePath -split '/'

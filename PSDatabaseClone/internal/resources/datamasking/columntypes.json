@@ -3,14 +3,16 @@
         "TypeName": "Firstname",
         "Synonim": [
             "Firstname",
-            "Forename"
+            "Forename",
+            "Fname"
         ]
     },
     {
         "TypeName": "Lastname",
         "Synonim": [
             "Lastname",
-            "Surname"
+            "Surname",
+            "Lname"
         ]
     },
     {

@@ -125,7 +125,6 @@
             # Check if the disk is already initialized
             if ($disk.PartitionStyle -eq 'RAW') {
                 try {
-                    'RAW'
                     Write-PSFMessage -Message "Initializing disk $disk" -Level Verbose
                     $disk | Initialize-Disk -PartitionStyle $PartitionStyle -Confirm:$false
                 }
