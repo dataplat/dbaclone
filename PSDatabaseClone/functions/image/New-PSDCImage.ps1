@@ -72,7 +72,7 @@
     .PARAMETER CopyOnlyBackup
         Create a backup as COPY_ONLY
 
-    .PARAMETER MaskingConfigFile
+    .PARAMETER MaskingFile
         Configuration file that contains the which tables and columns need to be masked
 
     .PARAMETER Force
@@ -139,7 +139,8 @@
         [switch]$CreateFullBackup,
         [switch]$UseLastFullBackup,
         [switch]$CopyOnlyBackup,
-        [string]$MaskingConfigFile,
+        [Alias('MaskingConfigFile', 'MaskingConfigFilePath')]
+        [string]$MaskingFile,
         [switch]$Force,
         [switch]$EnableException
     )
@@ -334,8 +335,8 @@
         }
 
         # Check the data masking file
-        if($MaskingConfigFile -and -not (Test-Path -Path $MaskingConfigFile -Credential $SourceCredential)){
-            Stop-PSFFunction -Message "Could not find the data masking configuration file" -Target $MaskingConfigFile -Continue
+        if($MaskingFile -and -not (Test-Path -Path $MaskingFile -Credential $SourceCredential)){
+            Stop-PSFFunction -Message "Could not find the data masking configuration file" -Target $MaskingFile -Continue
         }
 
         # Set time stamp
@@ -539,7 +540,7 @@
             }
 
             # Apply data masking
-            if($MaskingConfigFile){
+            if($MaskingFile){
 
                 # Check the recovery model of the database
                 $dbRecoveryModel = Get-DbaDbRecoveryModel -SqlInstance $DestinationSqlInstance -SqlCredential $DestinationSqlCredential -Database $tempDbName
@@ -561,10 +562,10 @@
 
                 # Execute the data masking
                 try{
-                    Invoke-PSDCDataMasking -SqlInstance $DestinationSqlInstance -SqlCredential $DestinationSqlCredential -Database $tempDbName -MaskingConfigFile $MaskingConfigFile -EnableException
+                    Invoke-PSDCDataMasking -SqlInstance $DestinationSqlInstance -SqlCredential $DestinationSqlCredential -Database $tempDbName -FilePath $MaskingFile -EnableException
                 }
                 catch{
-                    Stop-PSFFunction -Message "Something went wrong masking the data" -Target $MaskingConfigFile -ErrorRecord $_ -Continue
+                    Stop-PSFFunction -Message "Something went wrong masking the data" -Target $MaskingFile -ErrorRecord $_ -Continue
                 }
 
                 # Change back the recovery model to it's original setting
