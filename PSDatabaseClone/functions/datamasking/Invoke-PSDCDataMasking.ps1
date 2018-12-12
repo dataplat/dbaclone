@@ -153,10 +153,10 @@
                         } # End switch
 
                         # Setup the column art of the SET statement
-                        if ($newValue.Gettype().Name -eq 'DateTime', 'String') {
+                        if ($column.IsStringType) {
                             $query += "'" + $newValue.Replace("'", "''") + "',"
                         }
-                        elseif ($newValue.Gettype().Name -in 'Double', 'Int32', 'Int64') {
+                        else {
                             $query += "$newValue,"
                         }
 
@@ -188,6 +188,7 @@
 
                     # Execute the query
                     try {
+                        $query
                         $server.Databases[$Database].Query($query)
                     }
                     catch {
