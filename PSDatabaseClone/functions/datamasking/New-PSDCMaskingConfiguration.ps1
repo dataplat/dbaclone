@@ -181,7 +181,13 @@
 
                         $columnLength = $cln.DataType.MaximumLength
                         $columnType = $cln.DataType.Name.ToLower()
-                        $isStringType = [int]$cln.DataType.IsStringType
+
+                        if ($cln.DataType.IsStringType -or ($cln.DataType.Name.ToString() -in 'datetime', 'datetime2', 'date')) {
+                            $isStringType = 1
+                        }
+                        else {
+                            $isStringType = 0
+                        }
 
                         # Get the masking type with the synonims
                         $maskingType = $columnTypes | Where-Object {$cln.Name -in $_.Synonim}
