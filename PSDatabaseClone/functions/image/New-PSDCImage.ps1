@@ -562,11 +562,7 @@
 
                 # Execute the data masking
                 try{
-<<<<<<< HEAD
                     Invoke-DbaDbDataMasking -SqlInstance $DestinationSqlInstance -SqlCredential $DestinationSqlCredential -Database $tempDbName -FilePath $MaskingFile -EnableException
-=======
-                    Invoke-PSDCDataMasking -SqlInstance $DestinationSqlInstance -SqlCredential $DestinationSqlCredential -Database $tempDbName -FilePath $MaskingFile -EnableException
->>>>>>> 67f397a0151917065e37a8788a0e2b885fbfd972
                 }
                 catch{
                     Stop-PSFFunction -Message "Something went wrong masking the data" -Target $MaskingFile -ErrorRecord $_ -Continue
