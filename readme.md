@@ -137,4 +137,3 @@ Remove-PSDCImage -ImageLocation \\fileserver\psdatabaseclone\images\DB1_20180703
 ## Planned for future releases
 * Default directories for the images
 * Creation of multiple disks for a single database to rebuild original file structure
-* Implement data masking into the clones to mask sensitive data
