@@ -562,7 +562,7 @@
 
                 # Execute the data masking
                 try{
-                    Invoke-PSDCDataMasking -SqlInstance $DestinationSqlInstance -SqlCredential $DestinationSqlCredential -Database $tempDbName -FilePath $MaskingFile -EnableException
+                    Invoke-DbaDbDataMasking -SqlInstance $DestinationSqlInstance -SqlCredential $DestinationSqlCredential -Database $tempDbName -FilePath $MaskingFile -EnableException
                 }
                 catch{
                     Stop-PSFFunction -Message "Something went wrong masking the data" -Target $MaskingFile -ErrorRecord $_ -Continue
@@ -631,7 +631,7 @@
                                     @ImageLocation = '$imageLocation',			  -- varchar(255)
                                     @SizeMB = $sizeMB,							  -- int
                                     @DatabaseName = '$databaseName',			  -- varchar(100)
-                                    @DatabaseTimestamp = '$databaseTS'           -- datetime
+                                    @DatabaseTimestamp = '$databaseTS'            -- datetime
 
                 SELECT @ImageID as ImageID
             "
