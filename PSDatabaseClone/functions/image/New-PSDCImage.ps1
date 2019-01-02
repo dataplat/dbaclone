@@ -631,7 +631,7 @@
                                     @ImageLocation = '$imageLocation',			  -- varchar(255)
                                     @SizeMB = $sizeMB,							  -- int
                                     @DatabaseName = '$databaseName',			  -- varchar(100)
-                                    @DatabaseTimestamp = '$databaseTS'           -- datetime
+                                    @DatabaseTimestamp = '$databaseTS'            -- datetime
 
                 SELECT @ImageID as ImageID
             "
