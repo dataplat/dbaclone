@@ -72,7 +72,7 @@
     .PARAMETER CopyOnlyBackup
         Create a backup as COPY_ONLY
 
-    .PARAMETER MaskingConfigFile
+    .PARAMETER MaskingFile
         Configuration file that contains the which tables and columns need to be masked
 
     .PARAMETER Force
@@ -139,7 +139,8 @@
         [switch]$CreateFullBackup,
         [switch]$UseLastFullBackup,
         [switch]$CopyOnlyBackup,
-        [string]$MaskingConfigFile,
+        [Alias('MaskingConfigFile', 'MaskingConfigFilePath')]
+        [string]$MaskingFile,
         [switch]$Force,
         [switch]$EnableException
     )
@@ -334,8 +335,8 @@
         }
 
         # Check the data masking file
-        if($MaskingConfigFile -and -not (Test-Path -Path $MaskingConfigFile -Credential $SourceCredential)){
-            Stop-PSFFunction -Message "Could not find the data masking configuration file" -Target $MaskingConfigFile -Continue
+        if($MaskingFile -and -not (Test-Path -Path $MaskingFile -Credential $SourceCredential)){
+            Stop-PSFFunction -Message "Could not find the data masking configuration file" -Target $MaskingFile -Continue
         }
 
         # Set time stamp
@@ -399,10 +400,10 @@
 
                     # Check if computer is local
                     if ($computer.IsLocalhost) {
-                        $null = New-PSDCVhdDisk -Destination $imagePath -Name $imageName -VhdType $VhdType
+                        $null = New-PSDCVhdDisk -Destination $imagePath -Name $imageName -VhdType $VhdType -EnableException
                     }
                     else {
-                        $command = [ScriptBlock]::Create("New-PSDCVhdDisk -Destination '$imagePath' -Name $imageName -VhdType $VhdType")
+                        $command = [ScriptBlock]::Create("New-PSDCVhdDisk -Destination '$imagePath' -Name $imageName -VhdType $VhdType -EnableException")
                         $null = Invoke-PSFCommand -ComputerName $computer -ScriptBlock $command -Credential $DestinationCredential
                     }
 
@@ -420,15 +421,15 @@
 
                     # Check if computer is local
                     if ($computer.IsLocalhost) {
-                        $diskResult = Initialize-PSDCVhdDisk -Path $vhdPath -Credential $DestinationCredential
+                        $diskResult = Initialize-PSDCVhdDisk -Path $vhdPath -Credential $DestinationCredential -EnableException
                     }
                     else {
-                        $command = [ScriptBlock]::Create("Initialize-PSDCVhdDisk -Path $vhdPath")
+                        $command = [ScriptBlock]::Create("Initialize-PSDCVhdDisk -Path $vhdPath -EnableException")
                         $diskResult = Invoke-PSFCommand -ComputerName $computer -ScriptBlock $command -Credential $DestinationCredential
                     }
                 }
                 catch {
-                    Stop-PSFFunction -Message "Couldn't initialize vhd $vhdPath" -Target $imageName -ErrorRecord $_ -Continue
+                    Stop-PSFFunction -Message "Couldn't initialize vhd $vhdPath" -Target $imageName -ErrorRecord $_
                 }
             }
 
@@ -539,7 +540,7 @@
             }
 
             # Apply data masking
-            if($MaskingConfigFile){
+            if($MaskingFile){
 
                 # Check the recovery model of the database
                 $dbRecoveryModel = Get-DbaDbRecoveryModel -SqlInstance $DestinationSqlInstance -SqlCredential $DestinationSqlCredential -Database $tempDbName
@@ -561,10 +562,14 @@
 
                 # Execute the data masking
                 try{
+<<<<<<< HEAD
                     Invoke-DbaDbDataMasking -SqlInstance $DestinationSqlInstance -SqlCredential $DestinationSqlCredential -Database $tempDbName -FilePath $MaskingFile -EnableException
+=======
+                    Invoke-PSDCDataMasking -SqlInstance $DestinationSqlInstance -SqlCredential $DestinationSqlCredential -Database $tempDbName -FilePath $MaskingFile -EnableException
+>>>>>>> 67f397a0151917065e37a8788a0e2b885fbfd972
                 }
                 catch{
-                    Stop-PSFFunction -Message "Something went wrong masking the data" -Target $MaskingConfigFile -ErrorRecord $_ -Continue
+                    Stop-PSFFunction -Message "Something went wrong masking the data" -Target $MaskingFile -ErrorRecord $_ -Continue
                 }
 
                 # Change back the recovery model to it's original setting
