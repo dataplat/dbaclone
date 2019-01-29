@@ -8,7 +8,11 @@ $supportedVersions = @(
     'Microsoft Windows Server 2008 R2 Datacenter'
     'Microsoft Windows Server 2012 R2 Standard',
     'Microsoft Windows Server 2012 R2 Enterprise',
-    'Microsoft Windows Server 2012 R2 Datacenter'
+    'Microsoft Windows Server 2012 R2 Datacenter',
+    'Microsoft Windows Server 2016 Standard',
+    'Microsoft Windows Server 2016 Enterprise',
+    'Microsoft Windows Server 2016 Datacenter'
+
 )
 
 # Get the OS details
