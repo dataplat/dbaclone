@@ -398,7 +398,7 @@
             }
             else {
                 try {
-                    New-Item -Path "$env:APPDATA\psdatabaseclone" -ItemType Directory -Force:$Force
+                    $null = New-Item -Path "$env:APPDATA\psdatabaseclone" -ItemType Directory -Force:$Force
                 }
                 catch {
                     Stop-PSFFunction -Message "Something went wrong creating the working directory" -ErrorRecord $_ -Continue

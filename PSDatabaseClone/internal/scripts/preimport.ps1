@@ -8,7 +8,11 @@ $supportedVersions = @(
     'Microsoft Windows Server 2008 R2 Datacenter'
     'Microsoft Windows Server 2012 R2 Standard',
     'Microsoft Windows Server 2012 R2 Enterprise',
-    'Microsoft Windows Server 2012 R2 Datacenter'
+    'Microsoft Windows Server 2012 R2 Datacenter',
+    'Microsoft Windows Server 2016 Standard',
+    'Microsoft Windows Server 2016 Enterprise',
+    'Microsoft Windows Server 2016 Datacenter'
+
 )
 
 # Get the OS details
@@ -21,6 +25,15 @@ if ($osDetails.Caption -notin $supportedVersions ) {
     }
     else {
         Stop-PSFFunction -Message "Unsupported version of Windows." -Target $OSDetails -FunctionName 'Pre Import'
+    }
+}
+
+if(-not (Test-Path -Path "$env:APPDATA\psdatabaseclone")){
+    try {
+        $null = New-Item -Path "$env:APPDATA\psdatabaseclone" -ItemType Directory -Force:$Force
+    }
+    catch {
+        Stop-PSFFunction -Message "Something went wrong creating the working directory" -Target "$env:APPDATA\psdatabaseclone" -ErrorRecord $_ -FunctionName 'Pre Import'
     }
 }
 
