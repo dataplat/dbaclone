@@ -1,5 +1,5 @@
 $script:ModuleRoot = $PSScriptRoot
-$script:ModuleVersion = "0.3.54"
+$script:ModuleVersion = "0.3.62"
 
 # Detect whether at some level dotsourcing was enforced
 $script:doDotSource = Get-PSFConfigValue -FullName PSDatabaseClone.Import.DoDotSource -Fallback $false
