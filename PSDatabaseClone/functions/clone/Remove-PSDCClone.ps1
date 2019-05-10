@@ -185,7 +185,7 @@
             }
 
             # Setup the computer object
-            $computer = [PsfComputer]$clone.Name
+            $computer = [PsfComputer]$clone.ComputerName
 
             if (-not $computer.IsLocalhost) {
                 # Get the result for the remote test
