@@ -185,7 +185,7 @@
                 $server = Connect-DbaInstance -SqlInstance $instance -SqlCredential $SqlCredential
 
                 # Setup the computer object
-                $computer = [PsfComputer]$server.Name
+                $computer = [PsfComputer]$server.ComputerName
             }
             catch {
                 Stop-PSFFunction -Message "Could not connect to Sql Server instance $instance" -ErrorRecord $_ -Target $instance
