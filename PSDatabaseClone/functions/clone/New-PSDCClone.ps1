@@ -510,10 +510,10 @@
 
                 # Get all the files of the database
                 if ($computer.IsLocalhost) {
-                    $databaseFiles = Get-ChildItem -Path $accessPath -Recurse | Where-Object {-not $_.PSIsContainer}
+                    $databaseFiles = Get-ChildItem -Path $accessPath -Filter *.*df -Recurse
                 }
                 else {
-                    $commandText = "Get-ChildItem -Path '$accessPath' -Recurse | " + 'Where-Object {-not $_.PSIsContainer}'
+                    $commandText = "Get-ChildItem -Path $accessPath -Filter *.*df -Recurse"
                     $command = [ScriptBlock]::Create($commandText)
                     $databaseFiles = Invoke-PSFCommand -ComputerName $computer -ScriptBlock $command -Credential $Credential
                 }
