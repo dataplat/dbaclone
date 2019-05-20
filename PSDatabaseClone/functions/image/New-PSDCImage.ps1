@@ -456,7 +456,7 @@
 
                 # Get the properties of the disk and partition
                 $disk = $diskResult.Disk
-                $partition = $diskResult.Partition | Where-Object {$_.Type -ne "Reserved"} | Select-Object -First 1
+                $partition = Get-Partition -DiskNumber $disk.Number | Where-Object {$_.Type -ne "Reserved"} | Select-Object -First 1
 
                 if ($PSCmdlet.ShouldProcess($accessPath, "Adding access path '$accessPath' to mounted disk")) {
                     # Add the access path to the mounted disk
