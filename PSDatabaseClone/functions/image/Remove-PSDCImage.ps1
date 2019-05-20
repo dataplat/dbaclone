@@ -22,6 +22,12 @@
     .PARAMETER ExcludeDatabase
         Filter the images based on the excluded database
 
+    .PARAMETER Unused
+        Remove images not used by any clones
+
+    .PARAMETER Keep
+        When used with the Unused parameter, sets the number of most recent images to keep
+
     .PARAMETER PSDCSqlCredential
         Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted.
         This works similar as SqlCredential but is only meant for authentication to the PSDatabaseClone database server and database.
@@ -78,6 +84,8 @@
         [string[]]$ImageLocation,
         [string[]]$Database,
         [string[]]$ExcludeDatabase,
+        [switch]$Unused,
+        [int]$Keep = 0,
         [System.Management.Automation.PSCredential]
         $PSDCSqlCredential,
         [System.Management.Automation.PSCredential]
@@ -125,6 +133,7 @@
 
         # Get all the items
         $items = Get-PSDCImage
+        $clones = Get-PSDCClone
 
         if ($ImageID) {
             Write-PSFMessage -Message "Filtering image ids" -Level Verbose
@@ -151,6 +160,18 @@
             $items = $items | Where-Object {$_.DatabaseName -notin $Database}
         }
 
+        if ($Unused) {
+            Write-PSFMessage -Message "Filtering images with associated clones, keeping latest $Keep images." -Level Verbose
+            $images = $items
+            foreach ($item in $items) {
+                if ($clones.ImageID -contains $item.ImageID) {
+                    $images = $images | Where-Object {$_.ImageID -ne $item.ImageID}
+                }
+            }
+            
+            $items = $images | Sort-Object -Property CreatedOn -Descending | Select-Object -Skip $Keep
+        }
+        
         # Append the items
         $InputObject += $items
     }
