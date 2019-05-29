@@ -451,16 +451,16 @@
                         # Check if computer is local
                         if ($computer.IsLocalhost) {
                             # Get the partition based on the disk
-                            $partition = Get-Partition -Disk $disk
+                            $partition = Get-Partition -Disk $disk | Where-Object {$_.Type -ne "Reserved"} | Select-Object -First 1
 
                             # Create an access path for the disk
-                            $null = Add-PartitionAccessPath -DiskNumber $disk.Number -PartitionNumber $partition[1].PartitionNumber -AccessPath $accessPath -ErrorAction SilentlyContinue
+                            $null = Add-PartitionAccessPath -DiskNumber $disk.Number -PartitionNumber $partition.PartitionNumber -AccessPath $accessPath -ErrorAction SilentlyContinue
                         }
                         else {
                             $command = [ScriptBlock]::Create("Get-Partition -DiskNumber $($disk.Number)")
-                            $partition = Invoke-PSFCommand -ComputerName $computer -ScriptBlock $command -Credential $Credential
+                            $partition = Invoke-PSFCommand -ComputerName $computer -ScriptBlock $command -Credential $Credential | Where-Object {$_.Type -ne "Reserved"} | Select-Object -First 1
 
-                            $command = [ScriptBlock]::Create("Add-PartitionAccessPath -DiskNumber $($disk.Number) -PartitionNumber $($partition[1].PartitionNumber) -AccessPath '$accessPath' -ErrorAction Ignore")
+                            $command = [ScriptBlock]::Create("Add-PartitionAccessPath -DiskNumber $($disk.Number) -PartitionNumber $($partition.PartitionNumber) -AccessPath '$accessPath' -ErrorAction Ignore")
 
                             $null = Invoke-PSFCommand -ComputerName $computer -ScriptBlock $command -Credential $Credential
                         }
