@@ -116,14 +116,14 @@
     param(
         [parameter(Mandatory = $true)]
         [ValidateNotNullOrEmpty()]
-        [object]$SourceSqlInstance,
+        [DbaInstanceParameter]$SourceSqlInstance,
         [System.Management.Automation.PSCredential]
         $SourceSqlCredential,
         [System.Management.Automation.PSCredential]
         $SourceCredential,
         [Parameter(Mandatory = $true)]
         [ValidateNotNullOrEmpty()]
-        [object]$DestinationSqlInstance,
+        [DbaInstanceParameter]$DestinationSqlInstance,
         [System.Management.Automation.PSCredential]
         $DestinationSqlCredential,
         [System.Management.Automation.PSCredential]

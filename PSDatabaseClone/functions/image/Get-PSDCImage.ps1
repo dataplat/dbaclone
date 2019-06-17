@@ -94,7 +94,7 @@
         if ($informationStore -eq 'SQL') {
 
             # Get the module configurations
-            $pdcSqlInstance = Get-PSFConfigValue -FullName psdatabaseclone.database.Server
+            [DbaInstanceParameter]$pdcSqlInstance = Get-PSFConfigValue -FullName psdatabaseclone.database.Server
             $pdcDatabase = Get-PSFConfigValue -FullName psdatabaseclone.database.name
             if (-not $PSDCSqlCredential) {
                 $pdcCredential = Get-PSFConfigValue -FullName psdatabaseclone.informationstore.credential -Fallback $null
