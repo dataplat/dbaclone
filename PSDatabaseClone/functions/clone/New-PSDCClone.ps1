@@ -477,7 +477,7 @@
                     if ($computer.IsLocalhost) {
                         $accessRule = New-Object System.Security.AccessControl.FilesystemAccessrule("Everyone", "FullControl", "Allow")
 
-                        foreach ($file in $(Get-ChildItem $accessPath -Recurse)) {
+                        foreach ($file in $(Get-ChildItem -Path $accessPath -Recurse)) {
                             $acl = Get-Acl $file.FullName
 
                             # Add this access rule to the ACL

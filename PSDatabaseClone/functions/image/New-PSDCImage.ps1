@@ -602,7 +602,7 @@
                         $null = Dismount-DiskImage -ImagePath $vhdPath
 
                         # Remove the access path
-                        $null = Remove-Item -Path $accessPath -Force
+                        $null = Remove-Item -Path $accessPath -Recurse -Force
                     }
                     else {
                         $command = [ScriptBlock]::Create("Dismount-DiskImage -ImagePath $vhdPath")
