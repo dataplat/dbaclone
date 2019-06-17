@@ -386,14 +386,14 @@
                     $lastFullBackup = Backup-DbaDatabase -SqlInstance $SourceSqlInstance -SqlCredential $SourceSqlCredential -Database $db.Name -CopyOnly:$CopyOnlyBackup
                 }
             }
-            elseif ($UseLastFullBackup) {
+            else{
                 Write-PSFMessage -Message "Trying to retrieve the last full backup for $db" -Level Verbose
 
                 # Get the last full backup
                 $lastFullBackup = Get-DbaBackupHistory -SqlInstance $SourceSqlInstance -SqlCredential $SourceSqlCredential -Database $db.Name -LastFull
             }
 
-            if($lastFullBackup.Path.Length -le 1){
+            if(-not $lastFullBackup.Path){
                 Stop-PSFFunction -Message "No full backup could be found. Please use -CreateFullBackup or create a full backup manually" -Target $lastFullBackup
                 return
             }
