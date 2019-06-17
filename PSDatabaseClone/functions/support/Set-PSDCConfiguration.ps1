@@ -92,7 +92,7 @@
         [ValidateSet('SQL', 'File')]
         [string]$InformationStore = 'File',
         [parameter(ParameterSetName = "SQL", Mandatory = $true)]
-        [object]$SqlInstance,
+        [DbaInstanceParameter]$SqlInstance,
         [parameter(ParameterSetName = "SQL")]
         [System.Management.Automation.PSCredential]
         $SqlCredential,

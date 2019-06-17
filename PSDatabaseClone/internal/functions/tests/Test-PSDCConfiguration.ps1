@@ -57,7 +57,7 @@
     [CmdLetBinding()]
 
     param(
-        [object]$SqlInstance,
+        [DbaInstanceParameter]$SqlInstance,
         [System.Management.Automation.PSCredential]
         $SqlCredential,
         [string]$Database,
