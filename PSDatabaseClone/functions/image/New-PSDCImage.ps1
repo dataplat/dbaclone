@@ -390,7 +390,16 @@
                 Write-PSFMessage -Message "Trying to retrieve the last full backup for $db" -Level Verbose
 
                 # Get the last full backup
-                $lastFullBackup = Get-DbaBackupHistory -SqlServer $SourceSqlInstance -SqlCredential $SourceSqlCredential -Databases $db.Name -LastFull
+                $lastFullBackup = Get-DbaBackupHistory -SqlInstance $SourceSqlInstance -SqlCredential $SourceSqlCredential -Database $db.Name -LastFull
+            }
+
+            if($lastFullBackup.Path.Length -le 1){
+                Stop-PSFFunction -Message "No full backup could be found. Please use -CreateFullBackup or create a full backup manually" -Target $lastFullBackup
+                return
+            }
+            elseif(-not (Test-Path -Path $lastFullBackup.Path)){
+                Stop-PSFFunction -Message "Could not access the full backup file. Check if it exists or that you have enough privileges to access it" -Target $lastFullBackup
+                return
             }
 
             if ($PSCmdlet.ShouldProcess("$imageName", "Creating the vhd")) {
