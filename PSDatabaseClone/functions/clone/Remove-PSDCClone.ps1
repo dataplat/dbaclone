@@ -185,11 +185,11 @@
             }
 
             # Setup the computer object
-            $computer = [PsfComputer]$clone.ComputerName
+            $computer = [PsfComputer]$clone.HostName
 
             if (-not $computer.IsLocalhost) {
                 # Get the result for the remote test
-                $resultPSRemote = Test-PSDCRemoting -ComputerName $clone.Name -Credential $Credential
+                $resultPSRemote = Test-PSDCRemoting -ComputerName $clone.HostName -Credential $Credential
 
                 # Check the result
                 if ($resultPSRemote.Result) {
@@ -235,10 +235,8 @@
                             $command = [ScriptBlock]::Create("Test-Path -Path '$($item.CloneLocation)'")
                             Write-PSFMessage -Message "Dismounting disk '$($item.CloneLocation)' from $($item.HostName)" -Level Verbose
                             $result = Invoke-PSFCommand -ComputerName $item.HostName -ScriptBlock $command -Credential $Credential
-                            #if (-not $result) {
                             $command = [scriptblock]::Create("Dismount-DiskImage -ImagePath '$($item.CloneLocation)'")
                             $null = Invoke-PSFCommand -ComputerName $item.HostName -ScriptBlock $command -Credential $Credential
-                            #}
                         }
                     }
                     catch {
