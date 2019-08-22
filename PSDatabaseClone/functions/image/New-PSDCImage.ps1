@@ -335,7 +335,7 @@
         }
 
         # Check the data masking file
-        if($MaskingFile -and -not (Test-Path -Path $MaskingFile -Credential $SourceCredential)){
+        if ($MaskingFile -and -not (Test-Path -Path $MaskingFile -Credential $SourceCredential)) {
             Stop-PSFFunction -Message "Could not find the data masking configuration file" -Target $MaskingFile -Continue
         }
 
@@ -386,18 +386,18 @@
                     $lastFullBackup = Backup-DbaDatabase -SqlInstance $SourceSqlInstance -SqlCredential $SourceSqlCredential -Database $db.Name -CopyOnly:$CopyOnlyBackup
                 }
             }
-            else{
+            else {
                 Write-PSFMessage -Message "Trying to retrieve the last full backup for $db" -Level Verbose
 
                 # Get the last full backup
                 $lastFullBackup = Get-DbaBackupHistory -SqlInstance $SourceSqlInstance -SqlCredential $SourceSqlCredential -Database $db.Name -LastFull
             }
 
-            if(-not $lastFullBackup.Path){
+            if (-not $lastFullBackup.Path) {
                 Stop-PSFFunction -Message "No full backup could be found. Please use -CreateFullBackup or create a full backup manually" -Target $lastFullBackup
                 return
             }
-            elseif(-not (Test-Path -Path $lastFullBackup.Path)){
+            elseif (-not (Test-Path -Path $lastFullBackup.Path)) {
                 Stop-PSFFunction -Message "Could not access the full backup file. Check if it exists or that you have enough privileges to access it" -Target $lastFullBackup
                 return
             }
@@ -451,9 +451,28 @@
                             # Check if computer is local
                             if ($computer.IsLocalhost) {
                                 $null = New-Item -Path $accessPath -ItemType Directory -Force
+
+                                # Set the permissions
+                                $permission = "Everyone", "FullControl", "ContainerInherit,ObjectInherit", "None", "Allow"
+                                $accessRule = New-Object System.Security.AccessControl.FileSystemAccessRule $permission
+                                $acl = Get-Acl -Path $accessPath
+                                $acl.SetAccessRule($accessRule)
+                                $acl | Set-Acl $accessPath
                             }
                             else {
                                 $command = [ScriptBlock]::Create("New-Item -Path $accessPath -ItemType Directory -Force")
+                                $null = Invoke-PSFCommand -ComputerName $computer -ScriptBlock $command -Credential $DestinationCredential
+
+                                # Set the permissions
+                                $script = "
+                                    `$permission = 'Everyone', 'FullControl', 'ContainerInherit,ObjectInherit', 'None', 'Allow'
+                                    `$accessRule = New-Object System.Security.AccessControl.FileSystemAccessRule `$permission
+                                    `$acl = Get-Acl -Path '$imageLogFolder'
+                                    `$acl.SetAccessRule(`$accessRule)
+                                    `$acl | Set-Acl '$imageLogFolder'
+                                "
+
+                                $command = [ScriptBlock]::Create($script)
                                 $null = Invoke-PSFCommand -ComputerName $computer -ScriptBlock $command -Credential $DestinationCredential
                             }
                         }
@@ -465,7 +484,7 @@
 
                 # Get the properties of the disk and partition
                 $disk = $diskResult.Disk
-                $partition = Get-Partition -DiskNumber $disk.Number | Where-Object {$_.Type -ne "Reserved"} | Select-Object -First 1
+                $partition = Get-Partition -DiskNumber $disk.Number | Where-Object { $_.Type -ne "Reserved" } | Select-Object -First 1
 
                 if ($PSCmdlet.ShouldProcess($accessPath, "Adding access path '$accessPath' to mounted disk")) {
                     # Add the access path to the mounted disk
@@ -549,40 +568,40 @@
             }
 
             # Apply data masking
-            if($MaskingFile){
+            if ($MaskingFile) {
 
                 # Check the recovery model of the database
                 $dbRecoveryModel = Get-DbaDbRecoveryModel -SqlInstance $DestinationSqlInstance -SqlCredential $DestinationSqlCredential -Database $tempDbName
 
                 # Set the recovery model to simple to minimize growth during data masking
-                if($dbRecoveryModel.RecoveryModel -ne 'Simple'){
-                    try{
+                if ($dbRecoveryModel.RecoveryModel -ne 'Simple') {
+                    try {
                         $null = Set-DbaDbRecoveryModel -SqlInstance $DestinationSqlInstance -SqlCredential $DestinationSqlCredential -Database $tempDbName -RecoveryModel Simple -Confirm:$false -EnableException
                     }
-                    catch{
+                    catch {
                         Stop-PSFFunction -Message "Couldn't change recovery model for database" -Target $restore -ErrorRecord $_ -Continue
                     }
 
                     [bool]$recoveryModelChanged = $true
                 }
-                else{
+                else {
                     [bool]$recoveryModelChanged = $false
                 }
 
                 # Execute the data masking
-                try{
+                try {
                     Invoke-DbaDbDataMasking -SqlInstance $DestinationSqlInstance -SqlCredential $DestinationSqlCredential -Database $tempDbName -FilePath $MaskingFile -EnableException
                 }
-                catch{
+                catch {
                     Stop-PSFFunction -Message "Something went wrong masking the data" -Target $MaskingFile -ErrorRecord $_ -Continue
                 }
 
                 # Change back the recovery model to it's original setting
-                if($recoveryModelChanged){
-                    try{
+                if ($recoveryModelChanged) {
+                    try {
                         $null = Set-DbaDbRecoveryModel -SqlInstance $DestinationSqlInstance -SqlCredential $DestinationSqlCredential -Database $tempDbName -RecoveryModel $dbRecoveryModel.RecoveryModel -Confirm:$false -EnableException
                     }
-                    catch{
+                    catch {
                         Stop-PSFFunction -Message "Couldn't change recovery model for database back to original" -Target $restore -ErrorRecord $_ -Continue
                     }
                 }
