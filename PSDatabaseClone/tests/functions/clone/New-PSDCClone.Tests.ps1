@@ -19,13 +19,13 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             New-Item -Path $script:clonefolder -ItemType Directory
         }
 
-        $server = Connect-DbaInstance -SqlInstance $script:sqlinstance
+        $server = Connect-DbaInstance -SqlInstance $script:sourcesqlinstance
 
         if ($server.Databases.Name -notcontains $script:database) {
             $query = "CREATE DATABASE $($script:database)"
             $server.Query($query)
 
-            Invoke-DbaQuery -SqlInstance $script:sqlinstance -Database $script:database -File "$($PSScriptRoot)\..\database.sql"
+            Invoke-DbaQuery -SqlInstance $script:sourcesqlinstance -Database $script:database -File "$($PSScriptRoot)\..\database.sql"
         }
 
         if (-not (Test-Path -Path $script:clonefolder)) {
@@ -38,7 +38,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
 
 
     AfterAll {
-        $null = Remove-DbaDatabase -SqlInstance $script:sqlinstance -Database $script:database -Confirm:$false
+        $null = Remove-DbaDatabase -SqlInstance $script:sourcesqlinstance -Database $script:database -Confirm:$false
     }
 
 }

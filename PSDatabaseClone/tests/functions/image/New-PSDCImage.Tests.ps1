@@ -35,17 +35,21 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     }
 
     Context "Create an image with full backup" {
-        $image = New-PSDCImage -SourceSqlInstance $script:sourcesqlinstance `
-            -DestinationSqlInstance $script:destinationsqlinstance `
-            -ImageNetworkPath "\\127.0.0.1\$($script:psdcshare)\$($script:images)" `
-            -Database $script:database `
-            -CreateFullBackup
+        $params = @{
+            SourceSqlInstance      = $script:sourcesqlinstance
+            DestinationSqlInstance = $script:destinationsqlinstance
+            Database               = $script:database
+            ImageNetworkPath       = "\\127.0.0.1\$($script:psdcshare)\$($script:images)"
+            CreateFullBackup       = $true
+        }
+
+        $image = New-PSDCImage @params
 
         It "Image object cannot be null" {
             $image | Should -Not -Be $null
         }
 
-        It "Image Path Should exist" {
+        It "Image path should exist" {
             Test-Path -Path $image.ImageLocation | Should -Be $true
         }
 
@@ -57,11 +61,15 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         Backup-DbaDatabase -SqlInstance localhost -Database $script:database
 
         # Create the image with the last backup
-        $image = New-PSDCImage -SourceSqlInstance $script:sourcesqlinstance `
-            -DestinationSqlInstance $script:destinationsqlinstance `
-            -ImageNetworkPath "\\127.0.0.1\$($script:psdcshare)\$($script:images)" `
-            -Database $script:database `
-            -UseLastFullBackup
+        $params = @{
+            SourceSqlInstance      = $script:sourcesqlinstance
+            DestinationSqlInstance = $script:destinationsqlinstance
+            Database               = $script:database
+            ImageNetworkPath       = "\\127.0.0.1\$($script:psdcshare)\$($script:images)"
+            UseLastFullBackup      = $true
+        }
+
+        $image = New-PSDCImage @params
 
         It "Image object cannot be null" {
             $image | Should -Not -Be $null
