@@ -5,8 +5,8 @@ if (Test-Path C:\temp\constants_pstsqlttestgenerator.ps1) {
 }
 else {
     $script:computer = "localhost"
-    $script:sourcesqlinstance = "localhost"
-    $script:destinationsqlinstance = "localhost"
+    $script:sourcesqlinstance = "localhost\SQL2017"
+    $script:destinationsqlinstance = "localhost\SQL2017"
     $script:database = "PSDatabaseClone_Tests"
     $script:workingfolder = "C:\projects\psdc"
     $script:psdcshare = "psdc"
