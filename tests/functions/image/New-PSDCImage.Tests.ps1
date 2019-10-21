@@ -19,11 +19,10 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
         }
 
         $sourceServer = Connect-DbaInstance -SqlInstance $script:sourcesqlinstance
-        $destServer = Connect-DbaInstance -SqlInstance $script:destinationsqlinstance
 
         if ($sourceServer.Databases.Name -notcontains $script:database) {
             $query = "CREATE DATABASE $($script:database)"
-            $server.Query($query)
+            $sourceServer.Query($query)
 
             Invoke-DbaQuery -SqlInstance $script:sourcesqlinstance -Database $script:database -File "$($PSScriptRoot)\..\database.sql"
         }
@@ -36,6 +35,8 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     }
 
     Context "Create an image with full backup" {
+        $destServer = Connect-DbaInstance -SqlInstance $script:destinationsqlinstance
+
         $params = @{
             SourceSqlInstance      = $script:sourcesqlinstance
             DestinationSqlInstance = $script:destinationsqlinstance
