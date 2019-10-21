@@ -5,12 +5,12 @@ if ( -not (Test-PSDCElevated) ) {
 
 # Load Configurations
 foreach ($file in (Get-ChildItem "$ModuleRoot\internal\configurations\*.ps1" -ErrorAction Ignore)) {
-	. Import-ModuleFile -Path $file.FullName
+    . Import-ModuleFile -Path $file.FullName
 }
 
 # Load Tab Expansion
 foreach ($file in (Get-ChildItem "$ModuleRoot\internal\tepp\*.tepp.ps1" -ErrorAction Ignore)) {
-	. Import-ModuleFile -Path $file.FullName
+    . Import-ModuleFile -Path $file.FullName
 }
 
 # Load Tab Expansion Assignment
@@ -20,11 +20,11 @@ foreach ($file in (Get-ChildItem "$ModuleRoot\internal\tepp\*.tepp.ps1" -ErrorAc
 . Import-ModuleFile -Path "$ModuleRoot\internal\scripts\license.ps1"
 
 # Check if the setup has run successfully
-if(-not (Get-PSFConfigValue -FullName psdatabaseclone.setup.status -Fallback $false)){
+<# if(-not (Get-PSFConfigValue -FullName psdatabaseclone.setup.status -Fallback $false)){
     Write-PSFMessage -Message "Setup for the module has not yet run. Starting.." -Level Host
 
     Set-PSDCConfiguration -InputPrompt
-}
+} #>
 
 # Check if the configuration has been set
 if (-not (Get-PSFConfigValue -FullName psdatabaseclone.setup.status)) {
@@ -32,7 +32,7 @@ if (-not (Get-PSFConfigValue -FullName psdatabaseclone.setup.status)) {
 }
 
 # Check the information mode
-if([bool](Get-PSFConfigValue -FullName psdatabaseclone.informationstore.mode) -eq 'File'){
+if ([bool](Get-PSFConfigValue -FullName psdatabaseclone.informationstore.mode) -eq 'File') {
     # Get the json file
     $jsonFolder = Get-PSFConfigValue -FullName psdatabaseclone.informationstore.path
     $jsonCred = Get-PSFConfigValue -FullName psdatabaseclone.informationstore.credential
