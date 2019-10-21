@@ -7,12 +7,7 @@ Write-PSFMessage -Level Important -Message "Pester version: $((Get-Module -Name 
 
 . "$PSScriptRoot\appveyor-constants.ps1"
 
-Write-PSFMessage -Level Host -Message "Create Unit Test Folder"
-if (-not (Test-Path -Path $unittestfolder)) {
-    $null = New-Item -Path $unittestfolder -ItemType Directory
-}
-
-Write-PSFMessage -Level Host -Message "Setup Database"
+<# Write-PSFMessage -Level Host -Message "Setup Database"
 $server = Connect-DbaInstance -SqlInstance $instance
 
 if ($server.Databases.Name -notcontains $database) {
@@ -31,7 +26,7 @@ if ($server.Databases.Name -notcontains $database) {
         Stop-PSFFunction -Message "Database creation unsuccessful!"
         return
     }
-}
+} #>
 
 $sw.Stop()
 Update-AppveyorTest -Name "appveyor-prerequisites" -Framework NUnit -FileName "appveyor-prerequisites.ps1" -Outcome Passed -Duration $sw.ElapsedMilliseconds
