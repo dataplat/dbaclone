@@ -15,19 +15,30 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
 
     BeforeAll {
-        Write-PSFMessage -Level Important -Message $script:clonefolder
-
         if (-not (Test-Path -Path $script:clonefolder)) {
             New-Item -Path $script:clonefolder -ItemType Directory
         }
 
-        Set-PSDCConfiguration -InformationStore File -Path $script:clonefolder -Force
+        $server = Connect-DbaInstance -SqlInstance $script:sqlinstance
 
+        if ($server.Databases.Name -notcontains $script:database) {
+            $query = "CREATE DATABASE $($script:database)"
+            $server.Query($query)
 
+            Invoke-DbaQuery -SqlInstance $script:sqlinstance -Database $script:database -File "$($PSScriptRoot)\..\database.sql"
+        }
+
+        if (-not (Test-Path -Path $script:clonefolder)) {
+            $null = New-Item -Path $script:clonefolder -ItemType Directory
+        }
+
+        $null = Set-PSDCConfiguration -InformationStore File -Path $script:clonefolder -Force
     }
 
-    AfterAll {
 
+
+    AfterAll {
+        $null = Remove-DbaDatabase -SqlInstance $script:sqlinstance -Database $script:database -Confirm:$false
     }
 
 }
