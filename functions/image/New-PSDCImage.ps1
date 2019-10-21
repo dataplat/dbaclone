@@ -390,7 +390,7 @@
                 Write-PSFMessage -Message "Trying to retrieve the last full backup for $db" -Level Verbose
 
                 # Get the last full backup
-                $lastFullBackup = Get-DbaBackupHistory -SqlInstance $SourceSqlInstance -SqlCredential $SourceSqlCredential -Database $db.Name -LastFull
+                $lastFullBackup = Get-DbaDbBackupHistory -SqlInstance $SourceSqlInstance -SqlCredential $SourceSqlCredential -Database $db.Name -LastFull
             }
 
             if (-not $lastFullBackup.Path) {
