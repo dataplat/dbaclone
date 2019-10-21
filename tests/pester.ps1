@@ -19,8 +19,6 @@ Remove-Module PSDatabaseClone -ErrorAction Ignore
 Import-Module "$PSScriptRoot\..\PSDatabaseClone.psd1"
 Import-Module "$PSScriptRoot\..\PSDatabaseClone.psm1" -Force
 
-$null = Set-PSDCConfiguration -InformationStore File -Path $script:workingfolder -Force -EnableException
-
 Write-PSFMessage -Level Important -Message "Creating test result folder"
 $null = New-Item -Path "$PSScriptRoot\..\.." -Name TestResults -ItemType Directory -Force
 
