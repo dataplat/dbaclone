@@ -18,9 +18,10 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
             New-Item -Path $script:imagefolder -ItemType Directory
         }
 
-        $server = Connect-DbaInstance -SqlInstance $script:sourcesqlinstance
+        $sourceServer = Connect-DbaInstance -SqlInstance $script:sourcesqlinstance
+        $destServer = Connect-DbaInstance -SqlInstance $script:destinationsqlinstance
 
-        if ($server.Databases.Name -notcontains $script:database) {
+        if ($sourceServer.Databases.Name -notcontains $script:database) {
             $query = "CREATE DATABASE $($script:database)"
             $server.Query($query)
 
@@ -83,7 +84,13 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     }
 
     AfterAll {
-        $null = Remove-DbaDatabase -SqlInstance $script:destinationsqlinstance -Database $script:database -Confirm:$false
+        if ($sourceServer.Databases.Name -contains $script:database) {
+            $null = Remove-DbaDatabase -SqlInstance $script:sourcesqlinstance -Database $script:database -Confirm:$false
+        }
+
+        if ($destServer.Databases.Name -contains $script:database) {
+            $null = Remove-DbaDatabase -SqlInstance $script:destinationsqlinstance -Database $script:database -Confirm:$false
+        }
 
         if ((Get-SmbShare -Name $script:psdcshare -ErrorAction SilentlyContinue)) {
             Remove-SmbShare -Name $script:psdcshare -Confirm:$false
