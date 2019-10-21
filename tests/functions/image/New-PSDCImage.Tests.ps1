@@ -58,7 +58,7 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
 
     Context "Create image with defaults and an existing backup" {
         # Create the backup
-        Backup-DbaDatabase -SqlInstance localhost -Database $script:database
+        Backup-DbaDatabase -SqlInstance $script:sourcesqlinstance -Database $script:database
 
         # Create the image with the last backup
         $params = @{
