@@ -87,8 +87,6 @@
     [CmdLetBinding(SupportsShouldProcess = $true, DefaultParameterSetName = "Prompt")]
 
     param(
-        [parameter(ParameterSetName = "File")]
-        [parameter(ParameterSetName = "SQL")]
         [ValidateSet('SQL', 'File')]
         [string]$InformationStore = 'File',
         [parameter(ParameterSetName = "SQL", Mandatory = $true)]
@@ -110,10 +108,14 @@
     )
 
     begin {
+        if (-not (Test-PSDCElevated)) {
+            Stop-PSFFunction -Message "Please run the module in elevated mode" -Continue
+        }
+
         Write-PSFMessage -Message "Started PSDatabaseClone Setup" -Level Output
 
         # Check if the user needs to be asked for user input
-        if ($InputPrompt -or ($InformationStore -notin 'SQL', 'File') -or (-not $SqlInstance -and -not $SqlInstance -and -not $Credential -and -not $Database)) {
+        if ($InputPrompt -or (-not $InformationStore) -and (-not $SqlInstance -and -not $SqlCredential -and -not $Credential -and -not $Database)) {
             # Setup the choices for the user
             $choiceDatabase = New-Object System.Management.Automation.Host.ChoiceDescription '&Database', 'Save the information in a database'
             $choiceDatabase.HelpMessage = "Choose to have the information saved in a database. This is reliable and is the default choice"
@@ -213,6 +215,15 @@
         catch {
             Stop-PSFFunction -Message "Something went wrong unregistering the configurations" -ErrorRecord $_ -Target $SqlInstance
             return
+        }
+
+        if (-not (Test-Path -Path $Path)) {
+            try {
+                $null = New-Item -Path $Path -ItemType Directory -Confirm:$false -Force
+            }
+            catch {
+                Stop-PSFFunction -Message "Could not create working directory" -ErrorRecord $_ -Target $SqlInstance
+            }
         }
     }
 

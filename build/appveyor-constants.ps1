@@ -1,7 +1,5 @@
-﻿# constants
-#$publishDir = "C:\Projects"
-#$workingfolder = "$($env:APPDATA)\psdc"
-$workingfolder = "C:\projects\psdatabaseclone"
-$jsonfolder = "$workingfolder\config"
-$imagefolder = "$workingfolder\images"
-$clonefolder = "$workingfolder\clones"
+﻿$computer = "localhost"
+$instance = "localhost\SQL2017"
+$database = "UnitTesting_Tests"
+$tempfolder = "C:\projects\"
+$unittestfolder = (Join-Path -Path $script:tempfolder -ChildPath "unittests")

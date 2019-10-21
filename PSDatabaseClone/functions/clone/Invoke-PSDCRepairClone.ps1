@@ -40,6 +40,12 @@
     .PARAMETER Confirm
         If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
 
+    .PARAMETER WhatIf
+        If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
+
+    .PARAMETER Confirm
+        If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
+
     .NOTES
         Author: Sander Stad (@sqlstad, sqlstad.nl)
 
@@ -166,7 +172,7 @@
                     if ($PSCmdlet.ShouldProcess($result.AccessPath, "Retrieving database files from $($result.AccessPath)")) {
                         # Check if computer is local
                         if ($computer.IsLocalhost) {
-                            $databaseFiles = Get-ChildItem -Path $result.AccessPath -Recurse | Where-Object {-not $_.PSIsContainer}
+                            $databaseFiles = Get-ChildItem -Path $result.AccessPath -Recurse | Where-Object { -not $_.PSIsContainer }
                         }
                         else {
                             $commandText = "Get-ChildItem -Path $($result.AccessPath) -Recurse | " + 'Where-Object {-not $_.PSIsContainer}'

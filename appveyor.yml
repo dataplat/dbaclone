@@ -1,4 +1,6 @@
 # See http://www.appveyor.com/docs/appveyor-yml for many more options
+image: Visual Studio 2019
+
 version: 0.3.{build}
 
 cache:
@@ -12,32 +14,27 @@ cache:
 shallow_clone: true
 
 environment:
-  workingfolder: c:\projects\PSDatabaseClone
+  workingdirectory: c:\projects\
+  workingfolder: c:\projects\PStSQLtTestGenerator
   environment: development
-  version: 0.3.$(appveyor_build_number)
-  appveyor_rdp_password: Psd@tabaseclone2018
+  version: 0.1.$(appveyor_build_number)
+  appveyor_rdp_password: P$Psd@tabaseclone2018
+
+services:
+  - mssql2017
 
 matrix:
   fast_finish: true
 
-before_build:
+before_test:
 - ps: .\build\appveyor-prerequisites.ps1
 
-
-build_script:
-# grab appveyor lab files and needed requirements for tests in CI
-- ps: .\build\appveyor-build.ps1
-
-#before_test:
-#- icacls "c:\projects\PSDatabaseClone" /grant Everyone:(OI)(CI)F /T /Q
+build: off
 
 test_script:
 # Test with PowerShell and Pester
-- ps: .\build\appveyor-validate.ps1
+- ps: .\build\appveyor-validate.ps1 -Finalize -IncludeCoverage
 
-branches:
-  only:
-    - development
+on_success:
+- ps: .\build\appveyor-build.ps1 -SkipPublish
 
-#on_finish:
-#  - ps: $blockRdp = $true; iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))

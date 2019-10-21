@@ -36,6 +36,17 @@
     .PARAMETER Database
         Filter based on the database
 
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+
+    .PARAMETER WhatIf
+        If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
+
+    .PARAMETER Confirm
+        If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
+
     .NOTES
         Author: Sander Stad (@sqlstad, sqlstad.nl)
 
@@ -78,7 +89,8 @@
         [int[]]$ImageID,
         [string[]]$ImageName,
         [string[]]$ImageLocation,
-        [string[]]$Database
+        [string[]]$Database,
+        [switch]$EnableException
     )
 
     begin {
@@ -148,22 +160,22 @@
 
         # Filter image id
         if ($ImageID) {
-            $results = $results | Where-Object {$_.ImageID -in $ImageID}
+            $results = $results | Where-Object { $_.ImageID -in $ImageID }
         }
 
         # Filter image name
         if ($ImageName) {
-            $results = $results | Where-Object {$_.ImageName -in $ImageName}
+            $results = $results | Where-Object { $_.ImageName -in $ImageName }
         }
 
         # Filter image location
         if ($ImageLocation) {
-            $results = $results | Where-Object {$_.ImageLocation -in $ImageLocation}
+            $results = $results | Where-Object { $_.ImageLocation -in $ImageLocation }
         }
 
         # Filter database
         if ($Database) {
-            $results = $results | Where-Object {$_.DatabaseName -in $Database}
+            $results = $results | Where-Object { $_.DatabaseName -in $Database }
         }
     }
 
