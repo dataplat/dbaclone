@@ -12,7 +12,7 @@ $supportedVersions = @(
     'Microsoft Windows Server 2016 Standard',
     'Microsoft Windows Server 2016 Enterprise',
     'Microsoft Windows Server 2016 Datacenter'
-
+    'Microsoft Windows Server 2019 Datacenter'
 )
 
 # Get the OS details
@@ -28,7 +28,7 @@ if ($osDetails.Caption -notin $supportedVersions ) {
     }
 }
 
-if(-not (Test-Path -Path "$env:APPDATA\psdatabaseclone")){
+if (-not (Test-Path -Path "$env:APPDATA\psdatabaseclone")) {
     try {
         $null = New-Item -Path "$env:APPDATA\psdatabaseclone" -ItemType Directory -Force:$Force
     }
