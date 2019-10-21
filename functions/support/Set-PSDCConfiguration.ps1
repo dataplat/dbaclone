@@ -112,7 +112,7 @@
             Stop-PSFFunction -Message "Please run the module in elevated mode" -Continue
         }
 
-        Write-PSFMessage -Message "Started PSDatabaseClone Setup" -Level Output
+        Write-PSFMessage -Message "Started PSDatabaseClone Setup" -Level Verbose
 
         # Check if the user needs to be asked for user input
         if ($InputPrompt -or (-not $InformationStore) -and (-not $SqlInstance -and -not $SqlCredential -and -not $Credential -and -not $Database)) {
@@ -426,7 +426,7 @@
             $dbName = Get-PSFConfigValue -FullName psdatabaseclone.database.name
 
             if (($false -ne $dbServer) -and ($false -ne $dbName)) {
-                Write-PSFMessage -Message "All mandatory configurations have been made" -Level Host
+                Write-PSFMessage -Message "All mandatory configurations have been made" -Level Verbose
                 Set-PSFConfig -Module PSDatabaseClone -Name setup.status -Value $true -Validation bool
             }
             else {
@@ -438,7 +438,7 @@
             $path = Get-PSFConfigValue -FullName psdatabaseclone.informationstore.path
 
             if (($null -ne $path) -or ('' -ne $path)) {
-                Write-PSFMessage -Message "All mandatory configurations have been made" -Level Host
+                Write-PSFMessage -Message "All mandatory configurations have been made" -Level Verbose
                 Set-PSFConfig -Module PSDatabaseClone -Name setup.status -Value $true -Validation bool
             }
             else {
