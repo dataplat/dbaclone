@@ -158,7 +158,7 @@
         }
 
         # Checking parameters
-        if (-not $ImageNetworkPath) {
+        if (-not $ImageNetworkPath -and -not $ImageLocalPath) {
             Stop-PSFFunction -Message "Please enter the network path where to save the images"
             return
         }
