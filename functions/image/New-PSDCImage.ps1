@@ -558,9 +558,10 @@
                     Write-PSFMessage -Message "Restoring database $db on $DestinationSqlInstance" -Level Verbose
                     $restore = Restore-DbaDatabase -SqlInstance $DestinationSqlInstance -SqlCredential $DestinationSqlCredential `
                         -DatabaseName $tempDbName -Path $lastFullBackup `
-                        -DestinationDataDirectory $imageDataFolder `
-                        -DestinationLogDirectory $imageLogFolder `
                         -WithReplace -EnableException
+                    #-DestinationDataDirectory $imageDataFolder `
+                    #-DestinationLogDirectory $imageLogFolder `
+
                 }
                 catch {
                     Stop-PSFFunction -Message "Couldn't restore database $db as $tempDbName on $DestinationSqlInstance.`n$($_)" -Target $restore -ErrorRecord $_ -Continue
