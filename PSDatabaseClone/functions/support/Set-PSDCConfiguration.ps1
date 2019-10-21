@@ -216,6 +216,15 @@
             Stop-PSFFunction -Message "Something went wrong unregistering the configurations" -ErrorRecord $_ -Target $SqlInstance
             return
         }
+
+        if (-not (Test-Path -Path $Path)) {
+            try {
+                $null = New-Item -Path $Path -ItemType Directory -Confirm:$false -Force
+            }
+            catch {
+                Stop-PSFFunction -Message "Could not create working directory" -ErrorRecord $_ -Target $SqlInstance
+            }
+        }
     }
 
     process {
