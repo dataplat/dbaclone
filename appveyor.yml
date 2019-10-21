@@ -15,9 +15,9 @@ shallow_clone: true
 
 environment:
   workingdirectory: c:\projects\
-  workingfolder: c:\projects\PStSQLtTestGenerator
+  workingfolder: c:\projects\PSDatabaseClone
   environment: development
-  version: 0.1.$(appveyor_build_number)
+  version: 0.3.$(appveyor_build_number)
   appveyor_rdp_password: P$Psd@tabaseclone2018
 
 services:
