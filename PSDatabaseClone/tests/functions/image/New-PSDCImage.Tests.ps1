@@ -1,7 +1,18 @@
 $commandname = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-. "$PSScriptRoot\..\..\..\build\appveyor-constants.ps1"
+. "$PSScriptRoot\constants.ps1"
+#. "$PSScriptRoot\..\constants.ps1"
 
-Describe "$commandname Unit Tests" {
+Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+    Context "Validate parameters" {
+        [object[]]$params = (Get-ChildItem Function:\New-PSDCImage).Parameters.Keys
+        $knownParameters = 'SourceSqlInstance', 'SourceSqlCredential', 'SourceCredential', 'DestinationSqlInstance', 'DestinationSqlCredential', 'DestinationCredential', 'PSDCSqlCredential', 'Database', 'ImageNetworkPath', 'ImageLocalPath', 'VhdType', 'CreateFullBackup', 'UseLastFullBackup', 'CopyOnlyBackup', 'MaskingFile', 'Force', 'EnableException'
+        It "Should contain our specific parameters" {
+            ( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $knownParameters.Count
+        }
+    }
+}
+
+<# Describe "$commandname Unit Tests" {
 
     BeforeAll {
         # get the databases
@@ -46,4 +57,4 @@ Describe "$commandname Unit Tests" {
         $null = Remove-Item -Path $image.ImageLocation -Force
     }
 
-}
+} #>

@@ -1,31 +1,31 @@
 @{
     # Script module or binary module file associated with this manifest
-    ModuleToProcess   = 'PSDatabaseClone.psm1'
+    ModuleToProcess    = 'PSDatabaseClone.psm1'
 
     # Version number of this module.
-    ModuleVersion     = '0.3.62'
+    ModuleVersion      = '0.3.62'
 
     # ID used to uniquely identify this module
-    GUID              = 'db92ed6d-9955-4357-b577-897ef1a535e2'
+    GUID               = 'db92ed6d-9955-4357-b577-897ef1a535e2'
 
     # Author of this module
-    Author            = 'Sander Stad'
+    Author             = 'Sander Stad'
 
     # Company or vendor of this module
-    CompanyName       = ''
+    CompanyName        = ''
 
     # Copyright statement for this module
-    Copyright         = 'Copyright (c) 2018 Sander Stad'
+    Copyright          = 'Copyright (c) 2018 Sander Stad'
 
     # Description of the functionality provided by this module
-    Description       = 'Module for cloning SQL Server databases'
+    Description        = 'Module for cloning SQL Server databases'
 
     # Minimum version of the Windows PowerShell engine required by this module
-    PowerShellVersion = '5.0'
+    PowerShellVersion  = '5.0'
 
     # Modules that must be imported into the global environment prior to importing
     # this module
-    RequiredModules   = @(
+    RequiredModules    = @(
         @{ ModuleName = 'PSFramework'; ModuleVersion = '0.10.27.128' },
         @{ ModuleName = 'dbatools'; ModuleVersion = '0.9.337' }
     )
@@ -40,38 +40,36 @@
     # FormatsToProcess = @('xml\PSDatabaseClone.Format.ps1xml')
 
     # Functions to export from this module
-    FunctionsToExport = 'Convert-PSDCUncPathToLocalPath',
-		'Get-PSDCClone',
-		'Get-PSDCImage',
-		'Initialize-PSDCVhdDisk',
-		'Invoke-PSDCDataMasking',
-		'Invoke-PSDCRepairClone',
-		'New-PSDCClone',
-		'New-PSDCImage',
-		'New-PSDCMaskingConfiguration',
-		'New-PSDCVhdDisk',
-		'Remove-PSDCClone',
-		'Remove-PSDCImage',
-		'Set-PSDCConfiguration',
-		'Test-PSDCRemoting'
+    FunctionsToExport  = 'Convert-PSDCUncPathToLocalPath',
+    'Get-PSDCClone',
+    'Get-PSDCImage',
+    'Initialize-PSDCVhdDisk',
+    'Invoke-PSDCRepairClone',
+    'New-PSDCClone',
+    'New-PSDCImage',
+    'New-PSDCVhdDisk',
+    'Remove-PSDCClone',
+    'Remove-PSDCImage',
+    'Set-PSDCConfiguration',
+    'Test-PSDCRemoting'
 
     # Cmdlets to export from this module
-    CmdletsToExport   = ''
+    CmdletsToExport    = ''
 
     # Variables to export from this module
-    VariablesToExport = ''
+    VariablesToExport  = ''
 
     # Aliases to export from this module
-    AliasesToExport   = ''
+    AliasesToExport    = ''
 
     # List of all modules packaged with this module
-    ModuleList        = @()
+    ModuleList         = @()
 
     # List of all files packaged with this module
-    FileList          = @()
+    FileList           = @()
 
     # Private data to pass to the module specified in ModuleToProcess. This may also contain a PSData hashtable with additional module metadata used by PowerShell.
-    PrivateData       = @{
+    PrivateData        = @{
 
         #Support for PowerShellGet galleries.
         PSData = @{
