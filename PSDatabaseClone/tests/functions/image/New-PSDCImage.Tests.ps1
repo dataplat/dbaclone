@@ -1,6 +1,5 @@
 $commandname = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 . "$PSScriptRoot\..\constants.ps1"
-#. "$PSScriptRoot\..\constants.ps1"
 
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
@@ -12,28 +11,42 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     }
 }
 
-<# Describe "$commandname Unit Tests" {
+Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
 
     BeforeAll {
-        # get the databases
-        $databases = Get-DbaDatabase -SqlInstance localhost | Select-Object Name
+        if (-not (Test-Path -Path $script:imagefolder)) {
+            New-Item -Path $script:imagefolder -ItemType Directory
+        }
 
-        # Create database if it doesn't exist
-        if ($databases.Name -notcontains 'DB1') {
-            # Create the database
-            Invoke-DbaQuery -SqlInstance localhost -Database master -Query "CREATE DATABASE [DB1]"
+        $server = Connect-DbaInstance -SqlInstance $script:sourcesqlinstance
+
+        if ($server.Databases.Name -notcontains $script:database) {
+            $query = "CREATE DATABASE $($script:database)"
+            $server.Query($query)
+
+            Invoke-DbaQuery -SqlInstance $script:sourcesqlinstance -Database $script:database -File "$($PSScriptRoot)\..\database.sql"
+        }
+
+        $null = Set-PSDCConfiguration -InformationStore File -Path $script:workingfolder -Force -EnableException
+
+        if (-not (Get-SmbShare -Name $script:psdcshare -ErrorAction SilentlyContinue)) {
+            New-SMBShare -Name $script:psdcshare -Path $script:workingfolder -FullAccess Everyone
         }
     }
 
-    Context "Create image with defaults and a new backup" {
-        $image = New-PSDCImage -SourceSqlInstance localhost -DestinationSqlInstance localhost -ImageNetworkPath "\\localhost\C$\projects\" -Database DB1 -CreateFullBackup -CopyOnlyBackup -EnableException
+    Context "Create an image with full backup" {
+        $image = New-PSDCImage -SourceSqlInstance $script:sourcesqlinstance `
+            -DestinationSqlInstance $script:destinationsqlinstance `
+            -ImageNetworkPath "\\127.0.0.1\$($script:psdcshare)\$($script:images)" `
+            -Database $script:database `
+            -CreateFullBackup
 
         It "Image object cannot be null" {
-            $image | Should Not Be $null
+            $image | Should -Not -Be $null
         }
 
         It "Image Path Should exist" {
-            Test-Path -Path $image.ImageLocation | Should Be $true
+            Test-Path -Path $image.ImageLocation | Should -Be $true
         }
 
         $null = Remove-Item -Path $image.ImageLocation -Force
@@ -41,20 +54,32 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 
     Context "Create image with defaults and an existing backup" {
         # Create the backup
-        Backup-DbaDatabase -SqlInstance localhost -Database DB1
+        Backup-DbaDatabase -SqlInstance localhost -Database $script:database
 
         # Create the image with the last backup
-        $image = New-PSDCImage -SourceSqlInstance localhost -DestinationSqlInstance localhost -ImageNetworkPath "\\localhost\C$\projects\" -Database DB1 -UseLastFullBackup
+        $image = New-PSDCImage -SourceSqlInstance $script:sourcesqlinstance `
+            -DestinationSqlInstance $script:destinationsqlinstance `
+            -ImageNetworkPath "\\127.0.0.1\$($script:psdcshare)\$($script:images)" `
+            -Database $script:database `
+            -UseLastFullBackup
 
         It "Image object cannot be null" {
-            $image | Should Not Be $null
+            $image | Should -Not -Be $null
         }
 
         It "Image Path Should exist" {
-            Test-Path -Path $image.ImageLocation | Should Be $true
+            Test-Path -Path $image.ImageLocation | Should -Be $true
         }
 
         $null = Remove-Item -Path $image.ImageLocation -Force
     }
 
-} #>
+    AfterAll {
+        $null = Remove-DbaDatabase -SqlInstance $script:destinationsqlinstance -Database $script:database -Confirm:$false
+
+        if ((Get-SmbShare -Name $script:psdcshare -ErrorAction SilentlyContinue)) {
+            Remove-SmbShare -Name $script:psdcshare -Confirm:$false
+        }
+    }
+
+}
