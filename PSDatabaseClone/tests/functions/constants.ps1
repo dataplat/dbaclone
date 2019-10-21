@@ -5,9 +5,14 @@ if (Test-Path C:\temp\constants_pstsqlttestgenerator.ps1) {
 }
 else {
     $script:computer = "localhost"
-    $script:sqlinstance = "localhost\SQL2017"
-    $script:database = "UnitTesting_Tests"
-    $script:workingfolder = "C:\projects\"
+    $script:sourcesqlinstance = "localhost"
+    $script:destinationsqlinstance = "localhost"
+    $script:database = "PSDatabaseClone_Tests"
+    $script:workingfolder = "C:\projects\psdc"
+    $script:psdcshare = "psdc"
+    $script:images = "images"
+    $script:imagefolder = (Join-Path -Path $script:workingfolder -ChildPath "image")
+    $script:clones = "clones"
     $script:clonefolder = (Join-Path -Path $script:workingfolder -ChildPath "clone")
 }
 
