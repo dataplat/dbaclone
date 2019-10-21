@@ -11,9 +11,9 @@ else {
     $script:workingfolder = "C:\projects\psdc"
     $script:psdcshare = "psdc"
     $script:images = "images"
-    $script:imagefolder = (Join-Path -Path $script:workingfolder -ChildPath "image")
+    $script:imagefolder = (Join-Path -Path $script:workingfolder -ChildPath "images")
     $script:clones = "clones"
-    $script:clonefolder = (Join-Path -Path $script:workingfolder -ChildPath "clone")
+    $script:clonefolder = (Join-Path -Path $script:workingfolder -ChildPath "clones")
 }
 
 if ($env:appveyor) {
