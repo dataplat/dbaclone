@@ -31,7 +31,7 @@
     )
 
     # Assemblies that must be loaded prior to importing this module
-    RequiredAssemblies = @("bin\PSDatabaseClone.dll", "bin\Bogus.dll")
+    RequiredAssemblies = @("bin\PSDatabaseClone.dll")
 
     # Type files (.ps1xml) to be loaded when importing this module
     # TypesToProcess = @('xml\PSDatabaseClone.Types.ps1xml')
