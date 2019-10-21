@@ -457,6 +457,6 @@
         # Test if there are any errors
         if (Test-PSFFunctionInterrupt) { return }
 
-        Write-PSFMessage -Message "Finished setting up PSDatabaseClone" -Level Host
+        Write-PSFMessage -Message "Finished setting up PSDatabaseClone" -Level Verbose
     }
 }
