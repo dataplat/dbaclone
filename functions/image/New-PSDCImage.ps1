@@ -463,14 +463,6 @@
                                 $acl.SetAccessRule($accessRule)
                                 Set-Acl -Path $accessPath -AclObject $acl
 
-                                $acl = Get-ACL -Path $imageDataFolder
-                                $acl.SetAccessRule($accessRule)
-                                Set-Acl -Path $imageDataFolder -AclObject $acl
-
-                                $acl = Get-ACL -Path $imageLogFolder
-                                $acl.SetAccessRule($accessRule)
-                                Set-Acl -Path $imageLogFolder -AclObject $acl
-
                             }
                             else {
                                 $command = [ScriptBlock]::Create("New-Item -Path $accessPath -ItemType Directory -Force")
@@ -524,6 +516,11 @@
                         # Check if computer is local
                         if ($computer.IsLocalhost) {
                             $null = New-Item -Path $imageDataFolder -ItemType Directory
+
+                            $accessRule = New-Object System.Security.AccessControl.FileSystemAccessRule("Everyone", "FullControl", "ContainerInherit,Objectinherit", "None", "Allow")
+                            $acl = Get-ACL -Path $imageDataFolder
+                            $acl.SetAccessRule($accessRule)
+                            Set-Acl -Path $imageDataFolder -AclObject $acl
                         }
                         else {
                             $command = [ScriptBlock]::Create("New-Item -Path $imageDataFolder -ItemType Directory")
@@ -545,6 +542,11 @@
                         # Check if computer is local
                         if ($computer.IsLocalhost) {
                             $null = New-Item -Path $imageLogFolder -ItemType Directory
+
+                            $accessRule = New-Object System.Security.AccessControl.FileSystemAccessRule("Everyone", "FullControl", "ContainerInherit,Objectinherit", "None", "Allow")
+                            $acl = Get-ACL -Path $imageLogFolder
+                            $acl.SetAccessRule($accessRule)
+                            Set-Acl -Path $imageLogFolder -AclObject $acl
                         }
                         else {
                             $command = [ScriptBlock]::Create("New-Item -Path $imageLogFolder -ItemType Directory")
