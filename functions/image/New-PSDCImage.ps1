@@ -453,11 +453,11 @@
                                 $null = New-Item -Path $accessPath -ItemType Directory -Force
 
                                 # Set the permissions
-                                $permission = "Everyone", "FullControl", "ContainerInherit,ObjectInherit", "None", "Allow"
-                                $accessRule = New-Object System.Security.AccessControl.FileSystemAccessRule $permission
+                                #$permission = "Everyone", "FullControl", "ContainerInherit,ObjectInherit", "None", "Allow"
+                                $accessRule = New-Object System.Security.AccessControl.FileSystemAccessRule("Everyone", "FullControl", "ContainerInherit,Objectinherit", "None", "Allow")
                                 $acl = Get-Acl -Path $accessPath
                                 $acl.SetAccessRule($accessRule)
-                                $acl | Set-Acl $accessPath
+                                Set-Acl -Path $accessPath -AclObject $acl
                             }
                             else {
                                 $command = [ScriptBlock]::Create("New-Item -Path $accessPath -ItemType Directory -Force")
@@ -556,12 +556,19 @@
                 # Restore database to image folder
                 try {
                     Write-PSFMessage -Message "Restoring database $db on $DestinationSqlInstance" -Level Verbose
-                    $restore = Restore-DbaDatabase -SqlInstance $DestinationSqlInstance -SqlCredential $DestinationSqlCredential `
-                        -DatabaseName $tempDbName -Path $lastFullBackup `
-                        -WithReplace -EnableException
-                    #-DestinationDataDirectory $imageDataFolder `
-                    #-DestinationLogDirectory $imageLogFolder `
 
+                    $params = @{
+                        SqlInstance              = $DestinationSqlInstance
+                        SqlCredential            = $DestinationSqlCredential
+                        DatabaseName             = $tempDbName
+                        Path                     = $lastFullBackup
+                        DestinationDataDirectory = $imageDataFolder
+                        DestinationLogDirectory  = $imageLogFolder
+                        WithReplace              = $true
+                        EnableException          = $true
+                    }
+
+                    $restore = Restore-DbaDatabase @params
                 }
                 catch {
                     Stop-PSFFunction -Message "Couldn't restore database $db as $tempDbName on $DestinationSqlInstance.`n$($_)" -Target $restore -ErrorRecord $_ -Continue
