@@ -442,6 +442,10 @@
                 }
             }
 
+            # Create folder structure for image
+            $imageDataFolder = "$($imagePath)\$imageName\Data"
+            $imageLogFolder = "$($imagePath)\$imageName\Log"
+
             # try to create access path
             try {
                 # Check if access path is already present
@@ -459,9 +463,13 @@
                                 $acl.SetAccessRule($accessRule)
                                 Set-Acl -Path $accessPath -AclObject $acl
 
-                                $acl = Get-ACL -Path "$($imagePath)\$imageName"
+                                $acl = Get-ACL -Path $imageDataFolder
                                 $acl.SetAccessRule($accessRule)
-                                Set-Acl -Path $accessPath -AclObject $acl
+                                Set-Acl -Path $imageDataFolder -AclObject $acl
+
+                                $acl = Get-ACL -Path $imageLogFolder
+                                $acl.SetAccessRule($accessRule)
+                                Set-Acl -Path $imageLogFolder -AclObject $acl
 
                             }
                             else {
@@ -506,10 +514,6 @@
             catch {
                 Stop-PSFFunction -Message "Couldn't create access path for partition" -ErrorRecord $_ -Target $diskResult.partition
             }
-
-            # # Create folder structure for image
-            $imageDataFolder = "$($imagePath)\$imageName\Data"
-            $imageLogFolder = "$($imagePath)\$imageName\Log"
 
             # Check if image data folder exist
             if (-not (Test-Path -Path $imageDataFolder)) {
