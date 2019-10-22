@@ -467,9 +467,9 @@
                                 $script = "
                                     `$permission = 'Everyone', 'FullControl', 'ContainerInherit,ObjectInherit', 'None', 'Allow'
                                     `$accessRule = New-Object System.Security.AccessControl.FileSystemAccessRule `$permission
-                                    `$acl = Get-Acl -Path '$imageLogFolder'
+                                    `$acl = Get-Acl -Path '$accessPath'
                                     `$acl.SetAccessRule(`$accessRule)
-                                    `$acl | Set-Acl '$imageLogFolder'
+                                    `$acl | Set-Acl '$accessPath'
                                 "
 
                                 $command = [ScriptBlock]::Create($script)
