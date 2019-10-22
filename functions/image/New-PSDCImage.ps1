@@ -456,13 +456,6 @@
                             if ($computer.IsLocalhost) {
                                 $null = New-Item -Path $accessPath -ItemType Directory -Force
                                 Write-PSFMessage -Level Important -Message $accessPath
-                                # Set the permissions
-                                #$permission = "Everyone", "FullControl", "ContainerInherit,ObjectInherit", "None", "Allow"
-                                $accessRule = New-Object System.Security.AccessControl.FileSystemAccessRule("Everyone", "FullControl", "ContainerInherit,Objectinherit", "None", "Allow")
-                                $acl = Get-Acl -Path $accessPath
-                                $acl.SetAccessRule($accessRule)
-                                Set-Acl -Path $accessPath -AclObject $acl
-
                             }
                             else {
                                 $command = [ScriptBlock]::Create("New-Item -Path $accessPath -ItemType Directory -Force")
@@ -485,6 +478,16 @@
                             Stop-PSFFunction -Message "Couldn't create access path directory" -ErrorRecord $_ -Target $accessPath -Continue
                         }
                     }
+
+                    # Set the permissions
+                    #$permission = "Everyone", "FullControl", "ContainerInherit,ObjectInherit", "None", "Allow"
+                    $accessRule = New-Object System.Security.AccessControl.FileSystemAccessRule("Everyone", "FullControl", "ContainerInherit,Objectinherit", "None", "Allow")
+                    $acl = Get-Acl -Path $accessPath
+                    $acl.SetAccessRule($accessRule)
+                    Set-Acl -Path $accessPath -AclObject $acl
+                }
+                catch {
+                    Stop-PSFFunction -Message "Something went wrong creating the access path" -Target $accessPath -ErrorRecord $_
                 }
 
                 # Get the properties of the disk and partition
@@ -517,7 +520,6 @@
                         if ($computer.IsLocalhost) {
                             $null = New-Item -Path $imageDataFolder -ItemType Directory
 
-                            $accessRule = New-Object System.Security.AccessControl.FileSystemAccessRule("Everyone", "FullControl", "ContainerInherit,Objectinherit", "None", "Allow")
                             $acl = Get-ACL -Path $imageDataFolder
                             $acl.SetAccessRule($accessRule)
                             Set-Acl -Path $imageDataFolder -AclObject $acl
@@ -543,7 +545,6 @@
                         if ($computer.IsLocalhost) {
                             $null = New-Item -Path $imageLogFolder -ItemType Directory
 
-                            $accessRule = New-Object System.Security.AccessControl.FileSystemAccessRule("Everyone", "FullControl", "ContainerInherit,Objectinherit", "None", "Allow")
                             $acl = Get-ACL -Path $imageLogFolder
                             $acl.SetAccessRule($accessRule)
                             Set-Acl -Path $imageLogFolder -AclObject $acl
