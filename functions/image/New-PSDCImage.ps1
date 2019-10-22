@@ -486,9 +486,6 @@
                     $acl.SetAccessRule($accessRule)
                     Set-Acl -Path $accessPath -AclObject $acl
                 }
-                catch {
-                    Stop-PSFFunction -Message "Something went wrong creating the access path" -Target $accessPath -ErrorRecord $_
-                }
 
                 # Get the properties of the disk and partition
                 $disk = $diskResult.Disk
