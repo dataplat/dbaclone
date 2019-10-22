@@ -32,9 +32,11 @@ before_test:
 build: off
 
 test_script:
-# Test with PowerShell and Pester
 - ps: .\build\appveyor-validate.ps1 -Finalize -IncludeCoverage
 
 on_success:
 - ps: .\build\appveyor-build.ps1 -SkipPublish
+
+on_finish:
+  - ps: $blockRdp = $true; iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))
 
