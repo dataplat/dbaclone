@@ -458,6 +458,11 @@
                                 $acl = Get-Acl -Path $accessPath
                                 $acl.SetAccessRule($accessRule)
                                 Set-Acl -Path $accessPath -AclObject $acl
+
+                                $acl = Get-ACL -Path "$($imagePath)\$imageName"
+                                $acl.SetAccessRule($accessRule)
+                                Set-Acl -Path $accessPath -AclObject $acl
+
                             }
                             else {
                                 $command = [ScriptBlock]::Create("New-Item -Path $accessPath -ItemType Directory -Force")
