@@ -83,7 +83,7 @@
         }
 
         # Check the partition style
-        if(-not $PartitionStyle){
+        if (-not $PartitionStyle) {
             Write-PSFMessage -Message "Setting partition style to 'GPT'" -Level Verbose
             $PartitionStyle = 'GPT'
         }
@@ -137,7 +137,14 @@
         if ($PSCmdlet.ShouldProcess($disk, "Partitioning volume")) {
             # Create the partition, set the drive letter and format the volume
             try {
-                $volume = Get-Disk -Number $disk.Number | New-Partition -UseMaximumSize | Format-Volume -FileSystem NTFS -NewFileSystemLabel "PSDatabaseClone" -AllocationUnitSize $AllocationUnitSize -Confirm:$false
+                $params = @{
+                    FileSystem         = "NTFS"
+                    NewFileSystemLabel = "PSDatabaseClone"
+                    AllocationUnitSize = $AllocationUnitSize
+                    Confirm            = $false
+                }
+
+                $volume = Get-Disk -Number $disk.Number | New-Partition -UseMaximumSize | Format-Volume @params
             }
             catch {
                 # Dismount the drive

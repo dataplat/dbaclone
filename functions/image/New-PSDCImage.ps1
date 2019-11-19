@@ -373,7 +373,7 @@
             $imageName = "$($db.Name)_$timestamp"
 
             # Setup the access path
-            $accessPath = "$ImageLocalPath\$imageName"
+            $accessPath = Join-PSFPath -Path $ImageLocalPath -Child $imageName
 
             # Setup the vhd path
             $vhdPath = "$($accessPath).$($VhdType.ToLower())"
@@ -443,8 +443,8 @@
             }
 
             # Create folder structure for image
-            $imageDataFolder = "$($imagePath)\$imageName\Data"
-            $imageLogFolder = "$($imagePath)\$imageName\Log"
+            $imageDataFolder = Join-PSFPath -Path $imagePath -Child "$($imageName)\Data"
+            $imageLogFolder = Join-PSFPath -Path $imagePath -Child "$($imageName)\Log"
 
             # try to create access path
             try {
@@ -663,7 +663,7 @@
             }
 
             # Write the data to the database
-            $imageLocation = "$($uri.LocalPath)\$imageName.vhdx"
+            $imageLocation = Join-PSFPath $uri.LocalPath -Child "$($imageName).vhdx"
             $sizeMB = $dbSizeMB
             $databaseName = $db.Name
             $databaseTS = $lastFullBackup.Start
@@ -672,11 +672,11 @@
                 $query = "
                 DECLARE @ImageID INT;
                 EXECUTE dbo.Image_New @ImageID = @ImageID OUTPUT,				  -- int
-                                    @ImageName = '$imageName',                    -- varchar(100)
-                                    @ImageLocation = '$imageLocation',			  -- varchar(255)
-                                    @SizeMB = $sizeMB,							  -- int
-                                    @DatabaseName = '$databaseName',			  -- varchar(100)
-                                    @DatabaseTimestamp = '$databaseTS'            -- datetime
+                                    @ImageName = '$($imageName)',                    -- varchar(100)
+                                    @ImageLocation = '$($imageLocation)',			  -- varchar(255)
+                                    @SizeMB = $($sizeMB),							  -- int
+                                    @DatabaseName = '$($databaseName)',			  -- varchar(100)
+                                    @DatabaseTimestamp = '$($databaseTS)'            -- datetime
 
                 SELECT @ImageID as ImageID
             "

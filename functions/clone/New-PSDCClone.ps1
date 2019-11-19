@@ -215,12 +215,7 @@
 
             # Check destination
             if (-not $Destination) {
-                $Destination = $server.DefaultFile
-                if ($server.DefaultFile.EndsWith("\")) {
-                    $Destination = $Destination.Substring(0, $Destination.Length - 1)
-                }
-
-                $Destination += "\clone"
+                $Destination = Join-PSFPath -Path $server.DefaultFile -Child "clone"
             }
             else {
                 # If the destination is a network path
@@ -331,7 +326,7 @@
                 }
 
                 # Setup access path location
-                $accessPath = "$Destination\$mountDirectory"
+                $accessPath = Join-PSFPath -Path $Destination -Child $mountDirectory
 
                 # Check if access path is already present
                 if ($PSCmdlet.ShouldProcess($accessPath, "Testing existence access path $accessPath and create it")) {
@@ -361,13 +356,14 @@
                 }
 
                 # Check if the clone vhd does not yet exist
+                $clonePath = Join-PSFPath -Path $Destination -Child "$($CloneName).vhdx"
                 if ($computer.IsLocalhost) {
-                    if (Test-Path -Path "$Destination\$CloneName.vhdx" -Credential $DestinationCredential) {
+                    if (Test-Path -Path "$($clonePath)" -Credential $DestinationCredential) {
                         Stop-PSFFunction -Message "Clone $CloneName already exists" -Target $accessPath -Continue
                     }
                 }
                 else {
-                    $command = [ScriptBlock]::Create("Test-Path -Path `"$Destination\$CloneName.vhdx`"")
+                    $command = [ScriptBlock]::Create("Test-Path -Path `"$($clonePath)`"")
                     $result = Invoke-PSFCommand -ComputerName $computer -ScriptBlock $command -Credential $Credential
                     if ($result) {
                         Stop-PSFFunction -Message "Clone $CloneName already exists" -Target $accessPath -Continue
@@ -379,7 +375,7 @@
                     try {
                         Write-PSFMessage -Message "Creating clone from $ParentVhd" -Level Verbose
 
-                        $command = "create vdisk file='$Destination\$CloneName.vhdx' parent='$ParentVhd'"
+                        $command = "create vdisk file='$($clonePath)' parent='$ParentVhd'"
 
                         # Check if computer is local
                         if ($computer.IsLocalhost) {
@@ -390,7 +386,7 @@
                             $null = Invoke-PSFCommand -ScriptBlock $script
                         }
                         else {
-                            $command = [ScriptBlock]::Create("New-VHD -ParentPath $ParentVhd -Path `"$Destination\$CloneName.vhdx`" -Differencing")
+                            $command = [ScriptBlock]::Create("New-VHD -ParentPath $ParentVhd -Path `"$($clonePath)`" -Differencing")
                             $vhd = Invoke-PSFCommand -ComputerName $computer -ScriptBlock $command -Credential $Credential
 
                             if (-not $vhd) {
@@ -405,25 +401,25 @@
                 }
 
                 # Mount the vhd
-                if ($PSCmdlet.ShouldProcess("$Destination\$CloneName.vhdx", "Mounting clone clone")) {
+                if ($PSCmdlet.ShouldProcess("$($clonePath)", "Mounting clone clone")) {
                     try {
                         Write-PSFMessage -Message "Mounting clone" -Level Verbose
 
                         # Check if computer is local
                         if ($computer.IsLocalhost) {
                             # Mount the disk
-                            $null = Mount-DiskImage -ImagePath "$Destination\$CloneName.vhdx"
+                            $null = Mount-DiskImage -ImagePath "$($clonePath)"
 
                             # Get the disk based on the name of the vhd
-                            $disk = Get-Disk | Where-Object {$_.Location -eq "$Destination\$CloneName.vhdx"}
+                            $disk = Get-Disk | Where-Object {$_.Location -eq "$($clonePath)"}
                         }
                         else {
                             # Mount the disk
-                            $command = [ScriptBlock]::Create("Mount-DiskImage -ImagePath `"$Destination\$CloneName.vhdx`"")
+                            $command = [ScriptBlock]::Create("Mount-DiskImage -ImagePath `"$($clonePath)`"")
                             $null = Invoke-PSFCommand -ComputerName $computer -ScriptBlock $command -Credential $Credential
 
                             # Get the disk based on the name of the vhd
-                            $command = [ScriptBlock]::Create("Get-Vhd -Path `"$Destination\$CloneName.vhdx`"")
+                            $command = [ScriptBlock]::Create("Get-Vhd -Path `"$($clonePath)`"")
                             $disk = Invoke-PSFCommand -ComputerName $computer -ScriptBlock $command -Credential $Credential
                         }
                     }
@@ -671,7 +667,7 @@
                 }
 
                 # Setup the clone location
-                $cloneLocation = "$Destination\$CloneName.vhdx"
+                $cloneLocation = "$($clonePath)"
 
                 if ($informationStore -eq 'SQL') {
                     # Get the image id from the database
@@ -684,7 +680,7 @@
                         Stop-PSFFunction -Message "Couldnt execute query for retrieving image id" -Target $query -ErrorRecord $_ -Continue
                     }
 
-                    if ($PSCmdlet.ShouldProcess("$Destination\$CloneName.vhdx", "Adding clone to database")) {
+                    if ($PSCmdlet.ShouldProcess("$($clonePath)", "Adding clone to database")) {
                         if ($null -ne $image.ImageID) {
                             # Setup the query to add the clone to the database
                             Write-PSFMessage -Message "Adding clone $cloneLocation to database" -Level Verbose
