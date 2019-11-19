@@ -28,5 +28,9 @@ if ($server.Databases.Name -notcontains $database) {
     }
 } #>
 
+Write-PSFMessage -Level Important -Message "Disabling UAC"
+Set-ItemProperty -Path REGISTRY::HKEY_LOCAL_MACHINE\Software\Microsoft\Windows\CurrentVersion\Policies\System -Name ConsentPromptBehaviorAdmin -Value 0
+
+
 $sw.Stop()
 Update-AppveyorTest -Name "appveyor-prerequisites" -Framework NUnit -FileName "appveyor-prerequisites.ps1" -Outcome Passed -Duration $sw.ElapsedMilliseconds
