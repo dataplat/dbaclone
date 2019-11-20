@@ -471,7 +471,12 @@
                 try {
                     # Check if computer is local
                     if ($computer.IsLocalhost) {
-                        $accessRule = New-Object System.Security.AccessControl.FilesystemAccessrule("Everyone", "FullControl", "Allow")
+
+                        $everyone = [System.Security.Principal.WellKnownSidType]::WorldSid
+                        $sid = New-Object System.Security.Principal.SecurityIdentifier($everyone, $Null)
+                        $accessRule = New-Object System.Security.AccessControl.FilesystemAccessrule($sid, "FullControl", "Allow")
+
+                        #$accessRule = New-Object System.Security.AccessControl.FilesystemAccessrule("Everyone", "FullControl", "Allow")
 
                         foreach ($file in $(Get-ChildItem -Path $accessPath -Recurse)) {
                             $acl = Get-Acl $file.FullName
@@ -484,7 +489,11 @@
                         }
                     }
                     else {
-                        [string]$commandText = "`$accessRule = New-Object System.Security.AccessControl.FilesystemAccessrule(`"Everyone`", `"FullControl`", `"Allow`")
+                        [string]$commandText = "
+                            `$everyone = [System.Security.Principal.WellKnownSidType]::WorldSid
+                            `$sid = New-Object System.Security.Principal.SecurityIdentifier(`$everyone, $Null)
+                            `$accessRule = New-Object System.Security.AccessControl.FilesystemAccessrule(`$sid, `"FullControl`", `"Allow`")
+
                             foreach (`$file in `$(Get-ChildItem -Path `"$accessPath`" -Recurse)) {
                                 `$acl = Get-Acl `$file.Fullname
 
