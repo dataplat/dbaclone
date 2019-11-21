@@ -139,22 +139,23 @@
         }
 
         # Get all the items
-        $items = Get-PSDCClone
+        $items = @()
+        $items += Get-PSDCClone
 
         if (-not $All) {
             if ($HostName) {
                 Write-PSFMessage -Message "Filtering hostnames" -Level Verbose
-                $items = $items | Where-Object {$_.HostName -in $HostName}
+                $items = $items | Where-Object { $_.HostName -in $HostName }
             }
 
             if ($Database) {
                 Write-PSFMessage -Message "Filtering included databases" -Level Verbose
-                $items = $items | Where-Object {$_.DatabaseName -in $Database}
+                $items = $items | Where-Object { $_.DatabaseName -in $Database }
             }
 
             if ($ExcludeDatabase) {
                 Write-PSFMessage -Message "Filtering excluded databases" -Level Verbose
-                $items = $items | Where-Object {$_.DatabaseName -notin $Database}
+                $items = $items | Where-Object { $_.DatabaseName -notin $Database }
             }
         }
 
@@ -184,33 +185,39 @@
                 Stop-PSFFunction -Message "Could not connect to Sql Server instance $($clone.Name)" -ErrorRecord $_ -Target $clone.Name -Continue
             }
 
-            # Setup the computer object
-            $computer = [PsfComputer]$clone.HostName
+            # Loop through each of the results
+            foreach ($item in $clone.Group) {
 
-            if (-not $computer.IsLocalhost) {
-                # Get the result for the remote test
-                $resultPSRemote = Test-PSDCRemoting -ComputerName $clone.HostName -Credential $Credential
+                # Setup the computer object
+                $computer = [PsfComputer]$item.HostName
 
-                # Check the result
-                if ($resultPSRemote.Result) {
-
-                    $command = [scriptblock]::Create("Import-Module PSDatabaseClone")
-
+                if (-not $computer.IsLocalhost) {
+                    # Get the result for the remote test
                     try {
-                        Invoke-PSFCommand -ComputerName $computer -ScriptBlock $command -Credential $Credential
+                        $resultPSRemote = Test-PSDCRemoting -ComputerName $item.HostName -Credential $Credential -EnableException
+
+                        # Check the result
+                        if ($resultPSRemote.Result) {
+
+                            $command = [scriptblock]::Create("Import-Module PSDatabaseClone")
+
+                            try {
+                                Invoke-PSFCommand -ComputerName $computer -ScriptBlock $command -Credential $Credential
+                            }
+                            catch {
+                                Stop-PSFFunction -Message "Couldn't import module remotely" -Target $command
+                                return
+                            }
+                        }
+                        else {
+                            Stop-PSFFunction -Message "Couldn't connect to host remotely.`nVerify that the specified computer name is valid, that the computer is accessible over the network, and that a firewall exception for the WinRM service is enabled and allows access from this computer" -Target $resultPSRemote -Continue
+                        }
                     }
                     catch {
-                        Stop-PSFFunction -Message "Couldn't import module remotely" -Target $command
+                        Stop-PSFFunction -Message "Something went wrong testing if the host is remote" -Target $item -ErrordRecord $_
                         return
                     }
                 }
-                else {
-                    Stop-PSFFunction -Message "Couldn't connect to host remotely.`nVerify that the specified computer name is valid, that the computer is accessible over the network, and that a firewall exception for the WinRM service is enabled and allows access from this computer" -Target $resultPSRemote -Continue
-                }
-            }
-
-            # Loop through each of the results
-            foreach ($item in $clone.Group) {
 
                 if ($PSCmdlet.ShouldProcess($item.DatabaseName, "Removing database $($item.DatabaseName)")) {
                     # Remove the database
@@ -287,16 +294,16 @@
 
                         $cloneData = Get-PSDCClone
 
-                        $newCloneData = $cloneData | Where-Object {$_.CloneID -ne $item.CloneID}
+                        $newCloneData = $cloneData | Where-Object { $_.CloneID -ne $item.CloneID }
 
                         # Set the clone file
                         $jsonCloneFile = "PSDCJSONFolder:\clones.json"
 
                         # Convert the data back to JSON
-                        if($newCloneData.Count -ge 1){
+                        if ($newCloneData.Count -ge 1) {
                             $newCloneData | ConvertTo-Json | Set-Content $jsonCloneFile
                         }
-                        else{
+                        else {
                             Clear-Content -Path $jsonCloneFile
                         }
 
