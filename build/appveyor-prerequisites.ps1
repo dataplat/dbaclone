@@ -1,82 +1,36 @@
 Add-AppveyorTest -Name "appveyor.prerequisites" -Framework NUnit -FileName "appveyor-prerequisites.ps1" -Outcome Running
 $sw = [system.diagnostics.stopwatch]::startNew()
 
-Write-Host "Installing dbatools" -ForegroundColor Cyan
-Install-Module dbatools -Force -SkipPublisherCheck
-Write-Host "Installing Pester" -ForegroundColor Cyan
-Install-Module Pester -Force -SkipPublisherCheck
-Write-Host "Installing PSFramework" -ForegroundColor Cyan
-Install-Module PSFramework -Force -SkipPublisherCheck
-Write-Host "Installing PSScriptAnalyzer" -ForegroundColor Cyan
-Install-Module -Name PSScriptAnalyzer -Force -SkipPublisherCheck
+choco install Pester, dbatools, psframework, psscriptanalyzer  -y  --no-progress --limit-output
+
+Write-PSFMessage -Level Important -Message "Pester version: $((Get-Module -Name Pester).Version)"
 
 . "$PSScriptRoot\appveyor-constants.ps1"
 
-#icacls "c:\projects\PSDatabaseClone" /grant Everyone:(OI)(CI)F /T
+<# Write-PSFMessage -Level Host -Message "Setup Database"
+$server = Connect-DbaInstance -SqlInstance $instance
 
-# Creating folder
-Write-Host -Object "Creating image and clone directories" -ForegroundColor Cyan
-if (-not (Test-Path -Path $workingfolder)) {
-    try{
-        $null = New-Item -Path $workingfolder -ItemType Directory -Force
-    }
-    catch{
-        Write-Error -Message "$($_)"
-    }
-}
-if (-not (Test-Path -Path $imagefolder)) {
-    try{
-        $null = New-Item -Path $imagefolder -ItemType Directory -Force
-    }
-    catch{
-        Write-Error -Message "$($_)"
-    }
-}
-if (-not (Test-Path -Path $clonefolder)) {
-    try{
-        $null = New-Item -Path $clonefolder -ItemType Directory -Force
-    }
-    catch{
-        Write-Error -Message "$($_)"
-    }
-}
-if (-not (Test-Path -Path $jsonfolder)) {
-    try{
-        $null = New-Item -Path $jsonfolder -ItemType Directory -Force
-    }
-    catch{
-        Write-Error -Message "$($_)"
-    }
-}
+if ($server.Databases.Name -notcontains $database) {
+    # Create the database
+    $query = "CREATE DATABASE $($database)"
+    $server.Query($query)
 
-<# # Set permissions on folders
-$accessRule = New-Object System.Security.AccessControl.FilesystemAccessrule("Everyone", "FullControl", "Allow")
-$acl = Get-Acl $env:workingfolder
-# Add this access rule to the ACL
-$acl.SetAccessRule($accessRule)
-# Write the changes to the object
-Set-Acl -Path $env:workingfolder -AclObject $acl #>
+    # Refresh the server object
+    $server.Refresh()
 
-# Creating config files
-Write-Host "Creating configurations files" -ForegroundColor Cyan
+    Invoke-DbaQuery -SqlInstance $instance -Database $database -File "$PSScriptRoot\..\tests\functions\database.sql"
 
-$null = New-Item -Path "$($jsonfolder)\hosts.json" -Force:$Force
-$null = New-Item -Path "$($jsonfolder)\images.json" -Force:$Force
-$null = New-Item -Path "$($jsonfolder)\clones.json" -Force:$Force
+    $server.Databases.Refresh()
 
-# Setting configurations
-Write-Host "Setting configurations" -ForegroundColor Cyan
-Set-PSFConfig -Module PSDatabaseClone -Name setup.status -Value $true -Validation bool
-Set-PSFConfig -Module PSDatabaseClone -Name informationstore.mode -Value 'File'
-Set-PSFConfig -Module PSDatabaseClone -Name informationstore.path -Value $($jsonfolder) -Validation string
-Set-PSFConfig -Module psdatabaseclone -Name diskpart.scriptfile -Value $workingfolder
+    if ($server.Databases[$database].Tables.Name -notcontains 'Person') {
+        Stop-PSFFunction -Message "Database creation unsuccessful!"
+        return
+    }
+} #>
 
-# Registering configurations
-Write-Host -Object "Registering configurations" -ForegroundColor Cyan
-Get-PSFConfig -FullName psdatabaseclone.setup.status | Register-PSFConfig -Scope SystemDefault
-Get-PSFConfig -FullName psdatabaseclone.informationstore.mode | Register-PSFConfig -Scope SystemDefault
-Get-PSFConfig -FullName psdatabaseclone.informationstore.path | Register-PSFConfig -Scope SystemDefault
-Get-PSFConfig -FullName psdatabaseclone.psdatabaseclone.diskpart.scriptfile | Register-PSFConfig -Scope SystemDefault
+Write-PSFMessage -Level Important -Message "Disabling UAC"
+Set-ItemProperty -Path REGISTRY::HKEY_LOCAL_MACHINE\Software\Microsoft\Windows\CurrentVersion\Policies\System -Name ConsentPromptBehaviorAdmin -Value 0
+
 
 $sw.Stop()
 Update-AppveyorTest -Name "appveyor-prerequisites" -Framework NUnit -FileName "appveyor-prerequisites.ps1" -Outcome Passed -Duration $sw.ElapsedMilliseconds

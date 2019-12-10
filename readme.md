@@ -1,4 +1,9 @@
-﻿## PSDatabaseClone
+﻿| Master Branch | Development Branch |
+| ------------- |-------------|
+|[![Build status](https://ci.appveyor.com/api/projects/status/p0n8te660hx5yylq/branch/development?svg=true)](https://ci.appveyor.com/project/sanderstad/psdatabaseclone/branch/master) | [![Build status](https://ci.appveyor.com/api/projects/status/p0n8te660hx5yylq/branch/development?svg=true)](https://ci.appveyor.com/project/sanderstad/psdatabaseclone/branch/development) |
+
+
+# PSDatabaseClone
 <img src="https://psdatabaseclone.org/wp-content/uploads/2018/07/PSDatabaseClone_Logo_128.png" align="left" with="128px" height="131px"/> PSDatabaseClone is a PowerShell module for creating SQL Server database images and clones.
 It enables administrator to supply environments with database copies that are a fraction of the original size.
 
