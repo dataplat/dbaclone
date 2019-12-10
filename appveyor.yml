@@ -31,8 +31,8 @@ before_test:
 
 build: off
 
-test_script:
-- ps: .\build\appveyor-validate.ps1 -Finalize -IncludeCoverage
+#test_script:
+#- ps: .\build\appveyor-validate.ps1 -Finalize -IncludeCoverage
 
 on_success:
 - ps: .\build\appveyor-build.ps1 -SkipPublish
