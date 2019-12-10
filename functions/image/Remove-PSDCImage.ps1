@@ -132,32 +132,34 @@
         }
 
         # Get all the items
-        $items = Get-PSDCImage
-        $clones = Get-PSDCClone
+        $items = @()
+        $clones = @()
+        $items += Get-PSDCImage
+        $clones += Get-PSDCClone
 
         if ($ImageID) {
             Write-PSFMessage -Message "Filtering image ids" -Level Verbose
-            $items = $items | Where-Object {$_.ImageID -in $ImageID}
+            $items = $items | Where-Object { $_.ImageID -in $ImageID }
         }
 
         if ($ImageName) {
             Write-PSFMessage -Message "Filtering image name" -Level Verbose
-            $items = $items | Where-Object {$_.ImageName -in $ImageName}
+            $items = $items | Where-Object { $_.ImageName -in $ImageName }
         }
 
         if ($ImageLocation) {
             Write-PSFMessage -Message "Filtering image locations" -Level Verbose
-            $items = $items | Where-Object {$_.ImageLocation -in $ImageLocation}
+            $items = $items | Where-Object { $_.ImageLocation -in $ImageLocation }
         }
 
         if ($Database) {
             Write-PSFMessage -Message "Filtering databases" -Level Verbose
-            $items = $items | Where-Object {$_.DatabaseName -in $Database}
+            $items = $items | Where-Object { $_.DatabaseName -in $Database }
         }
 
         if ($ExcludeDatabase) {
             Write-PSFMessage -Message "Filtering excluded databases" -Level Verbose
-            $items = $items | Where-Object {$_.DatabaseName -notin $Database}
+            $items = $items | Where-Object { $_.DatabaseName -notin $Database }
         }
 
         if ($Unused) {
@@ -165,13 +167,13 @@
             $images = $items
             foreach ($item in $items) {
                 if ($clones.ImageID -contains $item.ImageID) {
-                    $images = $images | Where-Object {$_.ImageID -ne $item.ImageID}
+                    $images = $images | Where-Object { $_.ImageID -ne $item.ImageID }
                 }
             }
-            
+
             $items = $images | Sort-Object -Property CreatedOn -Descending | Select-Object -Skip $Keep
         }
-        
+
         # Append the items
         $InputObject += $items
     }
@@ -294,7 +296,7 @@
                         }
                     }
                     elseif ($informationStore -eq 'File') {
-                        $imageData = Get-PSDCImage | Where-Object {$_.ImageID -ne $item.ImageID}
+                        $imageData = Get-PSDCImage | Where-Object { $_.ImageID -ne $item.ImageID }
 
                         # Set the image file
                         $jsonImageFile = "PSDCJSONFolder:\images.json"
