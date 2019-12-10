@@ -26,8 +26,8 @@
     # Modules that must be imported into the global environment prior to importing
     # this module
     RequiredModules    = @(
-        @{ ModuleName = 'PSFramework'; ModuleVersion = '0.10.27.128' },
-        @{ ModuleName = 'dbatools'; ModuleVersion = '0.9.337' }
+        @{ ModuleName = 'PSFramework'; ModuleVersion = '1.0' },
+        @{ ModuleName = 'dbatools'; ModuleVersion = '1.0' }
     )
 
     # Assemblies that must be loaded prior to importing this module
