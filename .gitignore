@@ -20,3 +20,6 @@ TestResults/*
 
 # ignore the publishing Directory
 publish/*
+
+# ignore appveyor
+appveyor.yml
