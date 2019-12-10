@@ -3,7 +3,7 @@
     ModuleToProcess    = 'PSDatabaseClone.psm1'
 
     # Version number of this module.
-    ModuleVersion      = '0.3.62'
+    ModuleVersion      = '0.3.132'
 
     # ID used to uniquely identify this module
     GUID               = 'db92ed6d-9955-4357-b577-897ef1a535e2'
@@ -26,8 +26,8 @@
     # Modules that must be imported into the global environment prior to importing
     # this module
     RequiredModules    = @(
-        @{ ModuleName = 'PSFramework'; ModuleVersion = '0.10.27.128' },
-        @{ ModuleName = 'dbatools'; ModuleVersion = '0.9.337' }
+        @{ ModuleName = 'PSFramework'; ModuleVersion = '1.0' },
+        @{ ModuleName = 'dbatools'; ModuleVersion = '1.0' }
     )
 
     # Assemblies that must be loaded prior to importing this module
