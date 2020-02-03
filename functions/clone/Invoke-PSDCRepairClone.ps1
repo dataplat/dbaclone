@@ -68,12 +68,9 @@
     param(
         [Parameter(Mandatory = $true)]
         [string[]]$HostName,
-        [System.Management.Automation.PSCredential]
-        $SqlCredential,
-        [System.Management.Automation.PSCredential]
-        $Credential,
-        [System.Management.Automation.PSCredential]
-        $PSDCSqlCredential,
+        [PSCredential]$SqlCredential,
+        [PSCredential]$Credential,
+        [PSCredential]$PSDCSqlCredential,
         [switch]$EnableException
     )
 

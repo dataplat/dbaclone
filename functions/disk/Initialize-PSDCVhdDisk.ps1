@@ -62,8 +62,7 @@
     Param(
         [Parameter(Mandatory = $true)]
         [string]$Path,
-        [System.Management.Automation.PSCredential]
-        $Credential,
+        [PSCredential]$Credential,
         [ValidateSet('GPT', 'MBR')]
         [string]$PartitionStyle,
         [int]$AllocationUnitSize = 64KB,

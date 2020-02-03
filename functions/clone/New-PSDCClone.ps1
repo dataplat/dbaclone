@@ -92,12 +92,9 @@
         [parameter(Mandatory = $true)]
         [ValidateNotNullOrEmpty()]
         [DbaInstanceParameter[]]$SqlInstance,
-        [System.Management.Automation.PSCredential]
-        $SqlCredential,
-        [System.Management.Automation.PSCredential]
-        $PSDCSqlCredential,
-        [System.Management.Automation.PSCredential]
-        $Credential,
+        [PSCredential]$SqlCredential,
+        [PSCredential]$PSDCSqlCredential,
+        [PSCredential]$Credential,
         [parameter(Mandatory = $true, ParameterSetName = "ByParent")]
         [string]$ParentVhd,
         [string]$Destination,

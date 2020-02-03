@@ -66,8 +66,7 @@
     param(
         [Parameter(Mandatory = $true)]
         [string[]]$ComputerName,
-        [System.Management.Automation.PSCredential]
-        $Credential,
+        [PSCredential]$Credential,
         [switch]$EnableException
     )
 

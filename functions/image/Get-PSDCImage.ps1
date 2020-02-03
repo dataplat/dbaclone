@@ -81,11 +81,9 @@
     [CmdLetBinding()]
 
     param(
-        [System.Management.Automation.PSCredential]$SqlCredential,
-        [System.Management.Automation.PSCredential]
-        $PSDCSqlCredential,
-        [System.Management.Automation.PSCredential]
-        $Credential,
+        [PSCredential]$SqlCredential,
+        [PSCredential]$PSDCSqlCredential,
+        [PSCredential]$Credential,
         [int[]]$ImageID,
         [string[]]$ImageName,
         [string[]]$ImageLocation,
