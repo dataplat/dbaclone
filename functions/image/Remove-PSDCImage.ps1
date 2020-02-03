@@ -306,14 +306,10 @@
                         else {
                             Clear-Content -Path $jsonImageFile
                         }
-
                     }
                 }
-
             } # End for each item in group
-
         } # End for each image
-
     } # End process
 
     end {

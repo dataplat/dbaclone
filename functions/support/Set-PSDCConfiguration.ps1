@@ -447,8 +447,6 @@
 
         # Set the overall status in the configurations
         Get-PSFConfig -FullName psdatabaseclone.setup.status | Register-PSFConfig -Scope SystemDefault
-
-
     }
 
     end {

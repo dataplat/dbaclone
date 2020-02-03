@@ -303,14 +303,10 @@
                         else {
                             Clear-Content -Path $jsonCloneFile
                         }
-
                     }
                 }
-
             } # End for each group item
-
         } # End for each clone
-
     } # End process
 
     end {

@@ -135,7 +135,5 @@
                 Result              = (($connectionResult) -and ($resultWSManService) -and ($resultCommand))
             }
         }
-
     }
-
 }

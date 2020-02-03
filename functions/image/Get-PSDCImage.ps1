@@ -193,9 +193,7 @@
                 DatabaseTimestamp = $result.DatabaseTimestamp
                 CreatedOn         = $result.CreatedOn
             }
-
         }
-
     }
 
     end {

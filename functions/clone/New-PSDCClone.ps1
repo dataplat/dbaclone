@@ -773,25 +773,20 @@
                 }
 
                 # Add the results to the custom object
-                $clone = New-Object PSDCClone
-
-                $clone.CloneID = $cloneID
-                $clone.CloneLocation = $cloneLocation
-                $clone.AccessPath = $accessPath
-                $clone.SqlInstance = $server.DomainInstanceName
-                $clone.DatabaseName = $cloneDatabase
-                $clone.IsEnabled = $active
-                $clone.ImageID = $image.ImageID
-                $clone.ImageName = $image.ImageName
-                $clone.ImageLocation = $ParentVhd
-                $clone.HostName = $hostname
-
-                return $clone
-
+                [PSCustomObject]@{
+                    CloneID = $cloneID
+                    CloneLocation = $cloneLocation
+                    AccessPath = $accessPath
+                    SqlInstance = $server.DomainInstanceName
+                    DatabaseName = $cloneDatabase
+                    IsEnabled = $active
+                    ImageID = $image.ImageID
+                    ImageName = $image.ImageName
+                    ImageLocation = $ParentVhd
+                    HostName = $hostname
+                }
             } # End for each database
-
         } # End for each sql instance
-
     } # End process
 
     end {

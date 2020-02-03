@@ -159,7 +159,6 @@
             Partition = (Get-Partition -Disk $disk)
             Volume    = $volume
         }
-
     }
 
     end {

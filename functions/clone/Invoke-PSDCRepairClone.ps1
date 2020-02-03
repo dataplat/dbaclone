@@ -201,11 +201,8 @@
                 else {
                     Write-PSFMessage -Message "Database $($result.Database) is already attached" -Level Verbose
                 }
-
             } # End for ech result
-
         } # End for each host
-
     } # End process
 
     end {

@@ -226,5 +226,4 @@
         Write-PSFMessage -Message "Finished retrieving clone(s)" -Level Verbose
 
     }
-
 }
