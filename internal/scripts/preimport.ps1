@@ -18,9 +18,11 @@ $supportedVersions = @(
 # Get the OS details
 $osDetails = Get-CimInstance Win32_OperatingSystem | Select-Object Caption, Description, Name, OSType, Version
 
+$windowsEdition = ($osDetails.Caption).Replace("Evaluation", "")
+
 # Check which version of windows we're dealing with
-if ($osDetails.Caption -notin $supportedVersions ) {
-    if ($osDetails.Caption -like '*Windows 7*') {
+if ($windowsEdition -notin $supportedVersions ) {
+    if ($windowsEdition -like '*Windows 7*') {
         Stop-PSFFunction -Message "Module does not work on Windows 7" -Target $OSDetails -FunctionName 'Pre Import'
     }
     else {
