@@ -88,7 +88,7 @@
 
     param(
         [ValidateSet('SQL', 'File')]
-        [string]$InformationStore = 'File',
+        [string]$InformationStore,
         [parameter(ParameterSetName = "SQL", Mandatory = $true)]
         [DbaInstanceParameter]$SqlInstance,
         [parameter(ParameterSetName = "SQL")]
@@ -215,7 +215,7 @@
             return
         }
 
-        if (-not (Test-Path -Path $Path)) {
+        if ($Path -and -not (Test-Path -Path $Path)) {
             try {
                 $null = New-Item -Path $Path -ItemType Directory -Confirm:$false -Force
             }
