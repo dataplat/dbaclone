@@ -152,9 +152,8 @@
         }
 
         # Checking parameters
-        if (-not $ImageNetworkPath -and -not $ImageLocalPath) {
-            Stop-PSFFunction -Message "Please enter the network path where to save the images"
-            return
+        if (-not $ImageNetworkPath) {
+            Stop-PSFFunction -Message "Please enter the network path where to save the images" -Continue
         }
 
         # Check the vhd type
@@ -253,6 +252,7 @@
                         $ImageLocalPath = Invoke-PSFCommand -ComputerName $computer -ScriptBlock $commandGetLocalPath -Credential $DestinationCredential
 
                         if (-not $ImageLocalPath) {
+                            Stop-PSFFunction -Message "Could not convert network path to local path" -Target $ImageLocalPath
                             return
                         }
                     }
