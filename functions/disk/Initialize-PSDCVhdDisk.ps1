@@ -93,7 +93,7 @@
         if (Test-PSFFunctionInterrupt) { return }
 
         # Get all the disks
-        $disks = Get-Disk | Select-Object Number, Location, OperationalStatus
+        $disks = Get-Disk
 
         # Check if disk is already mounted
         if ($disks.Location -contains $Path) {
@@ -120,7 +120,7 @@
             }
         }
 
-        if ($PSCmdlet.ShouldProcess($disk, "Initializing disk")) {
+        if ($PSCmdlet.ShouldProcess("Initializing disk")) {
             # Check if the disk is already initialized
             if ($disk.PartitionStyle -eq 'RAW') {
                 try {
@@ -133,7 +133,7 @@
             }
         }
 
-        if ($PSCmdlet.ShouldProcess($disk, "Partitioning volume")) {
+        if ($PSCmdlet.ShouldProcess("Partitioning volume")) {
             # Create the partition, set the drive letter and format the volume
             try {
                 $params = @{
@@ -143,7 +143,7 @@
                     Confirm            = $false
                 }
 
-                $volume = Get-Disk -Number $disk.Number | New-Partition -UseMaximumSize | Format-Volume @params
+                $volume = $disk | New-Partition -UseMaximumSize | Format-Volume @params
             }
             catch {
                 # Dismount the drive
