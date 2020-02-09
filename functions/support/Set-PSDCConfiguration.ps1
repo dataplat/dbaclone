@@ -106,8 +106,8 @@
     )
 
     begin {
-        if (-not (Test-PSDCElevated)) {
-            Stop-PSFFunction -Message "Please run the module in elevated mode" -Continue
+        if ( -not (Test-PSFPowerShell -Elevated) ) {
+            Stop-PSFFunction -Message "Please run the module in elevated/administrator mode" -Continue
         }
 
         Write-PSFMessage -Message "Started PSDatabaseClone Setup" -Level Verbose
