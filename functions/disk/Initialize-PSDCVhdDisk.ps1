@@ -147,7 +147,7 @@
             }
             catch {
                 # Dismount the drive
-                Dismount-DiskImage -DiskImage $Path
+                Dismount-DiskImage -ImagePath $Path
 
                 Stop-PSFFunction -Message "Couldn't create the partition" -Target $disk -ErrorRecord $_ -Continue
             }
