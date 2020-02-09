@@ -27,7 +27,7 @@ foreach ($file in (Get-ChildItem "$ModuleRoot\internal\tepp\*.tepp.ps1" -ErrorAc
 } #>
 
 # Check if the configuration has been set
-if (-not (Get-PSFConfigValue -FullName psdatabaseclone.setup.status)) {
+if (-not (Test-PSDCDatabaseClone -SetupStatus)) {
     Write-PSFMessage -Message "The module is not yet configured. Please run Set-PSDCConfiguration to make the neccesary changes" -Level Warning
 }
 
