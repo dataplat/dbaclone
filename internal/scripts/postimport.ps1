@@ -1,6 +1,10 @@
 # Check if window is in elevated mode
-if ( -not (Test-PSDCElevated) ) {
-    Stop-PSFFunction -Message "Module requires elevation. Please run the console in Administrator mode" -FunctionName 'Pre Import'
+if ( -not (Test-PSFPowerShell -Elevated) ) {
+    Stop-PSFFunction -Message "Module requires elevation. Please run the console in Administrator mode" -FunctionName 'Post Import'
+}
+
+if (-not (Test-PSDCDatabaseClone -WindowsVersion)) {
+    Stop-PSFFunction -Message "Unsupported version of Windows" -FunctionName 'Post Import'
 }
 
 # Load Configurations

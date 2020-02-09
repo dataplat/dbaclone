@@ -1,7 +1,3 @@
-if (-not (Test-PSDCDatabaseClone -WindowsVersion)) {
-    Stop-PSFFunction -Message "Unsupported version of Windows" -FunctionName 'Pre Import'
-}
-
 if (-not (Test-Path -Path "$env:APPDATA\psdatabaseclone")) {
     try {
         $null = New-Item -Path "$env:APPDATA\psdatabaseclone" -ItemType Directory -Force:$Force
