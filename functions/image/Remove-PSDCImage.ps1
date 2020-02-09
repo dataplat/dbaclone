@@ -86,10 +86,8 @@
         [string[]]$ExcludeDatabase,
         [switch]$Unused,
         [int]$Keep = 0,
-        [System.Management.Automation.PSCredential]
-        $PSDCSqlCredential,
-        [System.Management.Automation.PSCredential]
-        $Credential,
+        [PSCredential]$PSDCSqlCredential,
+        [PSCredential]$Credential,
         [switch]$Force,
         [parameter(ValueFromPipeline = $true, ParameterSetName = "Image")]
         [object[]]$InputObject,
@@ -308,14 +306,10 @@
                         else {
                             Clear-Content -Path $jsonImageFile
                         }
-
                     }
                 }
-
             } # End for each item in group
-
         } # End for each image
-
     } # End process
 
     end {

@@ -92,15 +92,13 @@
         [parameter(ParameterSetName = "SQL", Mandatory = $true)]
         [DbaInstanceParameter]$SqlInstance,
         [parameter(ParameterSetName = "SQL")]
-        [System.Management.Automation.PSCredential]
-        $SqlCredential,
+        [PSCredential]$SqlCredential,
         [parameter(ParameterSetName = "SQL")]
         [string]$Database,
         [parameter(ParameterSetName = "File", Mandatory = $true)]
         [string]$Path,
         [parameter(ParameterSetName = "File")]
-        [System.Management.Automation.PSCredential]
-        $Credential,
+        [PSCredential]$Credential,
         [switch]$EnableException,
         [parameter(ParameterSetName = "Prompt")]
         [switch]$InputPrompt,
@@ -141,7 +139,7 @@
 
                 # If the credentials are entered create the credential object
                 if (($DatabaseUser -ne '') -and (($databasePass -ne '') -or ($null -ne $databasePass))) {
-                    $SqlCredential = New-Object System.Management.Automation.PSCredential ($databaseUser, $databasePass)
+                    $SqlCredential = New-Object PSCredential ($databaseUser, $databasePass)
                 }
 
                 # Set the flag for the new database
@@ -163,7 +161,7 @@
 
                 # If the credentials are entered create the credential object
                 if (($fileUser -ne '') -and (($filePass -ne '') -or ($null -ne $filePass))) {
-                    $Credential = New-Object System.Management.Automation.PSCredential ($fileUser, $filePass)
+                    $Credential = New-Object PSCredential ($fileUser, $filePass)
                 }
 
                 # Clean up the file path
@@ -449,8 +447,6 @@
 
         # Set the overall status in the configurations
         Get-PSFConfig -FullName psdatabaseclone.setup.status | Register-PSFConfig -Scope SystemDefault
-
-
     }
 
     end {

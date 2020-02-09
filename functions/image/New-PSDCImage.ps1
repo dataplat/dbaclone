@@ -117,19 +117,14 @@
         [parameter(Mandatory = $true)]
         [ValidateNotNullOrEmpty()]
         [DbaInstanceParameter]$SourceSqlInstance,
-        [System.Management.Automation.PSCredential]
-        $SourceSqlCredential,
-        [System.Management.Automation.PSCredential]
-        $SourceCredential,
+        [PSCredential]$SourceSqlCredential,
+        [PSCredential]$SourceCredential,
         [Parameter(Mandatory = $true)]
         [ValidateNotNullOrEmpty()]
         [DbaInstanceParameter]$DestinationSqlInstance,
-        [System.Management.Automation.PSCredential]
-        $DestinationSqlCredential,
-        [System.Management.Automation.PSCredential]
-        $DestinationCredential,
-        [System.Management.Automation.PSCredential]
-        $PSDCSqlCredential,
+        [PSCredential]$DestinationSqlCredential,
+        [PSCredential]$DestinationCredential,
+        [PSCredential]$PSDCSqlCredential,
         [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [object[]]$Database,
         [string]$ImageNetworkPath,
@@ -747,19 +742,17 @@
             }
 
             # Add the results to the custom object
-            [PSDCImage]$image = New-Object PSDCImage
+            #[PSDCImage]$image = New-Object PSDCImage
 
-            $image.ImageID = $imageID
-            $image.ImageName = $imageName
-            $image.ImageLocation = $imageLocation
-            $image.SizeMB = $sizeMB
-            $image.DatabaseName = $databaseName
-            $image.DatabaseTimestamp = $databaseTS
-
-            return $image
-
+            [PSCustomObject]@{
+                ImageID           = $imageID
+                ImageName         = $imageName
+                ImageLocation     = $imageLocation
+                SizeMB            = $sizeMB
+                DatabaseName      = $databaseName
+                DatabaseTimestamp = $databaseTS
+            }
         } # for each database
-
     } # end process
 
     end {
