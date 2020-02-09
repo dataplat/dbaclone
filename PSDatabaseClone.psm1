@@ -19,8 +19,7 @@ if ($PSDatabaseClone_importIndividualFiles) { $importIndividualFiles = $true }
 if (Test-Path (Resolve-PSFPath -Path "$($script:ModuleRoot)\..\.git" -SingleItem -NewChild)) { $importIndividualFiles = $true }
 if (-not (Test-Path (Resolve-PSFPath "$($script:ModuleRoot)\commands.ps1" -SingleItem -NewChild))) { $importIndividualFiles = $true }
 
-function Import-ModuleFile
-{
+function Import-ModuleFile {
 	<#
 		.SYNOPSIS
 			Loads files into the module on module import.
@@ -49,37 +48,31 @@ function Import-ModuleFile
 	else { $ExecutionContext.InvokeCommand.InvokeScript($false, ([scriptblock]::Create([io.file]::ReadAllText((Resolve-Path $Path)))), $null, $null) }
 }
 
-if ($importIndividualFiles)
-{
+if ($importIndividualFiles) {
 	# Execute Preimport actions
 	. Import-ModuleFile -Path "$ModuleRoot\internal\scripts\preimport.ps1"
 
 	# Import all internal functions
-	foreach ($function in (Get-ChildItem "$ModuleRoot\internal\functions" -Filter "*.ps1" -Recurse -ErrorAction Ignore))
-	{
+	foreach ($function in (Get-ChildItem "$ModuleRoot\internal\functions" -Filter "*.ps1" -Recurse -ErrorAction Ignore)) {
 		. Import-ModuleFile -Path $function.FullName
 	}
 
 	# Import all public functions
-	foreach ($function in (Get-ChildItem "$ModuleRoot\functions" -Filter "*.ps1" -Recurse -ErrorAction Ignore))
-	{
+	foreach ($function in (Get-ChildItem "$ModuleRoot\functions" -Filter "*.ps1" -Recurse -ErrorAction Ignore)) {
 		. Import-ModuleFile -Path $function.FullName
 	}
 
 	# Execute Postimport actions
 	. Import-ModuleFile -Path "$ModuleRoot\internal\scripts\postimport.ps1"
 }
-else
-{
-	if (Test-Path (Resolve-PSFPath "$($script:ModuleRoot)\resourcesBefore.ps1" -SingleItem -NewChild))
-	{
+else {
+	if (Test-Path (Resolve-PSFPath "$($script:ModuleRoot)\resourcesBefore.ps1" -SingleItem -NewChild)) {
 		. Import-ModuleFile -Path "$($script:ModuleRoot)\resourcesBefore.ps1"
 	}
 
 	. Import-ModuleFile -Path "$($script:ModuleRoot)\commands.ps1"
 
-	if (Test-Path (Resolve-PSFPath "$($script:ModuleRoot)\resourcesAfter.ps1" -SingleItem -NewChild))
-	{
+	if (Test-Path (Resolve-PSFPath "$($script:ModuleRoot)\resourcesAfter.ps1" -SingleItem -NewChild)) {
 		. Import-ModuleFile -Path "$($script:ModuleRoot)\resourcesAfter.ps1"
 	}
 }
