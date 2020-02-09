@@ -6,13 +6,14 @@ function Test-PSDCDatabaseClone {
 
     .DESCRIPTION
         This helper command can evaluate various runtime conditions, such as:
-		- Configuration
+        - Configuration
+        - Windows version
 
     .PARAMETER SetupStatus
         Setup status should be set.
 
     .PARAMETER WindowsVersion
-        Tests if the windows version running is the correct one.
+        The windows version should be in the supported version list
 
         Windows version should be in
             - 'Microsoft Windows 10 Pro',
@@ -49,6 +50,11 @@ function Test-PSDCDatabaseClone {
         Test-PSDCDatabaseClone -SetupStatus
 
         Return true if the status if correct, if not returns false
+
+    .EXAMPLE
+        Test-PSDCDatabaseClone -WindowsVersion
+
+        Return true if the windows version is supported, if not returns false
     #>
 
     param(
