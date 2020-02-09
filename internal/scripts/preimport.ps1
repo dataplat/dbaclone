@@ -18,7 +18,7 @@ $supportedVersions = @(
 # Get the OS details
 $osDetails = Get-CimInstance Win32_OperatingSystem | Select-Object Caption, Description, Name, OSType, Version
 
-$windowsEdition = ($osDetails.Caption).Replace("Evaluation", "")
+$windowsEdition = ($osDetails.Caption).Replace(" Evaluation", "").Trim()
 
 # Check which version of windows we're dealing with
 if ($windowsEdition -notin $supportedVersions ) {
