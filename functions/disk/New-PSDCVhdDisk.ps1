@@ -81,8 +81,8 @@
 
     begin {
         # Check if the console is run in Administrator mode
-        if ( -not (Test-PSDCElevated) ) {
-            Stop-PSFFunction -Message "Module requires elevation. Please run the console in Administrator mode"
+        if ( -not (Test-PSFPowerShell -Elevated) ) {
+            Stop-PSFFunction -Message "Module requires elevation. Please run the console in Administrator mode" -Continue
         }
 
         # Check the destination path

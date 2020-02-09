@@ -51,6 +51,7 @@
     'Remove-PSDCClone',
     'Remove-PSDCImage',
     'Set-PSDCConfiguration',
+    'Test-PSDCDatabaseClone',
     'Test-PSDCRemoting'
 
     # Cmdlets to export from this module

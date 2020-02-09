@@ -88,7 +88,7 @@
 
     param(
         [ValidateSet('SQL', 'File')]
-        [string]$InformationStore = 'File',
+        [string]$InformationStore,
         [parameter(ParameterSetName = "SQL", Mandatory = $true)]
         [DbaInstanceParameter]$SqlInstance,
         [parameter(ParameterSetName = "SQL")]
@@ -106,8 +106,8 @@
     )
 
     begin {
-        if (-not (Test-PSDCElevated)) {
-            Stop-PSFFunction -Message "Please run the module in elevated mode" -Continue
+        if ( -not (Test-PSFPowerShell -Elevated) ) {
+            Stop-PSFFunction -Message "Please run the module in elevated/administrator mode" -Continue
         }
 
         Write-PSFMessage -Message "Started PSDatabaseClone Setup" -Level Verbose
@@ -215,7 +215,7 @@
             return
         }
 
-        if (-not (Test-Path -Path $Path)) {
+        if ($Path -and -not (Test-Path -Path $Path)) {
             try {
                 $null = New-Item -Path $Path -ItemType Directory -Confirm:$false -Force
             }
