@@ -792,12 +792,19 @@
                     $clones | ConvertTo-Json | Set-Content $jsonCloneFile
                 }
 
+                if(-not $SkipDatabaseMount){
+                    $cloneInstance = $server.DomainInstanceName
+                }
+                else{
+                    $cloneInstance = $null
+                }
+
                 # Add the results to the custom object
                 [PSCustomObject]@{
                     CloneID       = $cloneID
                     CloneLocation = $cloneLocation
                     AccessPath    = $accessPath
-                    SqlInstance   = $server.DomainInstanceName
+                    SqlInstance   = $cloneInstance
                     DatabaseName  = $cloneDatabase
                     IsEnabled     = $active
                     ImageID       = $image.ImageID

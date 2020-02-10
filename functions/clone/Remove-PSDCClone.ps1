@@ -171,12 +171,14 @@
         foreach ($clone in $clones) {
 
             # Connect to the instance
-            Write-PSFMessage -Message "Attempting to connect to clone database server $($clone.Name).." -Level Verbose
-            try {
-                $server = Connect-DbaInstance -SqlInstance $clone.Name -SqlCredential $SqlCredential -SqlConnectionOnly
-            }
-            catch {
-                Stop-PSFFunction -Message "Could not connect to Sql Server instance $($clone.Name)" -ErrorRecord $_ -Target $clone.Name -Continue
+            if (-not $null -eq $clone.Name) {
+                Write-PSFMessage -Message "Attempting to connect to clone database server $($clone.Name).." -Level Verbose
+                try {
+                    $server = Connect-DbaInstance -SqlInstance $clone.Name -SqlCredential $SqlCredential -SqlConnectionOnly
+                }
+                catch {
+                    Stop-PSFFunction -Message "Could not connect to Sql Server instance $($clone.Name)" -ErrorRecord $_ -Target $clone.Name -Continue
+                }
             }
 
             # Loop through each of the results
@@ -213,23 +215,25 @@
                     }
                 }
 
-                $server = Connect-DbaInstance -SqlInstance $item.SqlInstance -SqlCredential $SqlCredential
+                if (-not $null -eq $item.SqlInstance) {
+                    $server = Connect-DbaInstance -SqlInstance $item.SqlInstance -SqlCredential $SqlCredential
 
-                if ($item.DatabaseName -in $server.Databases.Name) {
-                    if ($PSCmdlet.ShouldProcess($item.DatabaseName, "Removing database $($item.DatabaseName)")) {
-                        # Remove the database
-                        try {
-                            Write-PSFMessage -Message "Removing database $($item.DatabaseName) from $($item.SqlInstance)" -Level Verbose
+                    if ($item.DatabaseName -in $server.Databases.Name) {
+                        if ($PSCmdlet.ShouldProcess($item.DatabaseName, "Removing database $($item.DatabaseName)")) {
+                            # Remove the database
+                            try {
+                                Write-PSFMessage -Message "Removing database $($item.DatabaseName) from $($item.SqlInstance)" -Level Verbose
 
-                            $null = Remove-DbaDatabase -SqlInstance $item.SqlInstance -SqlCredential $SqlCredential -Database $item.DatabaseName -Confirm:$false -EnableException
-                        }
-                        catch {
-                            Stop-PSFFunction -Message "Could not remove database $($item.DatabaseName) from $server" -ErrorRecord $_ -Target $server -Continue
+                                $null = Remove-DbaDatabase -SqlInstance $item.SqlInstance -SqlCredential $SqlCredential -Database $item.DatabaseName -Confirm:$false -EnableException
+                            }
+                            catch {
+                                Stop-PSFFunction -Message "Could not remove database $($item.DatabaseName) from $server" -ErrorRecord $_ -Target $server -Continue
+                            }
                         }
                     }
-                }
-                else {
-                    Write-PSFMessage -Level Verbose -Message "Could not find database [$($item.DatabaseName)] on $($item.SqlInstance)"
+                    else {
+                        Write-PSFMessage -Level Verbose -Message "Could not find database [$($item.DatabaseName)] on $($item.SqlInstance)"
+                    }
                 }
 
                 if ($PSCmdlet.ShouldProcess($item.CloneLocation, "Dismounting the vhd")) {
