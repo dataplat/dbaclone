@@ -9,6 +9,9 @@ function Test-PSDCDatabaseClone {
         - Configuration
         - Windows version
 
+    .PARAMETER IsLocal
+        Returns if the computer given is local
+
     .PARAMETER SetupStatus
         Setup status should be set.
 
@@ -58,6 +61,7 @@ function Test-PSDCDatabaseClone {
     #>
 
     param(
+        [PSFComputer]$IsLocal,
         [switch]$SetupStatus,
         [switch]$WindowsVersion
     )
@@ -67,7 +71,15 @@ function Test-PSDCDatabaseClone {
     }
 
     process {
-        # Region Setup status
+        #region Is Local
+        if ($IsLocal) {
+            $computer = [PsfComputer]$IsLocal
+
+            return $computer.IsLocalhost
+        }
+        # endregion Is Local
+
+        # region Setup status
         if ($SetupStatus) {
             if (-not (Get-PSFConfigValue -FullName psdatabaseclone.setup.status)) {
                 return $false
@@ -76,7 +88,9 @@ function Test-PSDCDatabaseClone {
                 return $true
             }
         }
+        # endregion Setup Status
 
+        #region Windows Version
         if ($WindowsVersion) {
             $supportedVersions = @(
                 'Microsoft Windows 10 Pro',
@@ -111,6 +125,7 @@ function Test-PSDCDatabaseClone {
                 }
             }
         }
+        # endregion Windows version
 
         return $true
     }
