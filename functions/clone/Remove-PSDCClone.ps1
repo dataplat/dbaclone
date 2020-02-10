@@ -214,6 +214,7 @@
                 }
 
                 $server = Connect-DbaInstance -SqlInstance $item.SqlInstance -SqlCredential $SqlCredential
+
                 if ($item.DatabaseName -in $server.Databases.Name) {
                     if ($PSCmdlet.ShouldProcess($item.DatabaseName, "Removing database $($item.DatabaseName)")) {
                         # Remove the database
@@ -228,7 +229,7 @@
                     }
                 }
                 else {
-                    Write-PSFMessage -Level Verbose -Message "COuld not find database [$($item.DatabaseName)] on $item.SqlInstance"
+                    Write-PSFMessage -Level Verbose -Message "Could not find database [$($item.DatabaseName)] on $($item.SqlInstance)"
                 }
 
                 if ($PSCmdlet.ShouldProcess($item.CloneLocation, "Dismounting the vhd")) {
