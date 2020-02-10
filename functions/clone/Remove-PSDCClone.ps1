@@ -213,16 +213,22 @@
                     }
                 }
 
-                if ($PSCmdlet.ShouldProcess($item.DatabaseName, "Removing database $($item.DatabaseName)")) {
-                    # Remove the database
-                    try {
-                        Write-PSFMessage -Message "Removing database $($item.DatabaseName) from $($item.SqlInstance)" -Level Verbose
+                $server = Connect-DbaInstance -SqlInstance $item.SqlInstance -SqlCredential $SqlCredential
+                if ($item.DatabaseName -in $server.Databases.Name) {
+                    if ($PSCmdlet.ShouldProcess($item.DatabaseName, "Removing database $($item.DatabaseName)")) {
+                        # Remove the database
+                        try {
+                            Write-PSFMessage -Message "Removing database $($item.DatabaseName) from $($item.SqlInstance)" -Level Verbose
 
-                        $null = Remove-DbaDatabase -SqlInstance $item.SqlInstance -SqlCredential $SqlCredential -Database $item.DatabaseName -Confirm:$false -EnableException
+                            $null = Remove-DbaDatabase -SqlInstance $item.SqlInstance -SqlCredential $SqlCredential -Database $item.DatabaseName -Confirm:$false -EnableException
+                        }
+                        catch {
+                            Stop-PSFFunction -Message "Could not remove database $($item.DatabaseName) from $server" -ErrorRecord $_ -Target $server -Continue
+                        }
                     }
-                    catch {
-                        Stop-PSFFunction -Message "Could not remove database $($item.DatabaseName) from $server" -ErrorRecord $_ -Target $server -Continue
-                    }
+                }
+                else {
+                    Write-PSFMessage -Level Verbose -Message "COuld not find database [$($item.DatabaseName)] on $item.SqlInstance"
                 }
 
                 if ($PSCmdlet.ShouldProcess($item.CloneLocation, "Dismounting the vhd")) {
