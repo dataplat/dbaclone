@@ -112,7 +112,8 @@
                     Mount-DiskImage -ImagePath $Path
 
                     # Get the disk
-                    $disk = Get-Disk | Where-Object Location -eq $Path
+                    $diskImage = Get-DiskImage -ImagePath $Path
+                    $disk = Get-Disk | Where-Object Number -eq $diskImage.Number
                 }
                 catch {
                     Stop-PSFFunction -Message "Couldn't mount vhd" -Target $Path -ErrorRecord $_ -Continue
