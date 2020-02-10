@@ -46,6 +46,9 @@
         Registers the clone in the configuration as disabled.
         If this setting is used the clone will not be recovered when the repair command is run
 
+    .PARAMETER SkipDatabaseMount
+        If this parameter is used, the database will not be mounted.
+
     .PARAMETER Force
         Forcefully create items when needed
 
@@ -104,6 +107,7 @@
         [parameter(Mandatory = $true, ParameterSetName = "ByLatest")]
         [switch]$LatestImage,
         [switch]$Disabled,
+        [switch]$SkipDatabaseMount,
         [switch]$Force,
         [switch]$EnableException
     )
@@ -145,9 +149,6 @@
 
         Write-PSFMessage -Message "Started clone creation" -Level Verbose
 
-        # Random string
-        $random = -join ((65..90) + (97..122) | Get-Random -Count 5 | ForEach-Object {[char]$_})
-
         # Check the disabled parameter
         $active = 1
         if ($Disabled) {
@@ -157,13 +158,20 @@
         # Set the location where to save the diskpart command
         $diskpartScriptFile = Get-PSFConfigValue -FullName psdatabaseclone.diskpart.scriptfile -Fallback "$env:APPDATA\psdatabaseclone\diskpartcommand.txt"
 
-        if(-not (Test-Path -Path $diskpartScriptFile)){
-            try{
+        if (-not (Test-Path -Path $diskpartScriptFile)) {
+            try {
                 $null = New-Item -Path $diskpartScriptFile -ItemType File
             }
-            catch{
+            catch {
                 Stop-PSFFunction -Message "Could not create diskpart script file" -ErrorRecord $_ -Continue
             }
+        }
+
+        # Check the available images
+        $images = Get-PSDCImage
+
+        if($Database -notin $images.DatabaseName){
+            Stop-PSFFunction -Message "There is no image for database '$Database'" -ErrorRecord $_ -Continue
         }
     }
 
@@ -305,11 +313,11 @@
                     if (-not $CloneName) {
                         $cloneDatabase = $parentVhdFile
                         $CloneName = $parentVhdFile
-                        $mountDirectory = "$($parentVhdFile)_$($random)"
+                        $mountDirectory = "$($parentVhdFile)"
                     }
                     elseif ($CloneName) {
                         $cloneDatabase = $CloneName
-                        $mountDirectory = "$($CloneName)_$($random)"
+                        $mountDirectory = "$($CloneName)"
                     }
                 }
 
@@ -406,7 +414,7 @@
                             $null = Mount-DiskImage -ImagePath "$($clonePath)"
 
                             # Get the disk based on the name of the vhd
-                            $disk = Get-Disk | Where-Object {$_.Location -eq "$($clonePath)"}
+                            $disk = Get-Disk | Where-Object { $_.Location -eq "$($clonePath)" }
                         }
                         else {
                             # Mount the disk
@@ -442,14 +450,14 @@
                         # Check if computer is local
                         if ($computer.IsLocalhost) {
                             # Get the partition based on the disk
-                            $partition = Get-Partition -Disk $disk | Where-Object {$_.Type -ne "Reserved"} | Select-Object -First 1
+                            $partition = Get-Partition -Disk $disk | Where-Object { $_.Type -ne "Reserved" } | Select-Object -First 1
 
                             # Create an access path for the disk
                             $null = Add-PartitionAccessPath -DiskNumber $disk.Number -PartitionNumber $partition.PartitionNumber -AccessPath $accessPath -ErrorAction SilentlyContinue
                         }
                         else {
                             $command = [ScriptBlock]::Create("Get-Partition -DiskNumber $($disk.Number)")
-                            $partition = Invoke-PSFCommand -ComputerName $computer -ScriptBlock $command -Credential $Credential | Where-Object {$_.Type -ne "Reserved"} | Select-Object -First 1
+                            $partition = Invoke-PSFCommand -ComputerName $computer -ScriptBlock $command -Credential $Credential | Where-Object { $_.Type -ne "Reserved" } | Select-Object -First 1
 
                             $command = [ScriptBlock]::Create("Add-PartitionAccessPath -DiskNumber $($disk.Number) -PartitionNumber $($partition.PartitionNumber) -AccessPath '$accessPath' -ErrorAction Ignore")
 
@@ -517,22 +525,25 @@
                     $databaseFiles = Invoke-PSFCommand -ComputerName $computer -ScriptBlock $command -Credential $Credential
                 }
 
-                # Setup the database filestructure
-                $dbFileStructure = New-Object System.Collections.Specialized.StringCollection
+                if (-not $SkipDatabaseMount) {
 
-                # Loop through each of the database files and add them to the file structure
-                foreach ($dbFile in $databaseFiles) {
-                    $null = $dbFileStructure.Add($dbFile.FullName)
-                }
+                    # Setup the database filestructure
+                    $dbFileStructure = New-Object System.Collections.Specialized.StringCollection
 
-                # Mount the database
-                if ($PSCmdlet.ShouldProcess($cloneDatabase, "Mounting database $cloneDatabase")) {
-                    try {
-                        Write-PSFMessage -Message "Mounting database from clone" -Level Verbose
-                        $null = Mount-DbaDatabase -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database $cloneDatabase -FileStructure $dbFileStructure
+                    # Loop through each of the database files and add them to the file structure
+                    foreach ($dbFile in $databaseFiles) {
+                        $null = $dbFileStructure.Add($dbFile.FullName)
                     }
-                    catch {
-                        Stop-PSFFunction -Message "Couldn't mount database $cloneDatabase" -Target $SqlInstance -Continue
+
+                    # Mount the database
+                    if ($PSCmdlet.ShouldProcess($cloneDatabase, "Mounting database $cloneDatabase")) {
+                        try {
+                            Write-PSFMessage -Message "Mounting database from clone" -Level Verbose
+                            $null = Mount-DbaDatabase -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database $cloneDatabase -FileStructure $dbFileStructure
+                        }
+                        catch {
+                            Stop-PSFFunction -Message "Couldn't mount database $cloneDatabase" -Target $SqlInstance -Continue
+                        }
                     }
                 }
 
@@ -575,7 +586,7 @@
                         $hostKnown = (Invoke-DbaQuery -SqlInstance $pdcSqlInstance -SqlCredential $pdcCredential -Database $pdcDatabase -Query $query -EnableException).HostKnown
                     }
                     elseif ($informationStore -eq 'File') {
-                        $hosts = Get-ChildItem -Path PSDCJSONFolder:\ -Filter *hosts.json | ForEach-Object { Get-Content $_.FullName | ConvertFrom-Json}
+                        $hosts = Get-ChildItem -Path PSDCJSONFolder:\ -Filter *hosts.json | ForEach-Object { Get-Content $_.FullName | ConvertFrom-Json }
 
                         $hostKnown = [bool]($hostname -in $hosts.HostName)
                     }
@@ -613,7 +624,7 @@
                             [array]$hosts = $null
 
                             # Get all the images
-                            $hosts = Get-ChildItem -Path PSDCJSONFolder:\ -Filter *hosts.json | ForEach-Object { Get-Content $_.FullName | ConvertFrom-Json}
+                            $hosts = Get-ChildItem -Path PSDCJSONFolder:\ -Filter *hosts.json | ForEach-Object { Get-Content $_.FullName | ConvertFrom-Json }
 
                             # Setup the new host id
                             if ($hosts.Count -ge 1) {
@@ -665,7 +676,7 @@
                         }
                     }
                     elseif ($informationStore -eq 'File') {
-                        $hostID = ($hosts | Where-Object {$_.Hostname -eq $hostname} | Select-Object HostID -Unique).HostID
+                        $hostID = ($hosts | Where-Object { $_.Hostname -eq $hostname } | Select-Object HostID -Unique).HostID
                     }
                 }
 
@@ -772,16 +783,16 @@
 
                 # Add the results to the custom object
                 [PSCustomObject]@{
-                    CloneID = $cloneID
+                    CloneID       = $cloneID
                     CloneLocation = $cloneLocation
-                    AccessPath = $accessPath
-                    SqlInstance = $server.DomainInstanceName
-                    DatabaseName = $cloneDatabase
-                    IsEnabled = $active
-                    ImageID = $image.ImageID
-                    ImageName = $image.ImageName
+                    AccessPath    = $accessPath
+                    SqlInstance   = $server.DomainInstanceName
+                    DatabaseName  = $cloneDatabase
+                    IsEnabled     = $active
+                    ImageID       = $image.ImageID
+                    ImageName     = $image.ImageName
                     ImageLocation = $ParentVhd
-                    HostName = $hostname
+                    HostName      = $hostname
                 }
             } # End for each database
         } # End for each sql instance
