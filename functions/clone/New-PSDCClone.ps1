@@ -164,9 +164,17 @@
             }
         }
 
-        if (-not $SqlInstance -and $SkipDatabaseMount) {
-            [array]$SqlInstance = "None"
+        if ($SkipDatabaseMount) {
+            if (-not $SqlInstance) {
+                [array]$SqlInstance = "None"
+            }
+
+            if(-not $Destination){
+                Stop-PSFFunction -Message "Please enter a destination when using -SkipDatabaseMount" -Continue
+            }
         }
+
+
 
         # Check the available images
         $images = Get-PSDCImage
@@ -195,11 +203,11 @@
             }
 
             # Setup the computer object
-            $computer = [PsfComputer]$server.ComputerName
+            $computer = [PsfComputer]$instance.ComputerName
 
             if (-not $computer.IsLocalhost) {
                 # Get the result for the remote test
-                $resultPSRemote = Test-PSDCRemoting -ComputerName $server.Name -Credential $Credential
+                $resultPSRemote = Test-PSDCRemoting -ComputerName $computer.ComputerName -Credential $Credential
 
                 # Check the result
                 if ($resultPSRemote.Result) {
