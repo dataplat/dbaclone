@@ -169,7 +169,7 @@
                 [array]$SqlInstance = "None"
             }
 
-            if(-not $Destination){
+            if (-not $Destination) {
                 Stop-PSFFunction -Message "Please enter a destination when using -SkipDatabaseMount" -Continue
             }
         }
@@ -527,17 +527,17 @@
                     Stop-PSFFunction -Message "Couldn't create access path directory" -ErrorRecord $_ -Target $accessPath -Continue
                 }
 
-                # Get all the files of the database
-                if ($computer.IsLocalhost) {
-                    $databaseFiles = Get-ChildItem -Path $accessPath -Filter *.*df -Recurse
-                }
-                else {
-                    $commandText = "Get-ChildItem -Path '$accessPath' -Filter *.*df -Recurse"
-                    $command = [ScriptBlock]::Create($commandText)
-                    $databaseFiles = Invoke-PSFCommand -ComputerName $computer -ScriptBlock $command -Credential $Credential
-                }
-
                 if (-not $SkipDatabaseMount) {
+                    # Get all the files of the database
+                    if ($computer.IsLocalhost) {
+                        $databaseFiles = Get-ChildItem -Path $accessPath -Filter *.*df -Recurse
+                    }
+                    else {
+                        $commandText = "Get-ChildItem -Path '$accessPath' -Filter *.*df -Recurse"
+                        $command = [ScriptBlock]::Create($commandText)
+                        $databaseFiles = Invoke-PSFCommand -ComputerName $computer -ScriptBlock $command -Credential $Credential
+                    }
+
                     # Setup the database filestructure
                     $dbFileStructure = New-Object System.Collections.Specialized.StringCollection
 
@@ -792,10 +792,10 @@
                     $clones | ConvertTo-Json | Set-Content $jsonCloneFile
                 }
 
-                if(-not $SkipDatabaseMount){
+                if (-not $SkipDatabaseMount) {
                     $cloneInstance = $server.DomainInstanceName
                 }
-                else{
+                else {
                     $cloneInstance = $null
                 }
 
