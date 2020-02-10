@@ -171,12 +171,14 @@
         foreach ($clone in $clones) {
 
             # Connect to the instance
-            Write-PSFMessage -Message "Attempting to connect to clone database server $($clone.Name).." -Level Verbose
-            try {
-                $server = Connect-DbaInstance -SqlInstance $clone.Name -SqlCredential $SqlCredential -SqlConnectionOnly
-            }
-            catch {
-                Stop-PSFFunction -Message "Could not connect to Sql Server instance $($clone.Name)" -ErrorRecord $_ -Target $clone.Name -Continue
+            if (-not $null -eq $clone.Name) {
+                Write-PSFMessage -Message "Attempting to connect to clone database server $($clone.Name).." -Level Verbose
+                try {
+                    $server = Connect-DbaInstance -SqlInstance $clone.Name -SqlCredential $SqlCredential -SqlConnectionOnly
+                }
+                catch {
+                    Stop-PSFFunction -Message "Could not connect to Sql Server instance $($clone.Name)" -ErrorRecord $_ -Target $clone.Name -Continue
+                }
             }
 
             # Loop through each of the results
@@ -213,31 +215,44 @@
                     }
                 }
 
-                if ($PSCmdlet.ShouldProcess($item.DatabaseName, "Removing database $($item.DatabaseName)")) {
-                    # Remove the database
-                    try {
-                        Write-PSFMessage -Message "Removing database $($item.DatabaseName) from $($item.SqlInstance)" -Level Verbose
+                if (-not $null -eq $item.SqlInstance) {
+                    $server = Connect-DbaInstance -SqlInstance $item.SqlInstance -SqlCredential $SqlCredential
 
-                        $null = Remove-DbaDatabase -SqlInstance $item.SqlInstance -SqlCredential $SqlCredential -Database $item.DatabaseName -Confirm:$false -EnableException
+                    if ($item.DatabaseName -in $server.Databases.Name) {
+                        if ($PSCmdlet.ShouldProcess($item.DatabaseName, "Removing database $($item.DatabaseName)")) {
+                            # Remove the database
+                            try {
+                                Write-PSFMessage -Message "Removing database $($item.DatabaseName) from $($item.SqlInstance)" -Level Verbose
+
+                                $null = Remove-DbaDatabase -SqlInstance $item.SqlInstance -SqlCredential $SqlCredential -Database $item.DatabaseName -Confirm:$false -EnableException
+                            }
+                            catch {
+                                Stop-PSFFunction -Message "Could not remove database $($item.DatabaseName) from $server" -ErrorRecord $_ -Target $server -Continue
+                            }
+                        }
                     }
-                    catch {
-                        Stop-PSFFunction -Message "Could not remove database $($item.DatabaseName) from $server" -ErrorRecord $_ -Target $server -Continue
+                    else {
+                        Write-PSFMessage -Level Verbose -Message "Could not find database [$($item.DatabaseName)] on $($item.SqlInstance)"
                     }
                 }
 
                 if ($PSCmdlet.ShouldProcess($item.CloneLocation, "Dismounting the vhd")) {
                     # Dismounting the vhd
                     try {
-
-                        if ($computer.IsLocalhost) {
-                            $null = Dismount-DiskImage -ImagePath $item.CloneLocation
+                        if (Test-Path -Path $item.CloneLocation) {
+                            if ($computer.IsLocalhost) {
+                                $null = Dismount-DiskImage -ImagePath $item.CloneLocation
+                            }
+                            else {
+                                $command = [ScriptBlock]::Create("Test-Path -Path '$($item.CloneLocation)'")
+                                Write-PSFMessage -Message "Dismounting disk '$($item.CloneLocation)' from $($item.HostName)" -Level Verbose
+                                $result = Invoke-PSFCommand -ComputerName $item.HostName -ScriptBlock $command -Credential $Credential
+                                $command = [scriptblock]::Create("Dismount-DiskImage -ImagePath '$($item.CloneLocation)'")
+                                $null = Invoke-PSFCommand -ComputerName $item.HostName -ScriptBlock $command -Credential $Credential
+                            }
                         }
                         else {
-                            $command = [ScriptBlock]::Create("Test-Path -Path '$($item.CloneLocation)'")
-                            Write-PSFMessage -Message "Dismounting disk '$($item.CloneLocation)' from $($item.HostName)" -Level Verbose
-                            $result = Invoke-PSFCommand -ComputerName $item.HostName -ScriptBlock $command -Credential $Credential
-                            $command = [scriptblock]::Create("Dismount-DiskImage -ImagePath '$($item.CloneLocation)'")
-                            $null = Invoke-PSFCommand -ComputerName $item.HostName -ScriptBlock $command -Credential $Credential
+                            Write-PSFMessage -Level Verbose -Message "Could not find clone file '$($item.CloneLocation)'"
                         }
                     }
                     catch {
