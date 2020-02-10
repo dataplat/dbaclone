@@ -111,7 +111,6 @@
         The image is written to c:\Temp\images
     #>
     [CmdLetBinding(SupportsShouldProcess = $true)]
-    [OutputType('PSDCImage')]
 
     param(
         [parameter(Mandatory = $true)]
