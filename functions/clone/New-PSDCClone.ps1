@@ -89,11 +89,8 @@
         Create a new clone on SQLDB1 and SQLDB2 for the databases DB1 with the latest image
     #>
     [CmdLetBinding(DefaultParameterSetName = 'ByLatest', SupportsShouldProcess = $true)]
-    [OutputType('PSDCClone')]
 
     param(
-        [parameter(Mandatory = $true)]
-        [ValidateNotNullOrEmpty()]
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [PSCredential]$PSDCSqlCredential,
@@ -167,10 +164,14 @@
             }
         }
 
+        if (-not $SqlInstance -and $SkipDatabaseMount) {
+            [array]$SqlInstance = "None"
+        }
+
         # Check the available images
         $images = Get-PSDCImage
 
-        if($Database -notin $images.DatabaseName){
+        if ($Database -notin $images.DatabaseName) {
             Stop-PSFFunction -Message "There is no image for database '$Database'" -ErrorRecord $_ -Continue
         }
     }
@@ -181,19 +182,20 @@
 
         # Loop through all the instances
         foreach ($instance in $SqlInstance) {
-
-            # Try connecting to the instance
-            Write-PSFMessage -Message "Attempting to connect to Sql Server $SqlInstance.." -Level Verbose
-            try {
-                $server = Connect-DbaInstance -SqlInstance $instance -SqlCredential $SqlCredential
-
-                # Setup the computer object
-                $computer = [PsfComputer]$server.ComputerName
+            if (-not $SkipDatabaseMount) {
+                # Try connecting to the instance
+                Write-PSFMessage -Message "Attempting to connect to Sql Server $SqlInstance.." -Level Verbose
+                try {
+                    $server = Connect-DbaInstance -SqlInstance $instance -SqlCredential $SqlCredential
+                }
+                catch {
+                    Stop-PSFFunction -Message "Could not connect to Sql Server instance $instance" -ErrorRecord $_ -Target $instance
+                    return
+                }
             }
-            catch {
-                Stop-PSFFunction -Message "Could not connect to Sql Server instance $instance" -ErrorRecord $_ -Target $instance
-                return
-            }
+
+            # Setup the computer object
+            $computer = [PsfComputer]$server.ComputerName
 
             if (-not $computer.IsLocalhost) {
                 # Get the result for the remote test
@@ -322,9 +324,11 @@
                 }
 
                 # Check if the database is already present
-                if ($PSCmdlet.ShouldProcess($cloneDatabase, "Verifying database existence")) {
-                    if ($server.Databases.Name -contains $cloneDatabase) {
-                        Stop-PSFFunction -Message "Database $cloneDatabase is already present on $SqlInstance" -Target $SqlInstance
+                if (-not $SkipDatabaseMount) {
+                    if ($PSCmdlet.ShouldProcess($cloneDatabase, "Verifying database existence")) {
+                        if ($server.Databases.Name -contains $cloneDatabase) {
+                            Stop-PSFFunction -Message "Database $cloneDatabase is already present on $SqlInstance" -Target $SqlInstance
+                        }
                     }
                 }
 
@@ -526,7 +530,6 @@
                 }
 
                 if (-not $SkipDatabaseMount) {
-
                     # Setup the database filestructure
                     $dbFileStructure = New-Object System.Collections.Specialized.StringCollection
 
