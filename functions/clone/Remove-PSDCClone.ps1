@@ -81,8 +81,7 @@
 
     #>
 
-    [CmdLetBinding(DefaultParameterSetName = "HostName", SupportsShouldProcess = $true,
-        ConfirmImpact = 'High')]
+    [CmdLetBinding(DefaultParameterSetName = "HostName", SupportsShouldProcess = $true, ConfirmImpact = 'High')]
 
     param(
         [parameter(ParameterSetName = "HostName")]
