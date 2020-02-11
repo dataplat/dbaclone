@@ -78,7 +78,7 @@ During the process a new backup will be generated.
 New-DcnImage -SourceSqlInstance SQLDB1 -DestinationSqlInstance SQLDB2 -ImageNetworkPath \\fileserver\dbaclone\images -Database DB1 -CreateFullBackup
 ```
 
-<img src="https://dbaclone.org/wp-content/uploads/2018/07/PSDatabaseClone_CreateImage.png" align="left" style="max-width: 100%"/>
+<img src="https://psdatabaseclone.org/wp-content/uploads/2018/07/PSDatabaseClone_CreateImage.png" align="left" style="max-width: 100%"/>
 
 ### Step 3 - Create a clone
 You have done the hard work of creating the image and make sure it's accessible for everyone.
@@ -93,7 +93,7 @@ New-DcnClone -SqlInstance SQLDB3 -Destination C:\dbaclone\clones -CloneName DB1_
 
 This will look into the central database if there is an image for database "DB1". The clone will be called "DB1_Clone1" and will be placed on the instance SQLDB3.
 
-<img src="https://dbaclone.org/wp-content/uploads/2018/07/PSDatabaseClone_CreateClone.png" align="left" style="max-width: 100%"/>
+<img src="https://psdatabaseclone.org/wp-content/uploads/2018/07/PSDatabaseClone_CreateClone.png" align="left" style="max-width: 100%"/>
 
 ## Examples
 
