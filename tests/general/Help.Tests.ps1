@@ -1,4 +1,4 @@
-<#
+﻿<#
     .NOTES
         The original test this is based upon was written by June Blender.
 		After several rounds of modifications it stands now as it is, but the honor remains hers.
@@ -39,7 +39,7 @@ Param (
 	$CommandPath = @("$PSScriptRoot\..\..\functions", "$PSScriptRoot\..\..\internal\functions"),
 	
 	[string]
-	$ModuleName = "PSDatabaseClone",
+	$ModuleName = "dbaclone",
 	
 	[string]
 	$ExceptionsFile = "$PSScriptRoot\Help.Exceptions.ps1"

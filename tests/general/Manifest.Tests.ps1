@@ -1,9 +1,8 @@
-Describe "Validating the module manifest" {
+﻿Describe "Validating the module manifest" {
 	$moduleRoot = (Resolve-Path "$PSScriptRoot\..\..").Path
-	$manifest = ((Get-Content "$moduleRoot\PSDatabaseClone.psd1") -join "`n") | Invoke-Expression
-	[version]$moduleVersion = Get-Item "$moduleRoot\PSDatabaseClone.psm1" | Select-String -Pattern '\$script:ModuleVersion = "(.*?)"' | ForEach-Object { $_.Matches[0].Groups[1].Value }
+	$manifest = ((Get-Content "$moduleRoot\dbaclone.psd1") -join "`n") | Invoke-Expression
 	Context "Basic resources validation" {
-		$files = Get-ChildItem "$moduleRoot\functions" -Recurse -File -Filter "*.ps1"
+		$files = Get-ChildItem "$moduleRoot\functions" -Recurse -File | Where-Object Name -like "*.ps1"
 		It "Exports all functions in the public folder" {
 			
 			$functions = (Compare-Object -ReferenceObject $files.BaseName -DifferenceObject $manifest.FunctionsToExport | Where-Object SideIndicator -Like '<=').InputObject
@@ -17,10 +16,6 @@ Describe "Validating the module manifest" {
 		It "Exports none of its internal functions" {
 			$files = Get-ChildItem "$moduleRoot\internal\functions" -Recurse -File -Filter "*.ps1"
 			$files | Where-Object BaseName -In $manifest.FunctionsToExport | Should -BeNullOrEmpty
-		}
-		
-		It "Has the same version as the psm1 file" {
-			([version]$manifest.ModuleVersion) | Should -Be $moduleVersion
 		}
 	}
 	
@@ -45,8 +40,22 @@ Describe "Validating the module manifest" {
 		
 		foreach ($assembly in $manifest.RequiredAssemblies)
 		{
-			It "The file $assembly should exist" {
-				Test-Path "$moduleRoot\$assembly" | Should -Be $true
+            if ($assembly -contains ".dll") {
+                It "The file $assembly should exist" {
+                    Test-Path "$moduleRoot\$assembly" | Should -Be $true
+                }
+            }
+            else {
+                It "The file $assembly should load from the GAC" {
+                    { Add-Type -AssemblyName $assembly } | Should -Not -Throw
+                }
+            }
+        }
+		
+		foreach ($tag in $manifest.PrivateData.PSData.Tags)
+		{
+			It "Tags should have no spaces in name" {
+				$tag -match " " | Should -Be $false
 			}
 		}
 	}

@@ -5,15 +5,15 @@
 *TempPoint*
 
 # Ignore staging info from Visual Studio
-library/PSDatabaseClone/.vs/*
-library/PSDatabaseClone/PSDatabaseClone/bin/*
-library/PSDatabaseClone/PSDatabaseClone/obj/*
+library/dbaclone/.vs/*
+library/dbaclone/dbaclone/bin/*
+library/dbaclone/dbaclone/obj/*
 
 # ignore PowerShell Studio MetaData
-PSDatabaseClone/PSDatabaseClone.psproj
-PSDatabaseClone/PSDatabaseClone.psproj.bak
-PSDatabaseClone/PSDatabaseClone.psprojs
-PSDatabaseClone/PSDatabaseClone.psproj
+dbaclone/dbaclone.psproj
+dbaclone/dbaclone.psproj.bak
+dbaclone/dbaclone.psprojs
+dbaclone/dbaclone.psproj
 
 # ignore the TestResults
 TestResults/*

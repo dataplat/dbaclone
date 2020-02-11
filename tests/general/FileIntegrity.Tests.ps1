@@ -1,10 +1,9 @@
-$moduleRoot = (Resolve-Path "$PSScriptRoot\..\..").Path
+﻿$moduleRoot = (Resolve-Path "$PSScriptRoot\..\..").Path
 
 . "$PSScriptRoot\FileIntegrity.Exceptions.ps1"
 
-function Get-FileEncoding
-{
-<#
+function Get-FileEncoding {
+	<#
 	.SYNOPSIS
 		Tests a file for encoding.
 
@@ -33,10 +32,9 @@ function Get-FileEncoding
 
 Describe "Verifying integrity of module files" {
 	Context "Validating PS1 Script files" {
-		$allFiles = Get-ChildItem -Path $moduleRoot -Recurse -Filter "*.ps1" | Where-Object FullName -NotLike "$moduleRoot\tests\*"
+		$allFiles = Get-ChildItem -Path $moduleRoot -Recurse | Where-Object Name -like "*.ps1" | Where-Object FullName -NotLike "$moduleRoot\tests\*"
 
-		foreach ($file in $allFiles)
-		{
+		foreach ($file in $allFiles) {
 			$name = $file.FullName.Replace("$moduleRoot\", '')
 
 			<# It "[$name] Should have UTF8 encoding" {
@@ -44,7 +42,7 @@ Describe "Verifying integrity of module files" {
 			} #>
 
 			It "[$name] Should have no trailing space" {
-				($file | Select-String "\s$" | Where-Object { $_.Line.Trim().Length -gt 0}).LineNumber | Should -BeNullOrEmpty
+				($file | Select-String "\s$" | Where-Object { $_.Line.Trim().Length -gt 0 }).LineNumber | Should -BeNullOrEmpty
 			}
 
 			$tokens = $null
@@ -55,10 +53,8 @@ Describe "Verifying integrity of module files" {
 				$parseErrors | Should Be $Null
 			}
 
-			foreach ($command in $global:BannedCommands)
-			{
-				if ($global:MayContainCommand["$command"] -notcontains $file.Name)
-				{
+			foreach ($command in $global:BannedCommands) {
+				if ($global:MayContainCommand["$command"] -notcontains $file.Name) {
 					It "[$name] Should not use $command" {
 						$tokens | Where-Object Text -EQ $command | Should -BeNullOrEmpty
 					}
@@ -72,10 +68,9 @@ Describe "Verifying integrity of module files" {
 	}
 
 	Context "Validating help.txt help files" {
-		$allFiles = Get-ChildItem -Path $moduleRoot -Recurse -Filter "*.help.txt" | Where-Object FullName -NotLike "$moduleRoot\tests\*"
+		$allFiles = Get-ChildItem -Path $moduleRoot -Recurse | Where-Object Name -like "*.help.txt" | Where-Object FullName -NotLike "$moduleRoot\tests\*"
 
-		foreach ($file in $allFiles)
-		{
+		foreach ($file in $allFiles) {
 			$name = $file.FullName.Replace("$moduleRoot\", '')
 
 			<# It "[$name] Should have UTF8 encoding" {
