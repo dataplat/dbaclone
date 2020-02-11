@@ -92,31 +92,34 @@
         # Test if there are any errors
         if (Test-PSFFunctionInterrupt) { return }
 
-        # Check if disk is already mounted
-        $diskImage = Get-DiskImage -ImagePath $Path
+        # Get all the disks
+        $disks = Get-Disk
 
         # Check if disk is already mounted
-        if ($disks) {
+        if ($disks.Location -contains $Path) {
             Write-PSFMessage -Message "Vhd is already mounted" -Level Warning
+
+            # retrieve the specific disk
+            $disk = $disks | Where-Object Location -eq $Path
         }
         else {
             if ($PSCmdlet.ShouldProcess("Mounting disk")) {
                 # Mount the vhd
                 try {
                     Write-PSFMessage -Message "Mounting disk $disk" -Level Verbose
- 
+
                     # Mount the disk
                     Mount-DiskImage -ImagePath $Path
+
+                    # Get the disk
                     $diskImage = Get-DiskImage -ImagePath $Path
+                    $disk = Get-Disk | Where-Object Number -eq $diskImage.Number
                 }
                 catch {
                     Stop-PSFFunction -Message "Couldn't mount vhd" -Target $Path -ErrorRecord $_ -Continue
                 }
             }
         }
-
-        # Get the mounted disk
-        $disk = Get-Disk | Where-Object Number -eq $diskImage.Number
 
         if ($PSCmdlet.ShouldProcess("Initializing disk")) {
             # Check if the disk is already initialized
