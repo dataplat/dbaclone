@@ -1,0 +1,25 @@
+
+# ignore the settings folder and files for VSCode and PSS
+.vscode/*
+*.psproj
+*TempPoint*
+
+# Ignore staging info from Visual Studio
+library/dbaclone/.vs/*
+library/dbaclone/dbaclone/bin/*
+library/dbaclone/dbaclone/obj/*
+
+# ignore PowerShell Studio MetaData
+dbaclone/dbaclone.psproj
+dbaclone/dbaclone.psproj.bak
+dbaclone/dbaclone.psprojs
+dbaclone/dbaclone.psproj
+
+# ignore the TestResults
+TestResults/*
+
+# ignore the publishing Directory
+publish/*
+
+# ignore appveyor
+appveyor.yml
