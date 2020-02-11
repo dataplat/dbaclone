@@ -426,7 +426,8 @@
                             $null = Mount-DiskImage -ImagePath "$($clonePath)"
 
                             # Get the disk based on the name of the vhd
-                            $disk = Get-Disk | Where-Object { $_.Location -eq "$($clonePath)" }
+                            $diskImage = Get-DiskImage -ImagePath $clonePath
+                            $disk = Get-Disk | Where-Object Number -eq $diskImage.Number
                         }
                         else {
                             # Mount the disk
