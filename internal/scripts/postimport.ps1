@@ -26,12 +26,12 @@ if ( -not (Test-PSFPowerShell -Elevated) ) {
 	Stop-PSFFunction -Message "Module requires elevation. Please run the console in Administrator mode" -FunctionName 'Post Import'
 }
 
-if (-not (Test-DcnDatabaseClone -WindowsVersion)) {
+if (-not (Test-DcnModule -WindowsVersion)) {
 	Stop-PSFFunction -Message "Unsupported version of Windows" -FunctionName 'Post Import'
 }
 
 # Check if the configuration has been set
-if (-not (Test-DcnDatabaseClone -SetupStatus)) {
+if (-not (Test-DcnModule -SetupStatus)) {
 	Write-PSFMessage -Message "The module is not yet configured. Please run Set-DcnConfiguration to make the neccesary changes" -Level Warning
 }
 

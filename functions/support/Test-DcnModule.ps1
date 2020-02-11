@@ -1,4 +1,4 @@
-function Test-DcnDatabaseClone {
+function Test-DcnModule {
 
     <#
     .SYNOPSIS
@@ -50,12 +50,12 @@ function Test-DcnDatabaseClone {
         https://psdatabaseclone.org/
 
     .EXAMPLE
-        Test-DcnDatabaseClone -SetupStatus
+        Test-DcnModule -SetupStatus
 
         Return true if the status if correct, if not returns false
 
     .EXAMPLE
-        Test-DcnDatabaseClone -WindowsVersion
+        Test-DcnModule -WindowsVersion
 
         Return true if the windows version is supported, if not returns false
     #>

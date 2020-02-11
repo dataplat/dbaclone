@@ -103,7 +103,7 @@
             Stop-PSFFunction -Message "Module requires elevation. Please run the console in Administrator mode" -Continue
         }
 
-        if (-not (Test-DcnDatabaseClone -SetupStatus)) {
+        if (-not (Test-DcnModule -SetupStatus)) {
             Stop-PSFFunction -Message "The module setup has NOT yet successfully run. Please run 'Set-DcnConfiguration'" -Continue
         }
 
