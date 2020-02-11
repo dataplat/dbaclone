@@ -50,7 +50,6 @@ catch {
 try {
     Remove-Item -Path "$($publishDir.FullName)\dbaclone\appveyor.yml" -Force -Recurse
     Remove-Item -Path "$($publishDir.FullName)\dbaclone\build" -Force -Recurse
-    Remove-Item -Path "$($publishDir.FullName)\dbaclone\resources" -Force -Recurse
     Remove-Item -Path "$($publishDir.FullName)\dbaclone\tests" -Force -Recurse
 }
 catch {
