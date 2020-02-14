@@ -166,15 +166,13 @@
 
         if ($SkipDatabaseMount) {
             if (-not $SqlInstance) {
-                [array]$SqlInstance = "None"
+                $SqlInstance += "localhost"
             }
 
             if (-not $Destination) {
                 Stop-PSFFunction -Message "Please enter a destination when using -SkipDatabaseMount" -Continue
             }
         }
-
-
 
         # Check the available images
         $images = Get-DcnImage
@@ -211,7 +209,7 @@
 
                 # Check the result
                 if ($resultPSRemote.Result) {
-                    $command = [scriptblock]::Create("Import-Module PSDatabaseClone")
+                    $command = [scriptblock]::Create("Import-Module dbaclone")
 
                     try {
                         Invoke-PSFCommand -ComputerName $computer -ScriptBlock $command -Credential $Credential
@@ -225,6 +223,7 @@
                     Stop-PSFFunction -Message "Couldn't connect to host remotely.`nVerify that the specified computer name is valid, that the computer is accessible over the network, and that a firewall exception for the WinRM service is enabled and allows access from this computer" -Target $resultPSRemote -Continue
                 }
             }
+
 
             # Check destination
             if (-not $Destination) {
@@ -554,10 +553,10 @@
                     if ($PSCmdlet.ShouldProcess($cloneDatabase, "Mounting database $cloneDatabase")) {
                         try {
                             Write-PSFMessage -Message "Mounting database from clone" -Level Verbose
-                            $null = Mount-DbaDatabase -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database $cloneDatabase -FileStructure $dbFileStructure
+                            $null = Mount-DbaDatabase -SqlInstance $instance -SqlCredential $SqlCredential -Database $cloneDatabase -FileStructure $dbFileStructure
                         }
                         catch {
-                            Stop-PSFFunction -Message "Couldn't mount database $cloneDatabase" -Target $SqlInstance -Continue
+                            Stop-PSFFunction -Message "Couldn't mount database $cloneDatabase" -Target $instance -Continue
                         }
                     }
                 }
@@ -659,7 +658,7 @@
 
                             # Test if the JSON folder can be reached
                             if (-not (Test-Path -Path "DCNJSONFolder:\")) {
-                                $command = [scriptblock]::Create("Import-Module PSDatabaseClone -Force")
+                                $command = [scriptblock]::Create("Import-Module dbaclone -Force")
 
                                 try {
                                     Invoke-PSFCommand -ComputerName $computer -ScriptBlock $command -Credential $Credential
@@ -778,7 +777,7 @@
 
                     # Test if the JSON folder can be reached
                     if (-not (Test-Path -Path "DCNJSONFolder:\")) {
-                        $command = [scriptblock]::Create("Import-Module PSDatabaseClone -Force")
+                        $command = [scriptblock]::Create("Import-Module dbaclone -Force")
 
                         try {
                             Invoke-PSFCommand -ComputerName $computer -ScriptBlock $command -Credential $Credential

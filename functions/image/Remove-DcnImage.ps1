@@ -210,7 +210,7 @@
                     # Check the result
                     if ($resultPSRemote.Result) {
 
-                        $command = [scriptblock]::Create("Import-Module PSDatabaseClone -Force")
+                        $command = [scriptblock]::Create("Import-Module dbaclone -Force")
 
                         try {
                             Invoke-PSFCommand -ComputerName $computer -ScriptBlock $command -Credential $Credential

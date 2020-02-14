@@ -222,7 +222,7 @@
 
             # Check the result
             if ($resultPSRemote.Result) {
-                $command = [scriptblock]::Create("Import-Module PSDatabaseClone -Force")
+                $command = [scriptblock]::Create("Import-Module dbaclone -Force")
 
                 try {
                     Invoke-PSFCommand -ComputerName $computer -ScriptBlock $command -Credential $Credential
@@ -721,7 +721,7 @@
 
                 # Test if the JSON folder can be reached
                 if (-not (Test-Path -Path "DCNJSONFolder:\")) {
-                    $command = [scriptblock]::Create("Import-Module PSDatabaseClone -Force")
+                    $command = [scriptblock]::Create("Import-Module dbaclone -Force")
 
                     try {
                         Invoke-PSFCommand -ComputerName $computer -ScriptBlock $command -Credential $Credential
