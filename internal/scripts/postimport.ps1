@@ -39,7 +39,7 @@ if (-not (Test-DcnModule -SetupStatus)) {
 if ([bool](Get-PSFConfigValue -FullName dbaclone.informationstore.mode) -eq 'File') {
 	# Get the json file
 	$jsonFolder = Get-PSFConfigValue -FullName dbaclone.informationstore.path
-	$jsonCred = Get-PSFConfigValue -FullName dbaclone.informationstore.credential
+	$jsonCred = Get-PSFConfigValue -FullName dbaclone.informationstore.credential -Fallback $null
 
 	# Create a PS Drive
 	if (-not [bool](Get-PSDrive -Name DCNJSONFolder -Scope Global -ErrorAction SilentlyContinue)) {
