@@ -165,7 +165,7 @@
         Write-PSFMessage -Message "Started removing database clones" -Level Verbose
 
         # Group the objects to make it easier to go through
-        $clones = $InputObject | Group-Object SqlInstance
+        [array]$clones = $InputObject | Group-Object SqlInstance
 
         # Loop through each of the host names
         foreach ($clone in $clones) {
@@ -241,6 +241,7 @@
                     try {
                         if (Test-Path -Path $item.CloneLocation) {
                             if ($computer.IsLocalhost) {
+                                Write-PSFMessage -Message "Dismounting disk '$($item.CloneLocation)' from $($item.HostName)" -Level Verbose
                                 $null = Dismount-DiskImage -ImagePath $item.CloneLocation
                             }
                             else {
@@ -264,20 +265,32 @@
                     # Remove clone file and related access path
                     try {
                         if ($computer.IsLocalhost) {
-                            Write-PSFMessage -Message "Removing vhd access path" -Level Verbose
-                            $null = Remove-Item -Path "$($item.AccessPath)" -Credential $Credential -Force
+                            if (Test-Path -Path $item.AccessPath) {
+                                Write-PSFMessage -Message "Removing vhd access path" -Level Verbose
+                                $null = Remove-Item -Path "$($item.AccessPath)" -Credential $Credential -Force
+                            }
 
-                            Write-PSFMessage -Message "Removing vhd" -Level Verbose
-                            $null = Remove-Item -Path "$($item.CloneLocation)" -Credential $Credential -Force
+                            if (Test-Path -Path $item.CloneLocation) {
+                                Write-PSFMessage -Message "Removing vhd" -Level Verbose
+                                $null = Remove-Item -Path "$($item.CloneLocation)" -Credential $Credential -Force
+                            }
                         }
                         else {
-                            Write-PSFMessage -Message "Removing vhd access path" -Level Verbose
-                            $command = [scriptblock]::Create("Remove-Item -Path '$($item.AccessPath)' -Force")
-                            $null = Invoke-PSFCommand -ComputerName $item.HostName -ScriptBlock $command -Credential $Credential
+                            $command = [scriptblock]::Create("Test-Path -Path '$($item.AccessPath)'")
+                            $result = Invoke-PSFCommand -ComputerName $item.HostName -ScriptBlock $command -Credential $Credential
+                            if ($result) {
+                                Write-PSFMessage -Message "Removing vhd access path" -Level Verbose
+                                $command = [scriptblock]::Create("Remove-Item -Path '$($item.AccessPath)' -Force")
+                                $null = Invoke-PSFCommand -ComputerName $item.HostName -ScriptBlock $command -Credential $Credential
+                            }
 
-                            Write-PSFMessage -Message "Removing vhd" -Level Verbose
-                            $command = [scriptblock]::Create("Remove-Item -Path '$($item.CloneLocation)' -Force")
-                            $null = Invoke-PSFCommand -ComputerName $item.HostName -ScriptBlock $command -Credential $Credential
+                            $command = [scriptblock]::Create("Test-Path -Path '$($item.CloneLocation)'")
+                            $result = Invoke-PSFCommand -ComputerName $item.HostName -ScriptBlock $command -Credential $Credential
+                            if ($result) {
+                                Write-PSFMessage -Message "Removing vhd" -Level Verbose
+                                $command = [scriptblock]::Create("Remove-Item -Path '$($item.CloneLocation)' -Force")
+                                $null = Invoke-PSFCommand -ComputerName $item.HostName -ScriptBlock $command -Credential $Credential
+                            }
                         }
                     }
                     catch {
