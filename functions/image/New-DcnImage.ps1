@@ -72,9 +72,6 @@
     .PARAMETER CopyOnlyBackup
         Create a backup as COPY_ONLY
 
-    .PARAMETER MaskingFile
-        Configuration file that contains the which tables and columns need to be masked
-
     .PARAMETER Force
         Forcefully execute commands when needed
 
@@ -134,7 +131,6 @@
         [switch]$UseLastFullBackup,
         [switch]$CopyOnlyBackup,
         [Alias('MaskingConfigFile', 'MaskingConfigFilePath')]
-        [string]$MaskingFile,
         [switch]$Force,
         [switch]$EnableException
     )
@@ -325,11 +321,6 @@
         }
         else {
             Stop-PSFFunction -Message "Please supply a database to create an image for" -Target $SourceSqlInstance -Continue
-        }
-
-        # Check the data masking file
-        if ($MaskingFile -and -not (Test-Path -Path $MaskingFile -Credential $SourceCredential)) {
-            Stop-PSFFunction -Message "Could not find the data masking configuration file" -Target $MaskingFile -Continue
         }
 
         # Set time stamp
@@ -575,47 +566,6 @@
                 catch {
                     Stop-PSFFunction -Message "Couldn't restore database $db as $tempDbName on $DestinationSqlInstance.`n$($_)" -Target $restore -ErrorRecord $_ -Continue
                 }
-            }
-
-            # Apply data masking
-            if ($MaskingFile) {
-
-                # Check the recovery model of the database
-                $dbRecoveryModel = Get-DbaDbRecoveryModel -SqlInstance $DestinationSqlInstance -SqlCredential $DestinationSqlCredential -Database $tempDbName
-
-                # Set the recovery model to simple to minimize growth during data masking
-                if ($dbRecoveryModel.RecoveryModel -ne 'Simple') {
-                    try {
-                        $null = Set-DbaDbRecoveryModel -SqlInstance $DestinationSqlInstance -SqlCredential $DestinationSqlCredential -Database $tempDbName -RecoveryModel Simple -Confirm:$false -EnableException
-                    }
-                    catch {
-                        Stop-PSFFunction -Message "Couldn't change recovery model for database" -Target $restore -ErrorRecord $_ -Continue
-                    }
-
-                    [bool]$recoveryModelChanged = $true
-                }
-                else {
-                    [bool]$recoveryModelChanged = $false
-                }
-
-                # Execute the data masking
-                try {
-                    Invoke-DbaDbDataMasking -SqlInstance $DestinationSqlInstance -SqlCredential $DestinationSqlCredential -Database $tempDbName -FilePath $MaskingFile -EnableException
-                }
-                catch {
-                    Stop-PSFFunction -Message "Something went wrong masking the data" -Target $MaskingFile -ErrorRecord $_ -Continue
-                }
-
-                # Change back the recovery model to it's original setting
-                if ($recoveryModelChanged) {
-                    try {
-                        $null = Set-DbaDbRecoveryModel -SqlInstance $DestinationSqlInstance -SqlCredential $DestinationSqlCredential -Database $tempDbName -RecoveryModel $dbRecoveryModel.RecoveryModel -Confirm:$false -EnableException
-                    }
-                    catch {
-                        Stop-PSFFunction -Message "Couldn't change recovery model for database back to original" -Target $restore -ErrorRecord $_ -Continue
-                    }
-                }
-
             }
 
             # Detach database
