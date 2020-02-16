@@ -130,7 +130,12 @@
                 $image = Get-DcnImage -ImageID $result.ImageID
 
                 # Check if the parent of the clone can be reached
-                $null = New-PSDrive -Name ImagePath -Root (Split-Path $image.ImageLocation) -Credential $Credential -PSProvider FileSystem
+                try {
+                    $null = New-PSDrive -Name ImagePath -Root (Split-Path $image.ImageLocation) -Credential $Credential -PSProvider FileSystem
+                }
+                catch {
+                    Stop-PSFFunction -Message "Could not create drive for image path '$($image.ImageLocation)'" -ErrorRecord $_ -Continue
+                }
 
                 # Test if the image still exists
                 if (Test-Path -Path "ImagePath:\$($image.Name).vhdx") {
@@ -158,7 +163,13 @@
                 }
 
                 # Remove the PS Drive
-                $null = Remove-PSDrive -Name ImagePath
+                try {
+                    $null = Remove-PSDrive -Name ImagePath
+                }
+                catch {
+                    Stop-PSFFunction -Message "Could not remove drive 'ImagePath'" -ErrorRecord $_ -Continue
+                }
+
 
                 # Check if the database is already attached
                 if ($result.DatabaseName -notin $databases.Name) {
