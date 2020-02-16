@@ -118,14 +118,16 @@
             }
 
             # Get the clones
-            $results = Get-DcnClone -HostName $hst
+            [array]$results = Get-DcnClone -HostName $hst
 
             # Loop through the results
             foreach ($result in $results) {
 
+                $server = Connect-DbaInstance -SqlInstance $result.SqlInstance -SqlCredential $SqlCredential
+
                 # Get the databases
                 Write-PSFMessage -Message "Retrieve the databases for $($result.SqlInstance)" -Level Verbose
-                $databases = Get-DbaDatabase -SqlInstance $result.SqlInstance -SqlCredential $SqlCredential
+                $databases = $server.Databases
 
                 $image = Get-DcnImage -ImageID $result.ImageID
 
@@ -138,28 +140,37 @@
                 }
 
                 # Test if the image still exists
-                if (Test-Path -Path "ImagePath:\$($image.Name).vhdx") {
+                if (Test-Path -Path "ImagePath:\$($image.ImageName).vhdx") {
                     # Mount the clone
                     try {
                         Write-PSFMessage -Message "Mounting vhd $($result.CloneLocation)" -Level Verbose
 
-                        # Check if computer is local
-                        if ($PSCmdlet.ShouldProcess($result.CloneLocation, "Mounting $($result.CloneLocation)")) {
-                            if ($computer.IsLocalhost) {
-                                $null = Mount-VHD -Path $result.CloneLocation -NoDriveLetter -ErrorAction SilentlyContinue
+                        if (Test-Path -Path $result.CloneLocation) {
+                            $disk = Get-Disk | Where-Object Location -eq $result.CloneLocation
+
+                            if (-not $disk) {
+                                # Check if computer is local
+                                if ($PSCmdlet.ShouldProcess("Mounting $($result.CloneLocation)")) {
+                                    if ($computer.IsLocalhost) {
+                                        $null = Mount-DiskImage -ImagePath $result.CloneLocation -NoDriveLetter
+                                    }
+                                    else {
+                                        $command = [ScriptBlock]::Create("Mount-DiskImage -ImagePath '$($result.CloneLocation)' -NoDriveLetter -ErrorAction SilentlyContinue")
+                                        $null = Invoke-PSFCommand -ComputerName $computer -ScriptBlock $command -Credential $Credential
+                                    }
+                                }
                             }
-                            else {
-                                $command = [ScriptBlock]::Create("Mount-VHD -Path $($result.CloneLocation) -NoDriveLetter -ErrorAction SilentlyContinue")
-                                $null = Invoke-PSFCommand -ComputerName $computer -ScriptBlock $command -Credential $Credential
-                            }
+                        }
+                        else {
+                            Stop-PSFFunction -Message "Couldn't find clone file '$($result.CloneLocation)'" -Target $result -Continue
                         }
                     }
                     catch {
-                        Stop-PSFFunction -Message "Couldn't mount vhd" -Target $clone -Continue
+                        Stop-PSFFunction -Message "Couldn't mount vhd" -Target $result -ErrorRecord $_ -Continue
                     }
                 }
                 else {
-                    Stop-PSFFunction -Message "Vhd $($result.CloneLocation) cannot be mounted because parent path cannot be reached" -Target $image -Continue
+                    Stop-PSFFunction -Message "Vhd $($result.CloneLocation) cannot be mounted because image path cannot be reached" -Target $image -Continue
                 }
 
                 # Remove the PS Drive
@@ -170,12 +181,34 @@
                     Stop-PSFFunction -Message "Could not remove drive 'ImagePath'" -ErrorRecord $_ -Continue
                 }
 
-
                 # Check if the database is already attached
-                if ($result.DatabaseName -notin $databases.Name) {
+                if ($result.DatabaseName -in $databases.Name) {
+                    $db = $databases | Where-Object Name -eq $result.DatabaseName
 
+                    if ($db.Status -eq 'RecoveryPending') {
+                        try {
+                            Write-PSFMessage -Message "Setting database offline" -Level Verbose
+                            $db.SetOffline()
+
+                            Write-PSFMessage -Message "Setting database online" -Level Verbose
+                            $db.SetOnline()
+                        }
+                        catch {
+                            Stop-PSFFunction -Message "Could not detach database [$($result.DatabaseName)]" -ErrorRecord $_ -Continue
+                        }
+                    }
+                    else {
+                        try {
+                            Detach-DbaDatabase -SqlInstance $result.SQLInstance -SqlCredential $SqlCredential -Database $result.DatabaseName
+                        }
+                        catch {
+                            Stop-PSFFunction -Message "Could not detach database [$($result.DatabaseName)]" -ErrorRecord $_ -Continue
+                        }
+                    }
+                }
+                else {
                     # Get all the files of the database
-                    if ($PSCmdlet.ShouldProcess($result.AccessPath, "Retrieving database files from $($result.AccessPath)")) {
+                    if ($PSCmdlet.ShouldProcess("Retrieving database files from $($result.AccessPath)")) {
                         # Check if computer is local
                         if ($computer.IsLocalhost) {
                             $databaseFiles = Get-ChildItem -Path $result.AccessPath -Recurse | Where-Object { -not $_.PSIsContainer }
@@ -198,7 +231,7 @@
                     Write-PSFMessage -Message "Mounting database from clone" -Level Verbose
 
                     # Mount the database using the config file
-                    if ($PSCmdlet.ShouldProcess($result.DatabaseName, "Mounting database $($result.DatabaseName) to $($result.SQLInstance)")) {
+                    if ($PSCmdlet.ShouldProcess("Mounting database $($result.DatabaseName) to $($result.SQLInstance)")) {
                         try {
                             $null = Mount-DbaDatabase -SqlInstance $result.SQLInstance -Database $result.DatabaseName -FileStructure $dbFileStructure
                         }
@@ -206,9 +239,6 @@
                             Stop-PSFFunction -Message "Couldn't mount database $($result.DatabaseName)" -Target $result.DatabaseName -Continue
                         }
                     }
-                }
-                else {
-                    Write-PSFMessage -Message "Database $($result.Database) is already attached" -Level Verbose
                 }
             } # End for ech result
         } # End for each host
