@@ -464,7 +464,6 @@
                             # Check if computer is local
                             if ($computer.IsLocalhost) {
                                 $null = New-Item -Path $accessPath -ItemType Directory -Force
-                                Write-PSFMessage -Level Important -Message $accessPath
                             }
                             else {
                                 $command = [ScriptBlock]::Create("New-Item -Path $accessPath -ItemType Directory -Force")
