@@ -69,6 +69,9 @@
     .PARAMETER UseLastFullBackup
         Use the last full backup created for the database
 
+    .PARAMETER BackupFilePath
+        Use a specific backup file to create the image
+
     .PARAMETER CopyOnlyBackup
         Create a backup as COPY_ONLY
 
@@ -129,6 +132,7 @@
         [string]$VhdType,
         [switch]$CreateFullBackup,
         [switch]$UseLastFullBackup,
+        [string]$BackupFilePath,
         [switch]$CopyOnlyBackup,
         [Alias('MaskingConfigFile', 'MaskingConfigFilePath')]
         [switch]$Force,
@@ -144,6 +148,10 @@
         # Check if the setup has ran
         if (-not (Test-DcnModule -SetupStatus)) {
             Stop-PSFFunction -Message "The module setup has NOT yet successfully run. Please run 'Set-DcnConfiguration'" -Continue
+        }
+
+        if(-not $CreateFullBackup -and -not $UseLastFullBackup -and -not $BackupFilePath){
+            Stop-PSFFunction -Message "Unable to get last backup file. Please use -CreateFullBackup, -UseLastFullBackup or -BackupFile" -Continue
         }
 
         # Checking parameters
@@ -323,6 +331,18 @@
             Stop-PSFFunction -Message "Please supply a database to create an image for" -Target $SourceSqlInstance -Continue
         }
 
+        if($BackupFilePath){
+            if(-not (Test-Path -Path $BackupFilePath)){
+                Stop-PSFFunction -Message "Could not find backup file '$($BackupFilePath)'"
+            }
+
+            if($Database.Count -gt 1){
+                Stop-PSFFunction -Message "You cannot enter multiple databases for the same backup file. Please just enter one"
+            }
+        }
+
+
+
         # Set time stamp
         $timestamp = Get-Date -format "yyyyMMddHHmmss"
 
@@ -368,6 +388,11 @@
                     # Create the backup
                     Write-PSFMessage -Message "Creating new full backup for database $db" -Level Verbose
                     $lastFullBackup = Backup-DbaDatabase -SqlInstance $SourceSqlInstance -SqlCredential $SourceSqlCredential -Database $db.Name -CopyOnly:$CopyOnlyBackup
+                }
+            }
+            elseif ($BackupFilePath) {
+                [pscustomobject]$lastFullBackup = @{
+                    Path = $BackupFilePath
                 }
             }
             else {
@@ -554,7 +579,7 @@
                         SqlInstance              = $DestinationSqlInstance
                         SqlCredential            = $DestinationSqlCredential
                         DatabaseName             = $tempDbName
-                        Path                     = $lastFullBackup
+                        Path                     = $lastFullBackup.Path
                         DestinationDataDirectory = $imageDataFolder
                         DestinationLogDirectory  = $imageLogFolder
                         WithReplace              = $true
