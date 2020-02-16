@@ -93,7 +93,7 @@
 
     begin {
         # Check if the setup has ran
-        if (-not (Test-DcnDatabaseClone -SetupStatus)) {
+        if (-not (Test-DcnModule -SetupStatus)) {
             Stop-PSFFunction -Message "The module setup has NOT yet successfully run. Please run 'Set-DcnConfiguration'" -Continue
         }
 

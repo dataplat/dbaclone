@@ -69,11 +69,11 @@
     .PARAMETER UseLastFullBackup
         Use the last full backup created for the database
 
+    .PARAMETER BackupFilePath
+        Use a specific backup file to create the image
+
     .PARAMETER CopyOnlyBackup
         Create a backup as COPY_ONLY
-
-    .PARAMETER MaskingFile
-        Configuration file that contains the which tables and columns need to be masked
 
     .PARAMETER Force
         Forcefully execute commands when needed
@@ -132,9 +132,9 @@
         [string]$VhdType,
         [switch]$CreateFullBackup,
         [switch]$UseLastFullBackup,
+        [string]$BackupFilePath,
         [switch]$CopyOnlyBackup,
         [Alias('MaskingConfigFile', 'MaskingConfigFilePath')]
-        [string]$MaskingFile,
         [switch]$Force,
         [switch]$EnableException
     )
@@ -146,8 +146,12 @@
         }
 
         # Check if the setup has ran
-        if (-not (Test-DcnDatabaseClone -SetupStatus)) {
+        if (-not (Test-DcnModule -SetupStatus)) {
             Stop-PSFFunction -Message "The module setup has NOT yet successfully run. Please run 'Set-DcnConfiguration'" -Continue
+        }
+
+        if(-not $CreateFullBackup -and -not $UseLastFullBackup -and -not $BackupFilePath){
+            Stop-PSFFunction -Message "Unable to get last backup file. Please use -CreateFullBackup, -UseLastFullBackup or -BackupFile" -Continue
         }
 
         # Checking parameters
@@ -222,7 +226,7 @@
 
             # Check the result
             if ($resultPSRemote.Result) {
-                $command = [scriptblock]::Create("Import-Module PSDatabaseClone -Force")
+                $command = [scriptblock]::Create("Import-Module dbaclone -Force")
 
                 try {
                     Invoke-PSFCommand -ComputerName $computer -ScriptBlock $command -Credential $Credential
@@ -327,10 +331,17 @@
             Stop-PSFFunction -Message "Please supply a database to create an image for" -Target $SourceSqlInstance -Continue
         }
 
-        # Check the data masking file
-        if ($MaskingFile -and -not (Test-Path -Path $MaskingFile -Credential $SourceCredential)) {
-            Stop-PSFFunction -Message "Could not find the data masking configuration file" -Target $MaskingFile -Continue
+        if($BackupFilePath){
+            if(-not (Test-Path -Path $BackupFilePath)){
+                Stop-PSFFunction -Message "Could not find backup file '$($BackupFilePath)'"
+            }
+
+            if($Database.Count -gt 1){
+                Stop-PSFFunction -Message "You cannot enter multiple databases for the same backup file. Please just enter one"
+            }
         }
+
+
 
         # Set time stamp
         $timestamp = Get-Date -format "yyyyMMddHHmmss"
@@ -377,6 +388,11 @@
                     # Create the backup
                     Write-PSFMessage -Message "Creating new full backup for database $db" -Level Verbose
                     $lastFullBackup = Backup-DbaDatabase -SqlInstance $SourceSqlInstance -SqlCredential $SourceSqlCredential -Database $db.Name -CopyOnly:$CopyOnlyBackup
+                }
+            }
+            elseif ($BackupFilePath) {
+                [pscustomobject]$lastFullBackup = @{
+                    Path = $BackupFilePath
                 }
             }
             else {
@@ -448,7 +464,6 @@
                             # Check if computer is local
                             if ($computer.IsLocalhost) {
                                 $null = New-Item -Path $accessPath -ItemType Directory -Force
-                                Write-PSFMessage -Level Important -Message $accessPath
                             }
                             else {
                                 $command = [ScriptBlock]::Create("New-Item -Path $accessPath -ItemType Directory -Force")
@@ -563,7 +578,7 @@
                         SqlInstance              = $DestinationSqlInstance
                         SqlCredential            = $DestinationSqlCredential
                         DatabaseName             = $tempDbName
-                        Path                     = $lastFullBackup
+                        Path                     = $lastFullBackup.Path
                         DestinationDataDirectory = $imageDataFolder
                         DestinationLogDirectory  = $imageLogFolder
                         WithReplace              = $true
@@ -575,47 +590,6 @@
                 catch {
                     Stop-PSFFunction -Message "Couldn't restore database $db as $tempDbName on $DestinationSqlInstance.`n$($_)" -Target $restore -ErrorRecord $_ -Continue
                 }
-            }
-
-            # Apply data masking
-            if ($MaskingFile) {
-
-                # Check the recovery model of the database
-                $dbRecoveryModel = Get-DbaDbRecoveryModel -SqlInstance $DestinationSqlInstance -SqlCredential $DestinationSqlCredential -Database $tempDbName
-
-                # Set the recovery model to simple to minimize growth during data masking
-                if ($dbRecoveryModel.RecoveryModel -ne 'Simple') {
-                    try {
-                        $null = Set-DbaDbRecoveryModel -SqlInstance $DestinationSqlInstance -SqlCredential $DestinationSqlCredential -Database $tempDbName -RecoveryModel Simple -Confirm:$false -EnableException
-                    }
-                    catch {
-                        Stop-PSFFunction -Message "Couldn't change recovery model for database" -Target $restore -ErrorRecord $_ -Continue
-                    }
-
-                    [bool]$recoveryModelChanged = $true
-                }
-                else {
-                    [bool]$recoveryModelChanged = $false
-                }
-
-                # Execute the data masking
-                try {
-                    Invoke-DbaDbDataMasking -SqlInstance $DestinationSqlInstance -SqlCredential $DestinationSqlCredential -Database $tempDbName -FilePath $MaskingFile -EnableException
-                }
-                catch {
-                    Stop-PSFFunction -Message "Something went wrong masking the data" -Target $MaskingFile -ErrorRecord $_ -Continue
-                }
-
-                # Change back the recovery model to it's original setting
-                if ($recoveryModelChanged) {
-                    try {
-                        $null = Set-DbaDbRecoveryModel -SqlInstance $DestinationSqlInstance -SqlCredential $DestinationSqlCredential -Database $tempDbName -RecoveryModel $dbRecoveryModel.RecoveryModel -Confirm:$false -EnableException
-                    }
-                    catch {
-                        Stop-PSFFunction -Message "Couldn't change recovery model for database back to original" -Target $restore -ErrorRecord $_ -Continue
-                    }
-                }
-
             }
 
             # Detach database
@@ -721,7 +695,7 @@
 
                 # Test if the JSON folder can be reached
                 if (-not (Test-Path -Path "DCNJSONFolder:\")) {
-                    $command = [scriptblock]::Create("Import-Module PSDatabaseClone -Force")
+                    $command = [scriptblock]::Create("Import-Module dbaclone -Force")
 
                     try {
                         Invoke-PSFCommand -ComputerName $computer -ScriptBlock $command -Credential $Credential
