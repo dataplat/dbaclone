@@ -4,7 +4,7 @@ $commandname = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
 Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
     Context "Validate parameters" {
         [object[]]$params = (Get-ChildItem Function:\New-DcnImage).Parameters.Keys
-        $knownParameters = 'SourceSqlInstance', 'SourceSqlCredential', 'SourceCredential', 'DestinationSqlInstance', 'DestinationSqlCredential', 'DestinationCredential', 'DcnSqlCredential', 'Database', 'ImageNetworkPath', 'ImageLocalPath', 'VhdType', 'CreateFullBackup', 'UseLastFullBackup', 'CopyOnlyBackup', 'Force', 'EnableException'
+        $knownParameters = 'SourceSqlInstance', 'SourceSqlCredential', 'SourceCredential', 'DestinationSqlInstance', 'DestinationSqlCredential', 'DestinationCredential', 'DcnSqlCredential', 'Database', 'ImageNetworkPath', 'ImageLocalPath', 'VhdType', 'CreateFullBackup', 'UseLastFullBackup', 'BackupFilePath', 'CopyOnlyBackup', 'Force', 'EnableException'
         It "Should contain our specific parameters" {
             ( (Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params -IncludeEqual | Where-Object SideIndicator -eq "==").Count ) | Should Be $knownParameters.Count
         }
