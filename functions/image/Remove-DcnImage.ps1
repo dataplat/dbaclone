@@ -193,7 +193,6 @@
                 try {
                     [uri]$uri = New-Object System.Uri($item.ImageLocation)
                     $uriHost = $uri.Host
-                    $item.ImageLocation
                 }
                 catch {
                     Stop-PSFFunction -Message "The image location $ImageNetworkPath is not valid" -ErrorRecord $_ -Target $ImageNetworkPath
