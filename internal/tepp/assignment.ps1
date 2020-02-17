@@ -18,4 +18,5 @@ Register-PSFTeppArgumentCompleter -Command Get-DcnClone -Parameter ImageID -Name
 Register-PSFTeppArgumentCompleter -Command Get-DcnClone -Parameter ImageName -Name 'dbaclone.clones.imagename'
 Register-PSFTeppArgumentCompleter -Command Remove-DcnClone -Parameter Database -Name 'dbaclone.clones.databasename'
 Register-PSFTeppArgumentCompleter -Command Remove-DcnClone -Parameter HostName -Name 'dbaclone.clones.hostname'
+Register-PSFTeppArgumentCompleter -Command Invoke-DcnRepairDcnClone -Parameter HostName -Name 'dbaclone.clones.hostname'
 
