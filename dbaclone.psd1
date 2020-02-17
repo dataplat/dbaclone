@@ -42,6 +42,7 @@
 	# Functions to export from this module
 	FunctionsToExport = 'Convert-DcnUncPathToLocalPath',
 	'Get-DcnClone',
+	'Get-DcnHost',
 	'Get-DcnImage',
 	'Initialize-DcnVhdDisk',
 	'Invoke-DcnRepairClone',

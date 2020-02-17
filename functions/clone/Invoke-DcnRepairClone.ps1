@@ -199,7 +199,7 @@
                     }
                     else {
                         try {
-                            Detach-DbaDatabase -SqlInstance $result.SQLInstance -SqlCredential $SqlCredential -Database $result.DatabaseName
+                            $null = Detach-DbaDatabase -SqlInstance $result.SQLInstance -SqlCredential $SqlCredential -Database $result.DatabaseName
                         }
                         catch {
                             Stop-PSFFunction -Message "Could not detach database [$($result.DatabaseName)]" -ErrorRecord $_ -Continue
