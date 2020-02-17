@@ -52,6 +52,7 @@
 	'Remove-DcnClone',
 	'Remove-DcnImage',
 	'Set-DcnConfiguration',
+	'Set-DcnPermission',
 	'Test-DcnDatabaseClone',
 	'Test-DcnRemoting'
 
