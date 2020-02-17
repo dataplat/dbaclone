@@ -91,7 +91,8 @@
         [string[]]$Database,
         [int[]]$ImageID,
         [string[]]$ImageName,
-        [string[]]$ImageLocation
+        [string[]]$ImageLocation,
+        [switch]$EnableException
     )
 
     begin {
