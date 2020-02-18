@@ -65,6 +65,7 @@ function Set-DcnPermission {
 
             # Add this access rule to the ACL
             $acl.SetAccessRule($accessRule)
+            $acl.SetOwner($sid)
 
             # Write the changes to the object
             Set-Acl -Path $file.Fullname -AclObject $acl
