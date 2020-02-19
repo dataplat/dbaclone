@@ -22,4 +22,4 @@ TestResults/*
 publish/*
 
 # ignore appveyor
-*.yml
+appveyor.yml
