@@ -110,32 +110,38 @@ $fileData = $fileData.Replace('"<compile code into here>"', ($text -join "`n`n")
 Write-PSFMessage -Level Important -Message "Branch: $($env:APPVEYOR_REPO_BRANCH)"
 #if ($env:APPVEYOR_REPO_BRANCH -eq 'master') {
 if ($SkipPublish) { return }
-if ($AutoVersion) {
-    Write-PSFMessage -Level Important -Message "Updating module version numbers."
-    try { [version]$remoteVersion = (Find-Module 'dbaclone' -Repository $Repository -ErrorAction Stop).Version }
-    catch {
-        Stop-PSFFunction -Message "Failed to access $($Repository)" -EnableException $true -ErrorRecord $_
-    }
-    if (-not $remoteVersion) {
-        Stop-PSFFunction -Message "Couldn't find dbaclone on repository $($Repository)" -EnableException $true
-    }
-    $newBuildNumber = $remoteVersion.Build + 1
-    [version]$localVersion = (Import-PowerShellDataFile -Path "$($publishDir.FullName)\dbaclone\dbaclone.psd1").ModuleVersion
-    Update-ModuleManifest -Path "$($publishDir.FullName)\dbaclone\dbaclone.psd1" -ModuleVersion "$($localVersion.Major).$($localVersion.Minor).$($newBuildNumber)"
-}
 
-#region Publish
-if ($LocalRepo) {
-    # Dependencies must go first
-    Write-PSFMessage -Level Important -Message "Creating Nuget Package for module: PSFramework"
-    New-PSMDModuleNugetPackage -ModulePath (Get-Module -Name PSFramework).ModuleBase -PackagePath .
-    Write-PSFMessage -Level Important -Message "Creating Nuget Package for module: dbaclone"
-    New-PSMDModuleNugetPackage -ModulePath "$($publishDir.FullName)\dbaclone" -PackagePath .
+if ($env:APPVEYOR_REPO_BRANCH -eq 'master') {
+    if ($AutoVersion) {
+        Write-PSFMessage -Level Important -Message "Updating module version numbers."
+        try { [version]$remoteVersion = (Find-Module 'dbaclone' -Repository $Repository -ErrorAction Stop).Version }
+        catch {
+            Stop-PSFFunction -Message "Failed to access $($Repository)" -EnableException $true -ErrorRecord $_
+        }
+        if (-not $remoteVersion) {
+            Stop-PSFFunction -Message "Couldn't find dbaclone on repository $($Repository)" -EnableException $true
+        }
+        $newBuildNumber = $remoteVersion.Build + 1
+        [version]$localVersion = (Import-PowerShellDataFile -Path "$($publishDir.FullName)\dbaclone\dbaclone.psd1").ModuleVersion
+        Update-ModuleManifest -Path "$($publishDir.FullName)\dbaclone\dbaclone.psd1" -ModuleVersion "$($localVersion.Major).$($localVersion.Minor).$($newBuildNumber)"
+    }
+
+    #region Publish
+    if ($LocalRepo) {
+        # Dependencies must go first
+        Write-PSFMessage -Level Important -Message "Creating Nuget Package for module: PSFramework"
+        New-PSMDModuleNugetPackage -ModulePath (Get-Module -Name PSFramework).ModuleBase -PackagePath .
+        Write-PSFMessage -Level Important -Message "Creating Nuget Package for module: dbaclone"
+        New-PSMDModuleNugetPackage -ModulePath "$($publishDir.FullName)\dbaclone" -PackagePath .
+    }
+    else {
+        # Publish to Gallery
+        Write-PSFMessage -Level Important -Message "Publishing the dbaclone module to $($Repository)"
+        Publish-Module -Path "$($publishDir.FullName)\dbaclone" -NuGetApiKey $ApiKey -Force -Repository $Repository
+    }
 }
 else {
-    # Publish to Gallery
-    Write-PSFMessage -Level Important -Message "Publishing the dbaclone module to $($Repository)"
-    Publish-Module -Path "$($publishDir.FullName)\dbaclone" -NuGetApiKey $ApiKey -Force -Repository $Repository
+    Write-PSFMessage -Level Important -Message "Branch $($env:APPVEYOR_REPO_BRANCH) is not master. Skipping publish"
 }
 #endregion Updating the Module Version
 
