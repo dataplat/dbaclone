@@ -1,11 +1,11 @@
-﻿function Get-DcnClone {
+function Get-DcnHost {
     <#
     .SYNOPSIS
-        Get-DcnClone get on or more clones
+        Get-DcnHost get all the hosts that have clones
 
     .DESCRIPTION
-        Get-DcnClone will retrieve the clones and apply filters if needed.
-        By default all the clones are returned
+        Get-DcnHost will retrieve the hosts that have clones
+        By default all the hosts are returned
 
     .PARAMETER SqlCredential
         Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
@@ -23,21 +23,6 @@
         Allows you to login to servers or use authentication to access files and folder/shares
 
         $scred = Get-Credential, then pass $scred object to the -Credential parameter.
-
-    .PARAMETER HostName
-        Filter based on the hostname
-
-    .PARAMETER Database
-        Filter based on the database
-
-    .PARAMETER ImageID
-        Filter based on the image id
-
-    .PARAMETER ImageName
-        Filter based on the image name
-
-    .PARAMETER ImageLocation
-        Filter based on the image location
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -61,24 +46,10 @@
         https://psdatabaseclone.org/
 
     .EXAMPLE
-        Get-DcnClone
+        Get-DcnHost
 
-        Get all the clones
+        Get all the hosts
 
-    .EXAMPLE
-        Get-DcnClone -HostName host1, host2
-
-        Retrieve the clones for host1 and host2
-
-    .EXAMPLE
-        Get-DcnClone -Database DB1
-
-        Get all the clones that have the name DB1
-
-    .EXAMPLE
-        Get-DcnClone -ImageName DB1_20180703085917
-
-        Get all the clones that were made with image "DB1_20180703085917"
     #>
 
     [CmdLetBinding()]
@@ -87,11 +58,6 @@
         [PSCredential]$SqlCredential,
         [PSCredential]$DcnSqlCredential,
         [PSCredential]$Credential,
-        [string[]]$HostName,
-        [string[]]$Database,
-        [int[]]$ImageID,
-        [string[]]$ImageName,
-        [string[]]$ImageLocation,
         [switch]$EnableException
     )
 
@@ -107,7 +73,7 @@
         if ($informationStore -eq 'SQL') {
 
             # Get the module configurations
-            $pdcSqlInstance = Get-PSFConfigValue -FullName psdatabaseclone.database.server
+            [DbaInstanceParameter]$pdcSqlInstance = Get-PSFConfigValue -FullName psdatabaseclone.database.Server
             $pdcDatabase = Get-PSFConfigValue -FullName psdatabaseclone.database.name
             if (-not $DcnSqlCredential) {
                 $pdcCredential = Get-PSFConfigValue -FullName psdatabaseclone.informationstore.credential -Fallback $null
@@ -124,106 +90,49 @@
                 Stop-PSFFunction -Message "Something is wrong in the module configuration" -ErrorRecord $_ -Continue
             }
 
-            $query = "
-                SELECT c.CloneID,
-                    c.CloneLocation,
-                    c.AccessPath,
-                    c.SqlInstance,
-                    c.DatabaseName,
-                    c.IsEnabled,
-                    i.ImageID,
-                    i.ImageName,
-                    i.ImageLocation,
-                    h.HostName
-                FROM dbo.Clone AS c
-                    INNER JOIN dbo.Host AS h
-                        ON h.HostID = c.HostID
-                    INNER JOIN dbo.Image AS i
-                        ON i.ImageID = c.ImageID;
-            "
+            $query = "SELECT DISTINCT h.HostName FROM dbo.Host AS h"
 
             try {
                 $results = @()
-                $results = Invoke-DbaQuery -SqlInstance $pdcSqlInstance -SqlCredential $pdcCredential -Database $pdcDatabase -Query $query -As PSObject
+                $results += Invoke-DbaQuery -SqlInstance $pdcSqlInstance -SqlCredential $DcnSqlCredential -Database $pdcDatabase -Query $query -As PSObject
             }
             catch {
-                Stop-PSFFunction -Message "Could not execute query" -ErrorRecord $_ -Target $query
+                Stop-PSFFunction -Message "Could retrieve images from database $pdcDatabase" -ErrorRecord $_ -Target $query
             }
         }
         elseif ($informationStore -eq 'File') {
-            # Create the PS Drive and get the results
             try {
                 if (Test-Path -Path "DCNJSONFolder:\") {
                     # Get the clones
                     $results = Get-ChildItem -Path "DCNJSONFolder:\" -Filter "*clones.json" | ForEach-Object { Get-Content $_.FullName | ConvertFrom-Json }
                 }
                 else {
-                    Stop-PSFFunction -Message "Could not reach clone information location 'DCNJSONFolder:\'" -ErrorRecord $_ -Target "DCNJSONFolder:\"
+                    Stop-PSFFunction -Message "Could not reach image information location 'DCNJSONFolder:\'" -ErrorRecord $_ -Target "DCNJSONFolder:\"
                     return
                 }
             }
             catch {
-                Stop-PSFFunction -Message "Couldn't get results from JSN folder" -ErrorRecord $_ -Target "DCNJSONFolder:\"
-                return
+                Stop-PSFFunction -Message "Couldn't get results from JSN folder" -Target "DCNJSONFolder:\" -ErrorRecord $_
             }
         }
-
-        # Filter host name
-        if ($HostName) {
-            $results = $results | Where-Object { $_.HostName -in $HostName }
-        }
-
-        # Filter image id
-        if ($Database) {
-            $results = $results | Where-Object { $_.DatabaseName -in $Database }
-        }
-
-        # Filter image id
-        if ($ImageID) {
-            $results = $results | Where-Object { $_.ImageID -in $ImageID }
-        }
-
-        # Filter image name
-        if ($ImageName) {
-            $results = $results | Where-Object { $_.ImageName -in $ImageName }
-        }
-
-        # Filter image location
-        if ($ImageLocation) {
-            $results = $results | Where-Object { $_.ImageLocation -in $ImageLocation }
-        }
-
     }
 
     process {
-
         # Test if there are any errors
         if (Test-PSFFunctionInterrupt) { return }
 
-        # Convert the results to the DCLClone data type
         foreach ($result in $results) {
 
             [pscustomobject]@{
-                CloneID       = $result.CloneID
-                CloneLocation = $result.CloneLocation
-                AccessPath    = $result.AccessPath
-                SqlInstance   = $result.SqlInstance
-                DatabaseName  = $result.DatabaseName
-                IsEnabled     = $result.IsEnabled
-                ImageID       = $result.ImageID
-                ImageName     = $result.ImageName
-                ImageLocation = $result.ImageLocation
-                HostName      = $result.HostName
+                HostName = $result.HostName
             }
         }
     }
 
     end {
-
         # Test if there are any errors
         if (Test-PSFFunctionInterrupt) { return }
 
-        Write-PSFMessage -Message "Finished retrieving clone(s)" -Level Verbose
-
+        Write-PSFMessage -Message "Finished retrieving host(s)" -Level Verbose
     }
 }
