@@ -37,6 +37,8 @@ function Set-DcnPermission {
         Set the permissions for the path
     #>
 
+    [CmdLetBinding()]
+
     param(
         [string]$Path,
         [switch]$EnableException
@@ -58,17 +60,26 @@ function Set-DcnPermission {
 
         $everyone = [System.Security.Principal.WellKnownSidType]::WorldSid
         $sid = New-Object System.Security.Principal.SecurityIdentifier($everyone, $Null)
+
         $accessRule = New-Object System.Security.AccessControl.FilesystemAccessrule($sid, "FullControl", "Allow")
         $accessRule = New-Object System.Security.AccessControl.FilesystemAccessrule("Everyone", "FullControl", "Allow")
+
         foreach ($file in $(Get-ChildItem -Path "$Path" -Recurse)) {
+            Write-PSFMessage -Level Verbose -Message "Setting permissions for '$($file.FullName)'"
             $acl = Get-Acl $file.Fullname
 
             # Add this access rule to the ACL
             $acl.SetAccessRule($accessRule)
             $acl.SetOwner($sid)
 
-            # Write the changes to the object
-            Set-Acl -Path $file.Fullname -AclObject $acl
+            try {
+                # Write the changes to the object
+                Set-Acl -Path $file.Fullname -AclObject $acl
+            }
+            catch {
+                Stop-PSFFunction -Message "Could not set permissions for '$($file.FullName)'" -Target $file -ErrorRecord $_ -Continue
+            }
+
         }
     }
 }
