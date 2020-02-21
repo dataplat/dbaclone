@@ -119,6 +119,21 @@
             Stop-PSFFunction -Message "The module setup has NOT yet successfully run. Please run 'Set-DcnConfiguration'" -Continue
         }
 
+        if (-not $Destination -and -not $SqlInstance) {
+            Stop-PSFFunction -Message "Please enter a destination or enter a SQL Server instance" -Continue
+        }
+
+        if (-not $Destination -and $SkipDatabaseMount) {
+            Stop-PSFFunction -Message "Please enter a destination when using -SkipDatabaseMount" -Continue
+        }
+
+        # Check the available images
+        $images = Get-DcnImage
+
+        if ($Database -notin $images.DatabaseName) {
+            Stop-PSFFunction -Message "There is no image for database '$Database'" -Continue
+        }
+
         # Get the information store
         $informationStore = Get-PSFConfigValue -FullName psdatabaseclone.informationstore.mode
 
@@ -163,27 +178,6 @@
                 Stop-PSFFunction -Message "Could not create diskpart script file" -ErrorRecord $_ -Continue
             }
         }
-
-        if ($SkipDatabaseMount) {
-            if (-not $SqlInstance) {
-                $SqlInstance += "localhost"
-            }
-
-            if (-not $Destination) {
-                Stop-PSFFunction -Message "Please enter a destination when using -SkipDatabaseMount" -Continue
-            }
-        }
-
-        # Check the available images
-        $images = Get-DcnImage
-
-        if ($Database -notin $images.DatabaseName) {
-            Stop-PSFFunction -Message "There is no image for database '$Database'" -ErrorRecord $_ -Continue
-        }
-
-        if (-not $SqlInstance -and -not $Destination) {
-            Stop-PSFFunction -Message "Please enter a destination or enter a SQL Server instance" -ErrorRecord $_ -Continue
-        }
     }
 
     process {
@@ -197,7 +191,7 @@
                 # Try connecting to the instance
                 Write-PSFMessage -Message "Attempting to connect to Sql Server $SqlInstance.." -Level Verbose
                 try {
-                    $server = Connect-DbaInstance -SqlInstance $instance -SqlCredential $SqlCredential
+                    $server = Connect-DbaInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
                 }
                 catch {
                     Stop-PSFFunction -Message "Could not connect to Sql Server instance $instance" -ErrorRecord $_ -Target $instance
@@ -206,12 +200,11 @@
             }
 
             # Setup the computer object
-            $computer = [PsfComputer]$instance.ComputerName
+            $computer = [PsfComputer]$server.ComputerName
         }
         else {
-            $computer = [PsfComputer]"localhost"
+            $computer = [PsfComputer]"$($env:COMPUTERNAME)"
         }
-
 
         if (-not $computer.IsLocalhost) {
             # Get the result for the remote test
@@ -518,10 +511,10 @@
                 if ($PSCmdlet.ShouldProcess($cloneDatabase, "Mounting database $cloneDatabase")) {
                     try {
                         Write-PSFMessage -Message "Mounting database from clone" -Level Verbose
-                        $null = Mount-DbaDatabase -SqlInstance $instance -SqlCredential $SqlCredential -Database $cloneDatabase -FileStructure $dbFileStructure
+                        $null = Mount-DbaDatabase -SqlInstance $server -SqlCredential $SqlCredential -Database $cloneDatabase -FileStructure $dbFileStructure
                     }
                     catch {
-                        Stop-PSFFunction -Message "Couldn't mount database $cloneDatabase" -Target $instance -Continue
+                        Stop-PSFFunction -Message "Couldn't mount database $cloneDatabase" -ErrorRecord $_ -Target $instance -Continue
                     }
                 }
             }
