@@ -663,7 +663,6 @@
             try {
                 # Check if computer is local
                 if ($computer.IsLocalhost) {
-                    $accessPath
                     Set-DcnPermission -Path $accessPath
                 }
                 else {
