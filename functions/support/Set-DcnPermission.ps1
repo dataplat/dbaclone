@@ -61,6 +61,8 @@ function Set-DcnPermission {
         $everyone = [System.Security.Principal.WellKnownSidType]::WorldSid
         $sid = New-Object System.Security.Principal.SecurityIdentifier($everyone, $Null)
 
+        $group = New-Object System.Security.Principal.NTAccount("Everyone")
+
         $accessRule = New-Object System.Security.AccessControl.FilesystemAccessrule($sid, "FullControl", "Allow")
         $accessRule = New-Object System.Security.AccessControl.FilesystemAccessrule("Everyone", "FullControl", "Allow")
 
@@ -70,7 +72,7 @@ function Set-DcnPermission {
 
             # Add this access rule to the ACL
             $acl.SetAccessRule($accessRule)
-            $acl.SetOwner($sid)
+            $acl.SetOwner($group)
 
             try {
                 # Write the changes to the object
