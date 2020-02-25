@@ -119,6 +119,10 @@
             Stop-PSFFunction -Message "The module setup has NOT yet successfully run. Please run 'Set-DcnConfiguration'" -Continue
         }
 
+        if (-not $SqlInstance) {
+            $SkipDatabaseMount = $true
+        }
+
         if (-not $Destination -and -not $SqlInstance) {
             Stop-PSFFunction -Message "Please enter a destination or enter a SQL Server instance" -Continue
         }
