@@ -8,7 +8,7 @@
         This function checks several configurations
 
     .PARAMETER SqlInstance
-        The instance that represents the PSDatabaseClone instance that holds the database
+        The instance that represents the dbaclone instance that holds the database
 
     .PARAMETER SqlCredential
         Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted. To use:
@@ -19,7 +19,7 @@
         To connect as a different Windows user, run PowerShell as that user.
 
     .PARAMETER Database
-        The database that holds all the information for the PSDatabaseClone module
+        The database that holds all the information for the dbaclone module
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -35,12 +35,12 @@
     .NOTES
         Author: Sander Stad (@sqlstad, sqlstad.nl)
 
-        Website: https://psdatabaseclone.org
+        Website: https://dbaclone.org
         Copyright: (C) Sander Stad, sander@sqlstad.nl
         License: MIT https://opensource.org/licenses/MIT
 
     .LINK
-        https://psdatabaseclone.org/
+        https://dbaclone.org/
 
     .EXAMPLE
         Test-DcnConfiguration
@@ -48,7 +48,7 @@
         Test the configuration of the module retrieving the set configurations
 
     .EXAMPLE
-        Test-DcnConfiguration -SqlInstance SQLDB1 -Database PSDatabaseClone
+        Test-DcnConfiguration -SqlInstance SQLDB1 -Database dbaclone
 
         Test the configuration with the instance and database set
 
@@ -66,26 +66,26 @@
 
     Write-PSFMessage -Message "SqlInstance: $SqlInstance, Database: $Database" -Level Debug
 
-    # Check if the values for the PSDatabaseClone database are set
+    # Check if the values for the dbaclone database are set
     if (($null -eq $SqlInstance) -or ($null -eq $Database) -or ($null -eq $SqlCredential)) {
         # Get the configurations for the program database
-        $Database = Get-PSFConfigValue -FullName psdatabaseclone.database.name -Fallback "NotConfigured"
-        $SqlInstance = Get-PSFConfigValue -FullName psdatabaseclone.database.server -Fallback "NotConfigured"
-        $SqlCredential = Get-PSFConfigValue -FullName psdatabaseclone.informationstore.credential -Fallback $null
+        $Database = Get-PSFConfigValue -FullName dbaclone.database.name -Fallback "NotConfigured"
+        $SqlInstance = Get-PSFConfigValue -FullName dbaclone.database.server -Fallback "NotConfigured"
+        $SqlCredential = Get-PSFConfigValue -FullName dbaclone.informationstore.credential -Fallback $null
     }
 
     Write-PSFMessage -Message "Checking configurations" -Level Verbose
 
     # Check the module database server and database name configurations
     if ($SqlInstance -eq 'NotConfigured') {
-        Stop-PSFFunction -Message "The PSDatabaseClone database server is not yet configured. Please run Set-DcnConfiguration" -Target $SqlInstance -Continue
+        Stop-PSFFunction -Message "The dbaclone database server is not yet configured. Please run Set-DcnConfiguration" -Target $SqlInstance -Continue
     }
 
     if ($Database -eq 'NotConfigured') {
-        Stop-PSFFunction -Message "The PSDatabaseClone database is not yet configured. Please run Set-DcnConfiguration" -Target $Database -Continue
+        Stop-PSFFunction -Message "The dbaclone database is not yet configured. Please run Set-DcnConfiguration" -Target $Database -Continue
     }
 
-    Write-PSFMessage -Message "Attempting to connect to PSDatabaseClone database server $SqlInstance.." -Level Verbose
+    Write-PSFMessage -Message "Attempting to connect to dbaclone database server $SqlInstance.." -Level Verbose
     try {
         $pdcServer = Connect-DbaInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential -NonPooledConnection
     }
@@ -93,9 +93,9 @@
         Stop-PSFFunction -Message "Could not connect to Sql Server instance $SqlInstance" -ErrorRecord $_ -Target $pdcServer -Continue
     }
 
-    # Check if the PSDatabaseClone database is present
+    # Check if the dbaclone database is present
     if ($pdcServer.Databases.Name -notcontains $Database) {
-        Stop-PSFFunction -Message "PSDatabaseClone database $Database is not present on $SqlInstance" -Target $pdcServer -Continue
+        Stop-PSFFunction -Message "dbaclone database $Database is not present on $SqlInstance" -Target $pdcServer -Continue
     }
 
     Write-PSFMessage -Message "Finished checking configurations" -Level Verbose
