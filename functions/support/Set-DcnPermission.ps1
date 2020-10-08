@@ -81,7 +81,6 @@ function Set-DcnPermission {
             catch {
                 Stop-PSFFunction -Message "Could not set permissions for '$($file.FullName)'" -Target $file -ErrorRecord $_ -Continue
             }
-
         }
     }
 }
