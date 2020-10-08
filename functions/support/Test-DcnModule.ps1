@@ -81,7 +81,7 @@ function Test-DcnModule {
 
         # region Setup status
         if ($SetupStatus) {
-            if (-not (Get-PSFConfigValue -FullName psdatabaseclone.setup.status)) {
+            if (-not (Get-PSFConfigValue -FullName dbaclone.setup.status)) {
                 return $false
             }
             else {
@@ -117,10 +117,8 @@ function Test-DcnModule {
             if ($windowsEdition -notin $supportedVersions ) {
                 if ($windowsEdition -like '*Windows 7*') {
                     return $false
-                    #Stop-PSFFunction -Message "Module does not work on Windows 7" -Target $OSDetails -FunctionName 'Pre Import'
                 }
                 else {
-                    #Stop-PSFFunction -Message "Unsupported version of Windows." -Target $OSDetails -FunctionName 'Pre Import'
                     return $false
                 }
             }

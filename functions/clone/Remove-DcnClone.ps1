@@ -24,7 +24,7 @@
 
     .PARAMETER DcnSqlCredential
         Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted.
-        This works similar as SqlCredential but is only meant for authentication to the PSDatabaseClone database server and database.
+        This works similar as SqlCredential but is only meant for authentication to the dbaclone database server and database.
 
     .PARAMETER Credential
         Allows you to login to systems using a credential. To use:
@@ -108,14 +108,14 @@
         }
 
         # Get the information store
-        $informationStore = Get-PSFConfigValue -FullName psdatabaseclone.informationstore.mode
+        $informationStore = Get-PSFConfigValue -FullName dbaclone.informationstore.mode
 
         if ($informationStore -eq 'SQL') {
             # Get the module configurations
-            [DbaInstanceParameter]$pdcSqlInstance = Get-PSFConfigValue -FullName psdatabaseclone.database.Server
-            $pdcDatabase = Get-PSFConfigValue -FullName psdatabaseclone.database.name
+            [DbaInstanceParameter]$pdcSqlInstance = Get-PSFConfigValue -FullName dbaclone.database.Server
+            $pdcDatabase = Get-PSFConfigValue -FullName dbaclone.database.name
             if (-not $DcnSqlCredential) {
-                $pdcCredential = Get-PSFConfigValue -FullName psdatabaseclone.informationstore.credential -Fallback $null
+                $pdcCredential = Get-PSFConfigValue -FullName dbaclone.informationstore.credential -Fallback $null
             }
             else {
                 $pdcCredential = $DcnSqlCredential

@@ -139,7 +139,7 @@
             try {
                 $params = @{
                     FileSystem         = "NTFS"
-                    NewFileSystemLabel = "PSDatabaseClone"
+                    NewFileSystemLabel = "dbaclone"
                     AllocationUnitSize = $AllocationUnitSize
                     Confirm            = $false
                 }

@@ -46,9 +46,9 @@
 
     .PARAMETER DcnSqlCredential
         Allows you to login to servers using SQL Logins as opposed to Windows Auth/Integrated/Trusted.
-        This works similar as SqlCredential but is only meant for authentication to the PSDatabaseClone database server and database.
+        This works similar as SqlCredential but is only meant for authentication to the dbaclone database server and database.
 
-        By default the script will try to retrieve the configuration value "psdatabaseclone.informationstore.credential"
+        By default the script will try to retrieve the configuration value "dbaclone.informationstore.credential"
 
     .PARAMETER ImageNetworkPath
         Network path where to save the image. This has to be a UNC path
@@ -166,14 +166,14 @@
         }
 
         # Get the information store
-        $informationStore = Get-PSFConfigValue -FullName psdatabaseclone.informationstore.mode
+        $informationStore = Get-PSFConfigValue -FullName dbaclone.informationstore.mode
 
         if ($informationStore -eq 'SQL') {
             # Get the module configurations
-            $pdcSqlInstance = Get-PSFConfigValue -FullName psdatabaseclone.database.Server
-            $pdcDatabase = Get-PSFConfigValue -FullName psdatabaseclone.database.name
+            $pdcSqlInstance = Get-PSFConfigValue -FullName dbaclone.database.Server
+            $pdcDatabase = Get-PSFConfigValue -FullName dbaclone.database.name
             if (-not $DcnSqlCredential) {
-                $pdcCredential = Get-PSFConfigValue -FullName psdatabaseclone.informationstore.credential -Fallback $null
+                $pdcCredential = Get-PSFConfigValue -FullName dbaclone.informationstore.credential -Fallback $null
             }
             else {
                 $pdcCredential = $DcnSqlCredential
@@ -567,7 +567,7 @@
             }
 
             # Setup the temporary database name
-            $tempDbName = "$($db.Name)-PSDatabaseClone"
+            $tempDbName = "$($db.Name)-dbaclone"
 
             if ($PSCmdlet.ShouldProcess($tempDbName, "Restoring database")) {
                 # Restore database to image folder
