@@ -48,6 +48,7 @@ catch {
 
 # region remove unneccesary directories
 try {
+    Remove-Item -Path "$($publishDir.FullName)\dbaclone\.github" -Force -Recurse
     Remove-Item -Path "$($publishDir.FullName)\dbaclone\appveyor.yml" -Force -Recurse
     Remove-Item -Path "$($publishDir.FullName)\dbaclone\build" -Force -Recurse
     Remove-Item -Path "$($publishDir.FullName)\dbaclone\tests" -Force -Recurse
