@@ -142,7 +142,7 @@ if ($env:APPVEYOR_REPO_BRANCH -eq 'main') {
     }
 }
 else {
-    Write-PSFMessage -Level Important -Message "Branch $($env:APPVEYOR_REPO_BRANCH) is not master. Skipping publish"
+    Write-PSFMessage -Level Important -Message "Branch $($env:APPVEYOR_REPO_BRANCH) is not main. Skipping publish"
 }
 #endregion Updating the Module Version
 
