@@ -23,3 +23,6 @@ publish/*
 
 # ignore appveyor
 appveyor.yml
+
+# ignore debug
+debug.log
