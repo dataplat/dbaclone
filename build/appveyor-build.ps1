@@ -112,7 +112,7 @@ Write-PSFMessage -Level Important -Message "Branch: $($env:APPVEYOR_REPO_BRANCH)
 #if ($env:APPVEYOR_REPO_BRANCH -eq 'master') {
 if ($SkipPublish) { return }
 
-if ($env:APPVEYOR_REPO_BRANCH -eq 'main') {
+if ($env:APPVEYOR_REPO_BRANCH -eq 'master') {
     if ($AutoVersion) {
         Write-PSFMessage -Level Important -Message "Updating module version numbers."
         try { [version]$remoteVersion = (Find-Module 'dbaclone' -Repository $Repository -ErrorAction Stop).Version }
@@ -142,7 +142,7 @@ if ($env:APPVEYOR_REPO_BRANCH -eq 'main') {
     }
 }
 else {
-    Write-PSFMessage -Level Important -Message "Branch $($env:APPVEYOR_REPO_BRANCH) is not main. Skipping publish"
+    Write-PSFMessage -Level Important -Message "Branch $($env:APPVEYOR_REPO_BRANCH) is not master. Skipping publish"
 }
 #endregion Updating the Module Version
 
