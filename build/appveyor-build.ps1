@@ -101,10 +101,10 @@ foreach ($line in (Get-Content "$($PSScriptRoot)\filesAfter.txt" | Where-Object 
 #endregion Gather text data to compile
 
 #region Update the psm1 file
-$fileData = Get-Content -Path "$($publishDir.FullName)\dbaclone\dbaclone.psm1" -Raw
+<# $fileData = Get-Content -Path "$($publishDir.FullName)\dbaclone\dbaclone.psm1" -Raw
 $fileData = $fileData.Replace('"<was not compiled>"', '"<was compiled>"')
 $fileData = $fileData.Replace('"<compile code into here>"', ($text -join "`n`n"))
-[System.IO.File]::WriteAllText("$($publishDir.FullName)\dbaclone\dbaclone.psm1", $fileData, [System.Text.Encoding]::UTF8)
+[System.IO.File]::WriteAllText("$($publishDir.FullName)\dbaclone\dbaclone.psm1", $fileData, [System.Text.Encoding]::UTF8) #>
 #endregion Update the psm1 file
 
 #region Updating the Module Version
