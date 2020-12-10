@@ -3,6 +3,7 @@
 . "$PSScriptRoot\FileIntegrity.Exceptions.ps1"
 
 function Get-FileEncoding {
+	[OutputType('System.String')]
 	<#
 	.SYNOPSIS
 		Tests a file for encoding.
