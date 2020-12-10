@@ -1,13 +1,13 @@
 ﻿param (
 	$TestGeneral = $true,
-	
+
 	$TestFunctions = $true,
-	
+
 	[ValidateSet('None', 'Default', 'Passed', 'Failed', 'Pending', 'Skipped', 'Inconclusive', 'Describe', 'Context', 'Summary', 'Header', 'Fails', 'All')]
 	$Show = "None",
-	
+
 	$Include = "*",
-	
+
 	$Exclude = ""
 )
 
@@ -61,7 +61,7 @@ Write-PSFMessage -Level Important -Message "Proceeding with individual tests"
 	{
 		if ($file.Name -notlike $Include) { continue }
 		if ($file.Name -like $Exclude) { continue }
-		
+
 		Write-PSFMessage -Level Significant -Message "  Executing $($file.Name)"
 		$results = Invoke-Pester -Script $file.FullName -Show $Show -PassThru
 		foreach ($result in $results)
