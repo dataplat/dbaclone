@@ -196,7 +196,7 @@ BEGIN
 	DECLARE @SqlCmd NVARCHAR(MAX);
 	DECLARE @Params NVARCHAR(MAX);
 
-	SET @SqlCmd
+	SELECT @SqlCmd
 		= N'INSERT INTO dbo.Host
 			(
 				HostName,
@@ -213,7 +213,7 @@ BEGIN
 		';
 
 	-- Set the parameters
-	SET @Params = N'
+	SELECT @Params = N'
 			@HostID INT OUTPUT,
 			@HostName  VARCHAR(100),
 			@IPAddress VARCHAR(20),
@@ -259,7 +259,7 @@ BEGIN
 	DECLARE @SqlCmd NVARCHAR(MAX);
 	DECLARE @Params NVARCHAR(MAX);
 
-	SET @SqlCmd
+	SELECT @SqlCmd
 		= N'INSERT INTO dbo.Image
 			(
 				ImageName,
@@ -282,7 +282,7 @@ BEGIN
 		';
 
 	-- Set the parameters
-	SET @Params
+	SELECT @Params
 		= N'
 			@ImageID		   INT OUTPUT,
 			@ImageName		   VARCHAR(100),
