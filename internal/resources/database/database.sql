@@ -1,5 +1,6 @@
-﻿SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED
-SET ANSI_NULLS ON
+﻿SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
+SET QUOTED_IDENTIFIER ON;
+SET ANSI_NULLS ON;
 
 CREATE TABLE [dbo].[Clone]
 (
@@ -11,8 +12,8 @@ CREATE TABLE [dbo].[Clone]
 	,[SqlInstance]   [VARCHAR] (50)  COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL
 	,[DatabaseName]  [VARCHAR] (100) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL
 	,[IsEnabled]     [BIT]           NOT NULL CONSTRAINT [DF_Clone_IsEnabled] DEFAULT ((1))
-)
-GO
+);
+GO;
 
 CREATE PROCEDURE [dbo].[Clone_GetAll]
 AS
@@ -32,7 +33,7 @@ BEGIN
 		dbo.Clone;
 END;
 
-GO
+GO;
 
 CREATE TABLE [dbo].[Image]
 (
@@ -43,8 +44,8 @@ CREATE TABLE [dbo].[Image]
 	,[DatabaseName]      [VARCHAR] (100) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL
 	,[DatabaseTimestamp] [DATETIME]      NOT NULL
 	,[CreatedOn]         [DATETIME]      NOT NULL
-)
-GO
+);
+GO;
 
 CREATE PROCEDURE [dbo].[Image_GetAll]
 AS
@@ -63,7 +64,7 @@ BEGIN
 		dbo.Image;
 END;
 
-GO
+GO;
 
 CREATE TABLE [dbo].[Host]
 (
@@ -71,8 +72,8 @@ CREATE TABLE [dbo].[Host]
 	,[HostName]  [VARCHAR] (100) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL
 	,[IPAddress] [VARCHAR] (20)  COLLATE SQL_Latin1_General_CP1_CI_AS NULL
 	,[FQDN]      [VARCHAR] (255) COLLATE SQL_Latin1_General_CP1_CI_AS NULL
-)
-GO
+);
+GO;
 
 CREATE PROCEDURE [dbo].[Host_GetAll]
 AS
@@ -88,7 +89,7 @@ BEGIN
 		dbo.Host;
 END;
 
-GO
+GO;
 
 /*
 Description:
@@ -171,7 +172,7 @@ BEGIN
 
 
 END;
-GO
+GO;
 
 /*
 Description:
@@ -232,7 +233,7 @@ BEGIN
 
 
 END;
-GO
+GO;
 
 /*
 Description:
@@ -307,5 +308,5 @@ BEGIN
 
 
 END;
-GO
+GO;
 
