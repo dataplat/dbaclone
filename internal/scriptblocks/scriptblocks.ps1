@@ -7,6 +7,6 @@ It also prevents lengthy validation scriptblocks from making your parameter bloc
 hard to read.
 
 Set-PSFScriptblock -Name 'dbaclone.ScriptBlockName' -Scriptblock {
-	
+
 }
 #>
