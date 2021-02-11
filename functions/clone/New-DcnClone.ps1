@@ -132,10 +132,12 @@
         }
 
         # Check the available images
-        $images = Get-DcnImage
+        if (-not $ParentVhd) {
+            $images = Get-DcnImage
 
-        if ($Database -notin $images.DatabaseName) {
-            Stop-PSFFunction -Message "There is no image for database '$Database'" -Continue
+            if ($Database -notin $images.DatabaseName) {
+                Stop-PSFFunction -Message "There is no image for database '$Database'" -Continue
+            }
         }
 
         # Get the information store
@@ -284,17 +286,20 @@
         # Loopt through all the databases
         foreach ($db in $Database) {
 
-            if ($LatestImage) {
-                $images = Get-DcnImage -Database $db
-                $result = $images[-1] | Sort-Object CreatedOn
-            }
+            if (-not $ParentVhd) {
 
-            # Check the results
-            if ($null -eq $result) {
-                Stop-PSFFunction -Message "No image could be found for database $db" -Target $pdcSqlInstance -Continue
-            }
-            else {
-                $ParentVhd = $result.ImageLocation
+                if ($LatestImage) {
+                    $images = Get-DcnImage -Database $db
+                    $result = $images[-1] | Sort-Object CreatedOn
+                }
+
+                # Check the results
+                if ($null -eq $result) {
+                    Stop-PSFFunction -Message "No image could be found for database $db" -Target $pdcSqlInstance -Continue
+                }
+                else {
+                    $ParentVhd = $result.ImageLocation
+                }
             }
 
             # Take apart the vhd directory
