@@ -113,8 +113,8 @@
     [CmdLetBinding(SupportsShouldProcess = $true)]
 
     param(
-        [parameter(Mandatory = $true)]
-        [ValidateNotNullOrEmpty()]
+        # [parameter(Mandatory = $true)]
+        # [ValidateNotNullOrEmpty()]
         [DbaInstanceParameter]$SourceSqlInstance,
         [PSCredential]$SourceSqlCredential,
         [PSCredential]$SourceCredential,
@@ -193,13 +193,16 @@
         Write-PSFMessage -Message "Started image creation" -Level Verbose
 
         # Try connecting to the instance
-        Write-PSFMessage -Message "Attempting to connect to Sql Server $SourceSqlInstance.." -Level Verbose
-        try {
-            $sourceServer = Connect-DbaInstance -SqlInstance $SourceSqlInstance -SqlCredential $SourceSqlCredential
-        }
-        catch {
-            Stop-PSFFunction -Message "Could not connect to Sql Server instance $SourceSqlInstance" -ErrorRecord $_ -Target $SourceSqlInstance
-            return
+        if (-Not($BackupFilePath)) 
+        {
+            Write-PSFMessage -Message "Attempting to connect to Sql Server $SourceSqlInstance.." -Level Verbose
+            try {
+                $sourceServer = Connect-DbaInstance -SqlInstance $SourceSqlInstance -SqlCredential $SourceSqlCredential
+            }
+            catch {
+                Stop-PSFFunction -Message "Could not connect to Sql Server instance $SourceSqlInstance" -ErrorRecord $_ -Target $SourceSqlInstance
+                return
+            }
         }
 
         # Cleanup the values in the network path
@@ -302,35 +305,45 @@
             }
         }
 
-        # Check the image local path
-        if ($PSCmdlet.ShouldProcess("Verifying image local path")) {
-            if ((Test-DbaPath -Path $ImageLocalPath -SqlInstance $SourceSqlInstance -SqlCredential $DestinationCredential) -ne $true) {
-                Stop-PSFFunction -Message "Image local path $ImageLocalPath is not valid directory or can't be reached." -Target $SourceSqlInstance
-                return
-            }
-
-            # Clean up the paths
-            if ($ImageLocalPath.EndsWith("\")) {
-                $ImageLocalPath = $ImageLocalPath.Substring(0, $ImageLocalPath.Length - 1)
-            }
-
-            $imagePath = $ImageLocalPath
-        }
-
-        # Check the database parameter
-        if ($Database) {
-            foreach ($db in $Database) {
-                if ($db -notin $sourceServer.Databases.Name) {
-                    Stop-PSFFunction -Message "Database $db cannot be found on instance $SourceSqlInstance" -Target $SourceSqlInstance
+        if (-Not($BackupFilePath)) 
+        {
+            # Check the image local path
+            if ($PSCmdlet.ShouldProcess("Verifying image local path")) {
+                if ((Test-DbaPath -Path $ImageLocalPath -SqlInstance $SourceSqlInstance -SqlCredential $DestinationCredential) -ne $true) {
+                    Stop-PSFFunction -Message "Image local path $ImageLocalPath is not valid directory or can't be reached." -Target $SourceSqlInstance
+                    return
                 }
             }
-
-            $DatabaseCollection = $sourceServer.Databases | Where-Object { $_.Name -in $Database }
-        }
-        else {
-            Stop-PSFFunction -Message "Please supply a database to create an image for" -Target $SourceSqlInstance -Continue
         }
 
+        # Clean up the paths
+        if ($ImageLocalPath.EndsWith("\")) {
+            $ImageLocalPath = $ImageLocalPath.Substring(0, $ImageLocalPath.Length - 1)
+        }
+
+        $imagePath = $ImageLocalPath
+
+        # Check the database parameter
+        if (-Not($BackupFilePath)) 
+        {
+            if ($Database) {
+                foreach ($db in $Database) {
+                    if ($db -notin $sourceServer.Databases.Name) {
+                        Stop-PSFFunction -Message "Database $db cannot be found on instance $SourceSqlInstance" -Target $SourceSqlInstance
+                    }
+                }
+
+                $DatabaseCollection = $sourceServer.Databases | Where-Object { $_.Name -in $Database }
+            }
+            else {
+                Stop-PSFFunction -Message "Please supply a database to create an image for" -Target $SourceSqlInstance -Continue
+            }
+        }
+        else 
+        {
+            $DatabaseCollection = $Database
+        }
+            
         if($BackupFilePath){
             if(-not (Test-Path -Path $BackupFilePath)){
                 Stop-PSFFunction -Message "Could not find backup file '$($BackupFilePath)'"
@@ -354,7 +367,14 @@
 
         # Loop through each of the databases
         foreach ($db in $DatabaseCollection) {
-            Write-PSFMessage -Message "Creating image for database $db from $SourceSqlInstance" -Level Verbose
+            if (-Not($BackupFilePath)) 
+            {
+                Write-PSFMessage -Message "Creating image for database $db from $SourceSqlInstance" -Level Verbose
+            }
+            else 
+            {
+                Write-PSFMessage -Message "Creating image for database $db from $BackupFilePath" -Level Verbose
+            }
 
             if ($PSCmdlet.ShouldProcess($db, "Checking available disk space for database")) {
                 # Check the database size to the available disk space
