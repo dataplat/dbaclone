@@ -341,7 +341,11 @@
         }
         else 
         {
-            $DatabaseCollection = $Database
+            $DatabaseCollection = 
+            @{
+                Name = $Database
+                Size = 1
+            };
         }
             
         if($BackupFilePath){
