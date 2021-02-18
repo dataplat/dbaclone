@@ -497,6 +497,24 @@
                 }
             }
 
+            # Set privileges for access path
+            try {
+                # Check if computer is local
+                if ($computer.IsLocalhost) {
+                    Set-DcnPermission -Path $accessPath
+                }
+                else {
+                    [string]$commandText = "Set-DcnPermission -Path '$($accessPath)'"
+
+                    $command = [scriptblock]::Create($commandText)
+
+                    $null = Invoke-PSFCommand -ComputerName $computer -ScriptBlock $command -Credential $DestinationCredential
+                }
+            }
+            catch {
+                Stop-PSFFunction -Message "Couldn't create access path directory" -ErrorRecord $_ -Target $accessPath -Continue
+            }
+
             if (-not $SkipDatabaseMount) {
                 # Get all the files of the database
                 if ($computer.IsLocalhost) {
@@ -659,24 +677,6 @@
                 elseif ($informationStore -eq 'File') {
                     $hostID = ($hosts | Where-Object { $_.Hostname -eq $hostname } | Select-Object HostID -Unique).HostID
                 }
-            }
-
-            # Set privileges for access path
-            try {
-                # Check if computer is local
-                if ($computer.IsLocalhost) {
-                    Set-DcnPermission -Path $accessPath
-                }
-                else {
-                    [string]$commandText = "Set-DcnPermission -Path '$($accessPath)'"
-
-                    $command = [scriptblock]::Create($commandText)
-
-                    $null = Invoke-PSFCommand -ComputerName $computer -ScriptBlock $command -Credential $DestinationCredential
-                }
-            }
-            catch {
-                Stop-PSFFunction -Message "Couldn't create access path directory" -ErrorRecord $_ -Target $accessPath -Continue
             }
 
             # Setup the clone location
