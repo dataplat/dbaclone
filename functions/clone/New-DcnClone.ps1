@@ -139,6 +139,9 @@
                 Stop-PSFFunction -Message "There is no image for database '$Database'" -Continue
             }
         }
+        else {
+            $Database = $(Get-DcnImage -ImageLocation $ParentVhd).DatabaseName
+        }
 
         # Get the information store
         $informationStore = Get-PSFConfigValue -FullName dbaclone.informationstore.mode
