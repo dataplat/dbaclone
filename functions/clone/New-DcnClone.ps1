@@ -141,6 +141,9 @@
         }
         else {
             $Database = $(Get-DcnImage -ImageLocation $ParentVhd).DatabaseName
+            if ($null -eq $Database -or $Database -eq "") {
+                Stop-PSFFunction -Message "There is no image with name '$ParentVhd'" -Continue
+            }
         }
 
         # Get the information store
