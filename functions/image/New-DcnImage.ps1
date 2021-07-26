@@ -399,11 +399,11 @@
 
             # Setup the image variables
             $imageName = "$($db.Name)_$timestamp"
-
+            
             # Setup the access path
             $accessPath = $null
             if ($computer.IsLocalhost) {
-            $accessPath = Join-PSFPath -Path $ImageLocalPath -Child $imageName
+                $accessPath = Join-PSFPath -Path $ImageLocalPath -Child $imageName
             }else{
                 $command = [scriptblock]::Create("Join-PSFPath -Path $($ImageLocalPath) -Child $($imageName)");
                 $accessPath = Invoke-PSFCommand -ComputerName $computer -ScriptBlock $command -Credential $DestinationCredential
@@ -486,8 +486,8 @@
             $imageLogFolder = $null
 
             if ($computer.IsLocalhost) {
-            $imageDataFolder = Join-PSFPath -Path $imagePath -Child "$($imageName)\Data"
-            $imageLogFolder = Join-PSFPath -Path $imagePath -Child "$($imageName)\Log"
+                $imageDataFolder = Join-PSFPath -Path $imagePath -Child "$($imageName)\Data"
+                $imageLogFolder = Join-PSFPath -Path $imagePath -Child "$($imageName)\Log"
             }else{
                 $command = [scriptblock]::Create("Join-PSFPath -Path $($imagePath) -Child `"$($imageName)\Data`"");
                 $imageDataFolder = Invoke-PSFCommand -ComputerName $computer -ScriptBlock $command -Credential $DestinationCredential
@@ -505,6 +505,13 @@
                             # Check if computer is local
                             if ($computer.IsLocalhost) {
                                 $null = New-Item -Path $accessPath -ItemType Directory -Force
+
+                                # Set the permissions
+                                #$permission = "Everyone", "FullControl", "ContainerInherit,ObjectInherit", "None", "Allow"
+                                $accessRule = New-Object System.Security.AccessControl.FileSystemAccessRule("Everyone", "FullControl", "ContainerInherit,Objectinherit", "None", "Allow")
+                                $acl = Get-Acl -Path $accessPath
+                                $acl.SetAccessRule($accessRule)
+                                Set-Acl -Path $accessPath -AclObject $acl
                             }
                             else {
                                 $command = [ScriptBlock]::Create("New-Item -Path $accessPath -ItemType Directory -Force")
@@ -527,13 +534,6 @@
                             Stop-PSFFunction -Message "Couldn't create access path directory" -ErrorRecord $_ -Target $accessPath -Continue
                         }
                     }
-
-                    # Set the permissions
-                    #$permission = "Everyone", "FullControl", "ContainerInherit,ObjectInherit", "None", "Allow"
-                    $accessRule = New-Object System.Security.AccessControl.FileSystemAccessRule("Everyone", "FullControl", "ContainerInherit,Objectinherit", "None", "Allow")
-                    $acl = Get-Acl -Path $accessPath
-                    $acl.SetAccessRule($accessRule)
-                    Set-Acl -Path $accessPath -AclObject $acl
                 }
 
                 # Get the properties of the disk and partition
@@ -541,7 +541,7 @@
                 $partition = $null
 
                 if ($computer.IsLocalhost) {
-                $partition = Get-Partition -DiskNumber $disk.Number | Where-Object { $_.Type -ne "Reserved" } | Select-Object -First 1
+                    $partition = Get-Partition -DiskNumber $disk.Number | Where-Object { $_.Type -ne "Reserved" } | Select-Object -First 1
                 }else{
                     $command = [scriptblock]::Create("Get-Partition -DiskNumber $($disk.Number)");
                     $partition = Invoke-PSFCommand -ComputerName $computer -ScriptBlock $command -Credential $DestinationCredential | Where-Object { $_.Type -ne "Reserved" } | Select-Object -First 1
