@@ -401,7 +401,13 @@
             $imageName = "$($db.Name)_$timestamp"
 
             # Setup the access path
+            $accessPath = $null
+            if ($computer.IsLocalhost) {
             $accessPath = Join-PSFPath -Path $ImageLocalPath -Child $imageName
+            }else{
+                $command = [scriptblock]::Create("Join-PSFPath -Path $($ImageLocalPath) -Child $($imageName)");
+                $accessPath = Invoke-PSFCommand -ComputerName $computer -ScriptBlock $command -Credential $DestinationCredential
+            }
 
             # Setup the vhd path
             $vhdPath = "$($accessPath).$($VhdType.ToLower())"
@@ -476,8 +482,19 @@
             }
 
             # Create folder structure for image
+            $imageDataFolder = $null
+            $imageLogFolder = $null
+
+            if ($computer.IsLocalhost) {
             $imageDataFolder = Join-PSFPath -Path $imagePath -Child "$($imageName)\Data"
             $imageLogFolder = Join-PSFPath -Path $imagePath -Child "$($imageName)\Log"
+            }else{
+                $command = [scriptblock]::Create("Join-PSFPath -Path $($imagePath) -Child `"$($imageName)\Data`"");
+                $imageDataFolder = Invoke-PSFCommand -ComputerName $computer -ScriptBlock $command -Credential $DestinationCredential
+                
+                $command = [scriptblock]::Create("Join-PSFPath -Path $($imagePath) -Child `"$($imageName)\Log`"");
+                $imageLogFolder = Invoke-PSFCommand -ComputerName $computer -ScriptBlock $command -Credential $DestinationCredential
+            }
 
             # try to create access path
             try {
@@ -521,7 +538,14 @@
 
                 # Get the properties of the disk and partition
                 $disk = $diskResult.Disk
+                $partition = $null
+
+                if ($computer.IsLocalhost) {
                 $partition = Get-Partition -DiskNumber $disk.Number | Where-Object { $_.Type -ne "Reserved" } | Select-Object -First 1
+                }else{
+                    $command = [scriptblock]::Create("Get-Partition -DiskNumber $($disk.Number)");
+                    $partition = Invoke-PSFCommand -ComputerName $computer -ScriptBlock $command -Credential $DestinationCredential | Where-Object { $_.Type -ne "Reserved" } | Select-Object -First 1
+                }
 
                 if ($PSCmdlet.ShouldProcess($accessPath, "Adding access path '$accessPath' to mounted disk")) {
                     # Add the access path to the mounted disk
