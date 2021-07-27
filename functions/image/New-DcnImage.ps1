@@ -399,9 +399,15 @@
 
             # Setup the image variables
             $imageName = "$($db.Name)_$timestamp"
-
+            
             # Setup the access path
-            $accessPath = Join-PSFPath -Path $ImageLocalPath -Child $imageName
+            $accessPath = $null
+            if ($computer.IsLocalhost) {
+                $accessPath = Join-PSFPath -Path $ImageLocalPath -Child $imageName
+            }else{
+                $command = [scriptblock]::Create("Join-PSFPath -Path $($ImageLocalPath) -Child $($imageName)");
+                $accessPath = Invoke-PSFCommand -ComputerName $computer -ScriptBlock $command -Credential $DestinationCredential
+            }
 
             # Setup the vhd path
             $vhdPath = "$($accessPath).$($VhdType.ToLower())"
@@ -476,8 +482,19 @@
             }
 
             # Create folder structure for image
-            $imageDataFolder = Join-PSFPath -Path $imagePath -Child "$($imageName)\Data"
-            $imageLogFolder = Join-PSFPath -Path $imagePath -Child "$($imageName)\Log"
+            $imageDataFolder = $null
+            $imageLogFolder = $null
+
+            if ($computer.IsLocalhost) {
+                $imageDataFolder = Join-PSFPath -Path $imagePath -Child "$($imageName)\Data"
+                $imageLogFolder = Join-PSFPath -Path $imagePath -Child "$($imageName)\Log"
+            }else{
+                $command = [scriptblock]::Create("Join-PSFPath -Path $($imagePath) -Child `"$($imageName)\Data`"");
+                $imageDataFolder = Invoke-PSFCommand -ComputerName $computer -ScriptBlock $command -Credential $DestinationCredential
+                
+                $command = [scriptblock]::Create("Join-PSFPath -Path $($imagePath) -Child `"$($imageName)\Log`"");
+                $imageLogFolder = Invoke-PSFCommand -ComputerName $computer -ScriptBlock $command -Credential $DestinationCredential
+            }
 
             # try to create access path
             try {
@@ -488,6 +505,13 @@
                             # Check if computer is local
                             if ($computer.IsLocalhost) {
                                 $null = New-Item -Path $accessPath -ItemType Directory -Force
+
+                                # Set the permissions
+                                #$permission = "Everyone", "FullControl", "ContainerInherit,ObjectInherit", "None", "Allow"
+                                $accessRule = New-Object System.Security.AccessControl.FileSystemAccessRule("Everyone", "FullControl", "ContainerInherit,Objectinherit", "None", "Allow")
+                                $acl = Get-Acl -Path $accessPath
+                                $acl.SetAccessRule($accessRule)
+                                Set-Acl -Path $accessPath -AclObject $acl
                             }
                             else {
                                 $command = [ScriptBlock]::Create("New-Item -Path $accessPath -ItemType Directory -Force")
@@ -510,18 +534,18 @@
                             Stop-PSFFunction -Message "Couldn't create access path directory" -ErrorRecord $_ -Target $accessPath -Continue
                         }
                     }
-
-                    # Set the permissions
-                    #$permission = "Everyone", "FullControl", "ContainerInherit,ObjectInherit", "None", "Allow"
-                    $accessRule = New-Object System.Security.AccessControl.FileSystemAccessRule("Everyone", "FullControl", "ContainerInherit,Objectinherit", "None", "Allow")
-                    $acl = Get-Acl -Path $accessPath
-                    $acl.SetAccessRule($accessRule)
-                    Set-Acl -Path $accessPath -AclObject $acl
                 }
 
                 # Get the properties of the disk and partition
                 $disk = $diskResult.Disk
-                $partition = Get-Partition -DiskNumber $disk.Number | Where-Object { $_.Type -ne "Reserved" } | Select-Object -First 1
+                $partition = $null
+
+                if ($computer.IsLocalhost) {
+                    $partition = Get-Partition -DiskNumber $disk.Number | Where-Object { $_.Type -ne "Reserved" } | Select-Object -First 1
+                }else{
+                    $command = [scriptblock]::Create("Get-Partition -DiskNumber $($disk.Number)");
+                    $partition = Invoke-PSFCommand -ComputerName $computer -ScriptBlock $command -Credential $DestinationCredential | Where-Object { $_.Type -ne "Reserved" } | Select-Object -First 1
+                }
 
                 if ($PSCmdlet.ShouldProcess($accessPath, "Adding access path '$accessPath' to mounted disk")) {
                     # Add the access path to the mounted disk
