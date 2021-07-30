@@ -225,11 +225,10 @@
                 }
 
                 # Get the clones associated with the image
-                $results = @()
                 $results = Get-DcnClone -ImageID $item.ImageID
 
                 # Check the results
-                if ($results.Count -ge 1) {
+                if ($null -ne $results) {
                     # Loop through the results
                     foreach ($result in $results) {
                         if ($PSCmdlet.ShouldProcess($item.CloneID, "Removing clone $($result.CloneLocation) from $($result.HostName)")) {
