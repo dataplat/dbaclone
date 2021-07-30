@@ -299,34 +299,46 @@
                 }
 
                 if ($PSCmdlet.ShouldProcess("Clone ID: $($item.CloneID)", "Deleting clone from database")) {
-                    if ($informationStore -eq 'SQL') {
-                        # Removing records from database
-                        try {
-                            $query = "DELETE FROM dbo.Clone WHERE CloneID = $($item.CloneID);"
-
-                            $null = Invoke-DbaQuery -SqlInstance $pdcSqlInstance -SqlCredential $pdcCredential -Database $pdcDatabase -Query $query -EnableException
-                        }
-                        catch {
-                            Stop-PSFFunction -Message "Could not remove clone record from database" -ErrorRecord $_ -Target $query -Continue
-                        }
+                    #Check if the VHD has been removed before we remove it from the database
+                    $cloneVHDExists = $true;
+                    if ($computer.IsLocalhost) {
+                        $cloneVHDExists = Test-Path -Path $item.CloneLocation;
                     }
-                    elseif ($informationStore -eq 'File') {
-                        [array]$cloneData = $null
-                        [array]$newCloneData = $null
+                    else {
+                        $command = [scriptblock]::Create("Test-Path -Path '$($item.CloneLocation)'")
+                        $cloneVHDExists = Invoke-PSFCommand -ComputerName $item.HostName -ScriptBlock $command -Credential $Credential
+                    }
 
-                        $cloneData = Get-DcnClone
+                    if (-not $cloneVHDExists) {
+                        if ($informationStore -eq 'SQL') {
+                            # Removing records from database
+                            try {
+                                $query = "DELETE FROM dbo.Clone WHERE CloneID = $($item.CloneID);"
 
-                        $newCloneData = $cloneData | Where-Object { $_.CloneID -ne $item.CloneID }
-
-                        # Set the clone file
-                        $jsonCloneFile = "DCNJSONFolder:\clones.json"
-
-                        # Convert the data back to JSON
-                        if ($newCloneData.Count -ge 1) {
-                            $newCloneData | ConvertTo-Json | Set-Content $jsonCloneFile
+                                $null = Invoke-DbaQuery -SqlInstance $pdcSqlInstance -SqlCredential $pdcCredential -Database $pdcDatabase -Query $query -EnableException
+                            }
+                            catch {
+                                Stop-PSFFunction -Message "Could not remove clone record from database" -ErrorRecord $_ -Target $query -Continue
+                            }
                         }
-                        else {
-                            Clear-Content -Path $jsonCloneFile
+                        elseif ($informationStore -eq 'File') {
+                            [array]$cloneData = $null
+                            [array]$newCloneData = $null
+
+                            $cloneData = Get-DcnClone
+
+                            $newCloneData = $cloneData | Where-Object { $_.CloneID -ne $item.CloneID }
+
+                            # Set the clone file
+                            $jsonCloneFile = "DCNJSONFolder:\clones.json"
+
+                            # Convert the data back to JSON
+                            if ($newCloneData.Count -ge 1) {
+                                $newCloneData | ConvertTo-Json | Set-Content $jsonCloneFile
+                            }
+                            else {
+                                Clear-Content -Path $jsonCloneFile
+                            }
                         }
                     }
                 }

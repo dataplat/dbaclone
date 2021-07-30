@@ -279,30 +279,45 @@
                 }
 
                 if ($PSCmdlet.ShouldProcess($item.ImageLocation, "Removing image from database")) {
-                    if ($informationStore -eq 'SQL') {
-                        # Remove the image from the database
-                        try {
-                            $query = "DELETE FROM dbo.Image WHERE ImageID = $($item.ImageID)"
+                    #Check if the VHD has been removed before we remove it from the database
+                    $imageVHDExists = $true;
+                    if ($computer.IsLocalhost) {
+                        $imageVHDExists = Test-Path -Path $item.ImageLocation;
+                    }
+                    else {
+                        $command = [scriptblock]::Create("Test-Path -Path '$($item.ImageLocation)'")
+                        $imageVHDExists = Invoke-PSFCommand -ComputerName $item.HostName -ScriptBlock $command -Credential $Credential
+                    }
+                    
+                    if(-not $imageVHDExists){
+                        if ($informationStore -eq 'SQL') {
+                            # Remove the image from the database
+                            try {
+                                $query = "DELETE FROM dbo.Image WHERE ImageID = $($item.ImageID)"
 
-                            $null = Invoke-DbaQuery -SqlInstance $pdcSqlInstance -SqlCredential $pdcCredential -Database $pdcDatabase -Query $query
+                                $null = Invoke-DbaQuery -SqlInstance $pdcSqlInstance -SqlCredential $pdcCredential -Database $pdcDatabase -Query $query
+                            }
+                            catch {
+                                Stop-PSFFunction -Message "Couldn't remove image '$($item.ImageLocation)' from database" -ErrorRecord $_ -Target $query
+                            }
                         }
-                        catch {
-                            Stop-PSFFunction -Message "Couldn't remove image '$($item.ImageLocation)' from database" -ErrorRecord $_ -Target $query
+                        elseif ($informationStore -eq 'File') {
+                            $imageData = Get-DcnImage | Where-Object { $_.ImageID -ne $item.ImageID }
+
+                            # Set the image file
+                            $jsonImageFile = "DCNJSONFolder:\images.json"
+
+                            # Convert the data back to JSON
+                            if ($imageData) {
+                                $imageData | ConvertTo-Json | Set-Content $jsonImageFile
+                            }
+                            else {
+                                Clear-Content -Path $jsonImageFile
+                            }
                         }
                     }
-                    elseif ($informationStore -eq 'File') {
-                        $imageData = Get-DcnImage | Where-Object { $_.ImageID -ne $item.ImageID }
-
-                        # Set the image file
-                        $jsonImageFile = "DCNJSONFolder:\images.json"
-
-                        # Convert the data back to JSON
-                        if ($imageData) {
-                            $imageData | ConvertTo-Json | Set-Content $jsonImageFile
-                        }
-                        else {
-                            Clear-Content -Path $jsonImageFile
-                        }
+                    else{
+                        
                     }
                 }
             } # End for each item in group
