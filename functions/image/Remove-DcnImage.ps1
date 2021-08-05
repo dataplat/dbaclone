@@ -289,7 +289,7 @@
                         $imageVHDExists = Invoke-PSFCommand -ComputerName $item.HostName -ScriptBlock $command -Credential $Credential
                     }
                     
-                    if(-not $imageVHDExists){
+                    if (-not $imageVHDExists) {
                         if ($informationStore -eq 'SQL') {
                             # Remove the image from the database
                             try {
@@ -316,8 +316,8 @@
                             }
                         }
                     }
-                    else{
-                        
+                    else {
+                        Write-PSFMessage -Message "Image '$($item.ImageLocation)' exists. Skipping 'Removing image from database'" -Level Warning
                     }
                 }
             } # End for each item in group

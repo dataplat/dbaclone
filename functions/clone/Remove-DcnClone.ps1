@@ -341,6 +341,9 @@
                             }
                         }
                     }
+                    else {
+                        Write-PSFMessage -Message "Clone '$($item.ImageLocation)' exists. Skipping 'Deleting clone from database'" -Level Warning
+                    }
                 }
             } # End for each group item
         } # End for each clone
