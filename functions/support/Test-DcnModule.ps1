@@ -104,7 +104,9 @@ function Test-DcnModule {
                 'Microsoft Windows Server 2012 R2 Datacenter',
                 'Microsoft Windows Server 2016 Standard',
                 'Microsoft Windows Server 2016 Enterprise',
-                'Microsoft Windows Server 2016 Datacenter'
+                'Microsoft Windows Server 2016 Datacenter',
+                'Microsoft Windows Server 2019 Standard',
+                'Microsoft Windows Server 2019 Enterprise',
                 'Microsoft Windows Server 2019 Datacenter'
             )
 

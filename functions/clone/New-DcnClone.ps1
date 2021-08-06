@@ -384,7 +384,7 @@
             # Check if the clone vhd does not yet exist
             $clonePath = Join-PSFPath -Path $Destination -Child "$($CloneName).vhdx"
             if ($computer.IsLocalhost) {
-                if (Test-Path -Path "$($clonePath)" -Credential $DestinationCredential) {
+                if (Test-Path -Path $clonePath) {
                     Stop-PSFFunction -Message "Clone $CloneName already exists" -Target $accessPath -Continue
                 }
             }
