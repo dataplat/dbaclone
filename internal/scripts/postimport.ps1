@@ -57,6 +57,6 @@ if (-not (Test-DcnModule -SetupStatus)) {
 }
 
 # Check the version of the module
-if (-not (Test-DncVersion)) {
+if (-not (Test-DcnVersion)) {
 	Write-PSFMessage -Message "The module is not up-to-date. Please update the module to be sure to have the latest version." -Level Warning
 }
