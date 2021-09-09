@@ -55,3 +55,8 @@ if (-not (Test-DcnModule -WindowsVersion)) {
 if (-not (Test-DcnModule -SetupStatus)) {
 	Write-PSFMessage -Message "The module is not yet configured. Please run Set-DcnConfiguration to make the neccesary changes" -Level Warning
 }
+
+# Check the version of the module
+if (-not (Test-DcnVersion)) {
+	Write-PSFMessage -Message "The module is not up-to-date. Please update the module to be sure to have the latest version." -Level Warning
+}
