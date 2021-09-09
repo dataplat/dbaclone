@@ -96,6 +96,7 @@ function Test-DcnModule {
                 'Microsoft Windows 10 Pro',
                 'Microsoft Windows 10 Enterprise',
                 'Microsoft Windows 10 Education',
+                'Microsoft Windows 11 Pro Insider Preview',
                 'Microsoft Windows Server 2008 R2 Standard',
                 'Microsoft Windows Server 2008 R2 Enterprise',
                 'Microsoft Windows Server 2008 R2 Datacenter'
