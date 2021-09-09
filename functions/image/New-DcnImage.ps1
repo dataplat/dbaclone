@@ -75,6 +75,12 @@
     .PARAMETER CopyOnlyBackup
         Create a backup as COPY_ONLY
 
+    .PARAMETER ExecuteSQLCommand
+        Execute a SQL command on the database before creating the image
+
+    .PARAMETER ExecuteSQLFile
+        Execute a SQL file on the database before creating the image
+
     .PARAMETER Force
         Forcefully execute commands when needed
 
@@ -134,6 +140,8 @@
         [switch]$UseLastFullBackup,
         [string]$BackupFilePath,
         [switch]$CopyOnlyBackup,
+        [string]$ExecuteSQLCommand,
+        [string]$ExecuteSQLFile,
         [Alias('MaskingConfigFile', 'MaskingConfigFilePath')]
         [switch]$Force,
         [switch]$EnableException
@@ -150,7 +158,7 @@
             Stop-PSFFunction -Message "The module setup has NOT yet successfully run. Please run 'Set-DcnConfiguration'" -Continue
         }
 
-        if(-not $CreateFullBackup -and -not $UseLastFullBackup -and -not $BackupFilePath){
+        if (-not $CreateFullBackup -and -not $UseLastFullBackup -and -not $BackupFilePath) {
             Stop-PSFFunction -Message "Unable to get last backup file. Please use -CreateFullBackup, -UseLastFullBackup or -BackupFile" -Continue
         }
 
@@ -193,8 +201,7 @@
         Write-PSFMessage -Message "Started image creation" -Level Verbose
 
         # Try connecting to the instance
-        if (-Not($BackupFilePath)) 
-        {
+        if (-not ($BackupFilePath)) {
             Write-PSFMessage -Message "Attempting to connect to Sql Server $SourceSqlInstance.." -Level Verbose
             try {
                 $sourceServer = Connect-DbaInstance -SqlInstance $SourceSqlInstance -SqlCredential $SourceSqlCredential
@@ -305,8 +312,7 @@
             }
         }
 
-        if (-Not($BackupFilePath)) 
-        {
+        if (-Not($BackupFilePath)) {
             # Check the image local path
             if ($PSCmdlet.ShouldProcess("Verifying image local path")) {
                 if ((Test-DbaPath -Path $ImageLocalPath -SqlInstance $SourceSqlInstance -SqlCredential $DestinationCredential) -ne $true) {
@@ -324,8 +330,7 @@
         $imagePath = $ImageLocalPath
 
         # Check the database parameter
-        if (-Not($BackupFilePath)) 
-        {
+        if (-Not($BackupFilePath)) {
             if ($Database) {
                 foreach ($db in $Database) {
                     if ($db -notin $sourceServer.Databases.Name) {
@@ -339,30 +344,31 @@
                 Stop-PSFFunction -Message "Please supply a database to create an image for" -Target $SourceSqlInstance -Continue
             }
         }
-        else 
-        {
-            $DatabaseCollection = 
-            @{
+        else {
+            $DatabaseCollection = @{
                 Name = $Database
                 Size = 1
             };
         }
-            
-        if($BackupFilePath){
-            if(-not (Test-Path -Path $BackupFilePath)){
+
+        if ($BackupFilePath) {
+            if (-not (Test-Path -Path $BackupFilePath)) {
                 Stop-PSFFunction -Message "Could not find backup file '$($BackupFilePath)'"
             }
 
-            if($Database.Count -gt 1){
+            if ($Database.Count -gt 1) {
                 Stop-PSFFunction -Message "You cannot enter multiple databases for the same backup file. Please just enter one"
             }
         }
 
-
+        if ($ExecuteSQLFile) {
+            if (-not (Test-Path -Path $ExecuteSQLFile)) {
+                Stop-PSFFunction -Message "Could not find SQL file '$($ExecuteSQLFile)'" -Continue
+            }
+        }
 
         # Set time stamp
         $timestamp = Get-Date -format "yyyyMMddHHmmss"
-
     }
 
     process {
@@ -371,12 +377,10 @@
 
         # Loop through each of the databases
         foreach ($db in $DatabaseCollection) {
-            if (-Not($BackupFilePath)) 
-            {
+            if (-Not($BackupFilePath)) {
                 Write-PSFMessage -Message "Creating image for database $db from $SourceSqlInstance" -Level Verbose
             }
-            else 
-            {
+            else {
                 Write-PSFMessage -Message "Creating image for database $db from $BackupFilePath" -Level Verbose
             }
 
@@ -460,7 +464,6 @@
                     Stop-PSFFunction -Message "Couldn't create vhd(x) $imageName" -Target $imageName -ErrorRecord $_ -Continue
                 }
             }
-
 
             if ($PSCmdlet.ShouldProcess("$imageName", "Initializing the vhd")) {
                 # Try to initialize the vhd
@@ -637,6 +640,45 @@
                 }
                 catch {
                     Stop-PSFFunction -Message "Couldn't restore database $db as $tempDbName on $DestinationSqlInstance.`n$($_)" -Target $restore -ErrorRecord $_ -Continue
+                }
+            }
+
+
+            if ($ExecuteSQLCommand) {
+                if ($PSCmdlet.ShouldProcess($tempDbName, "Executing SQL script")) {
+                    # Execute SQL Script
+                    try {
+                        $params = @{
+                            SqlInstance     = $DestinationSqlInstance
+                            SqlCredential   = $DestinationSqlCredential
+                            DatabaseName    = $tempDbName
+                            Query           = $ExecuteSQLCommand
+                            EnableException = $EnableException
+                        }
+                        Invoke-DbaQuery @params
+                    }
+                    catch {
+                        Stop-PSFFunction -Message "Couldn't execute SQL script on $DestinationSqlInstance.`n$($_)" -Target $tempDbName -ErrorRecord $_ -Continue
+                    }
+                }
+            }
+
+            if ($ExecuteSQLFile) {
+                if ($PSCmdlet.ShouldProcess($tempDbName, "Executing SQL file")) {
+                    # Execute SQL File
+                    try {
+                        $params = @{
+                            SqlInstance     = $DestinationSqlInstance
+                            SqlCredential   = $DestinationSqlCredential
+                            DatabaseName    = $tempDbName
+                            File            = $ExecuteSQLFile
+                            EnableException = $EnableException
+                        }
+                        Invoke-DbaQuery @params
+                    }
+                    catch {
+                        Stop-PSFFunction -Message "Couldn't execute SQL script on $DestinationSqlInstance.`n$($_)" -Target $tempDbName -ErrorRecord $_ -Continue
+                    }
                 }
             }
 
