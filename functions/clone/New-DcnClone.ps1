@@ -401,23 +401,19 @@
                 try {
                     Write-PSFMessage -Message "Creating clone from $ParentVhd" -Level Verbose
 
-                    $command = "create vdisk file='$($clonePath)' parent='$ParentVhd'"
-
+                    $command = [ScriptBlock]::Create("
+                        `$command = `"create vdisk file='$($clonePath)' parent='$ParentVhd'`"
+                        Set-Content -Path './diskpart.txt' -Value `$command -Force
+                        diskpart /s './diskpart.txt'
+                    ")
+                      
                     # Check if computer is local
                     if ($computer.IsLocalhost) {
                         # Set the content of the diskpart script file
-                        Set-Content -Path $diskpartScriptFile -Value $command -Force
-
-                        $script = [ScriptBlock]::Create("diskpart /s $diskpartScriptFile")
-                        $null = Invoke-PSFCommand -ScriptBlock $script
+                        $null = Invoke-PSFCommand -ScriptBlock $command
                     }
                     else {
-                        $command = [ScriptBlock]::Create("New-VHD -ParentPath $ParentVhd -Path `"$($clonePath)`" -Differencing")
-                        $vhd = Invoke-PSFCommand -ComputerName $computer -ScriptBlock $command -Credential $Credential
-
-                        if (-not $vhd) {
-                            return
-                        }
+                        $null = Invoke-PSFCommand -ComputerName $computer -ScriptBlock $command -Credential $Credential
                     }
 
                 }
@@ -448,7 +444,7 @@
                         # Get the disk based on the name of the vhd
                         $command = [ScriptBlock]::Create("
                                 `$diskImage = Get-DiskImage -ImagePath $($clonePath)
-                                Get-Disk | Where-Object Number -eq $($diskImage.Number)
+                                Get-Disk | Where-Object Number -eq `$(`$diskImage.Number)
                             ")
                         $disk = Invoke-PSFCommand -ComputerName $computer -ScriptBlock $command -Credential $Credential
                     }
