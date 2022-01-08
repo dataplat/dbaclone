@@ -352,7 +352,7 @@
             }
 
             # Setup access path location
-            $accessPath = Join-PSFPath -Path $Destination -Child $mountDirectory
+            $accessPath = [System.IO.Path]::Combine($Destination, $mountDirectory)
 
             # Check if access path is already present
             if ($PSCmdlet.ShouldProcess($accessPath, "Testing existence access path $accessPath and create it")) {
@@ -382,7 +382,7 @@
             }
 
             # Check if the clone vhd does not yet exist
-            $clonePath = Join-PSFPath -Path $Destination -Child "$($CloneName).vhdx"
+            $clonePath = [System.IO.Path]::Combine($Destination, "$($CloneName).vhdx")
             if ($computer.IsLocalhost) {
                 if (Test-Path -Path "$($clonePath)" -Credential $DestinationCredential) {
                     Stop-PSFFunction -Message "Clone $CloneName already exists" -Target $accessPath -Continue
