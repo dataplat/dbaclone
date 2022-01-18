@@ -289,8 +289,7 @@
             if (-not $ParentVhd) {
 
                 if ($LatestImage) {
-                    $images = Get-DcnImage -Database $db
-                    $result = $images[-1] | Sort-Object CreatedOn
+                    $result = Get-DcnImage -Database $db | Sort-Object -Descending CreatedOn | Select-Object -First 1
                 }
 
                 # Check the results
