@@ -28,7 +28,7 @@ if ((Get-PSFConfigValue -FullName dbaclone.informationstore.mode).ToLower() -eq 
     $jsonCred = Get-PSFConfigValue -FullName dbaclone.informationstore.credential -Fallback $null
 
     # Create a PS Drive
-    if (Get-PSDrive -Name DCNJSONFolder -Scope Global -ErrorAction SilentlyContinue -eq $null) {
+    if ($null -eq (Get-PSDrive -Name DCNJSONFolder -Scope Global -ErrorAction SilentlyContinue)) {
         try {
             $null = New-PSDrive -Name DCNJSONFolder -Root $jsonFolder -Credential $jsonCred -PSProvider FileSystem -Scope Global
 
