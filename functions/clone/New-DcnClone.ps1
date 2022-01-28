@@ -442,7 +442,7 @@
 
                         # Get the disk based on the name of the vhd
                         $command = [ScriptBlock]::Create("
-                                `$diskImage = Get-DiskImage -ImagePath $($clonePath)
+                                `$diskImage = Get-DiskImage -ImagePath `"$($clonePath)`"
                                 Get-Disk | Where-Object Number -eq `$(`$diskImage.Number)
                             ")
                         $disk = Invoke-PSFCommand -ComputerName $computer -ScriptBlock $command -Credential $Credential
