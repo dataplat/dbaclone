@@ -236,7 +236,7 @@
 
         # Check destination
         if (-not $Destination) {
-            $Destination = Join-PSFPath -Path $server.DefaultFile -Child "clone"
+            $Destination = [System.IO.Path]::Combine($server.DefaultFile, "clone")
         }
         else {
             # If the destination is a network path
