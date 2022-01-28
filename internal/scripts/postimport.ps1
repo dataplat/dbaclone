@@ -22,7 +22,7 @@ foreach ($file in (Get-ChildItem "$($script:ModuleRoot)\internal\tepp\*.tepp.ps1
 . Import-ModuleFile -Path "$($script:ModuleRoot)\internal\scripts\license.ps1"
 
 # Check the information mode
-if ((Get-PSFConfigValue -FullName dbaclone.informationstore.mode).ToLower() -eq 'file') {
+if (((Get-PSFConfigValue -FullName dbaclone.informationstore.mode).ToLower()) -eq 'file') {
     # Get the json file
     $jsonFolder = Get-PSFConfigValue -FullName dbaclone.informationstore.path
     $jsonCred = Get-PSFConfigValue -FullName dbaclone.informationstore.credential -Fallback $null
