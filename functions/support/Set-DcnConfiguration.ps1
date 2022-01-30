@@ -293,14 +293,13 @@
             if ($newDatabase) {
                 try {
                     $path = "$($script:ModuleRoot)\internal\resources\database\database.sql"
-                    $query = [System.IO.File]::ReadAllText($path)
 
                     # Create the objects
                     try {
                         Write-PSFMessage -Message "Creating database objects" -Level Verbose
 
                         # Executing the query
-                        Invoke-DbaQuery -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database $Database -Query $query
+                        Invoke-DbaQuery -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database $Database -File $path
                     }
                     catch {
                         Stop-PSFFunction -Message "Couldn't create database objects" -ErrorRecord $_ -Target $SqlInstance

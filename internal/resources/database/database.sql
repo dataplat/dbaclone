@@ -1,8 +1,4 @@
-﻿SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
-SET QUOTED_IDENTIFIER ON;
-SET ANSI_NULLS ON;
-
-CREATE TABLE [dbo].[Clone]
+﻿CREATE TABLE [dbo].[Clone]
 (
 	[CloneID]       [INT]           NOT NULL IDENTITY(1, 1)
 	,[ImageID]       [INT]           NOT NULL
@@ -13,8 +9,7 @@ CREATE TABLE [dbo].[Clone]
 	,[DatabaseName]  [VARCHAR] (100) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL
 	,[IsEnabled]     [BIT]           NOT NULL CONSTRAINT [DF_Clone_IsEnabled] DEFAULT ((1))
 );
-GO;
-
+GO
 CREATE PROCEDURE [dbo].[Clone_GetAll]
 AS
 BEGIN
@@ -32,9 +27,7 @@ BEGIN
 	FROM
 		dbo.Clone;
 END;
-
-GO;
-
+GO
 CREATE TABLE [dbo].[Image]
 (
 	[ImageID]           [INT]           NOT NULL IDENTITY(1, 1)
@@ -45,8 +38,7 @@ CREATE TABLE [dbo].[Image]
 	,[DatabaseTimestamp] [DATETIME]      NOT NULL
 	,[CreatedOn]         [DATETIME]      NOT NULL
 );
-GO;
-
+GO
 CREATE PROCEDURE [dbo].[Image_GetAll]
 AS
 BEGIN
@@ -63,9 +55,7 @@ BEGIN
 	FROM
 		dbo.Image;
 END;
-
-GO;
-
+GO
 CREATE TABLE [dbo].[Host]
 (
 	[HostID]    [INT]           NOT NULL IDENTITY(1, 1)
@@ -73,8 +63,7 @@ CREATE TABLE [dbo].[Host]
 	,[IPAddress] [VARCHAR] (20)  COLLATE SQL_Latin1_General_CP1_CI_AS NULL
 	,[FQDN]      [VARCHAR] (255) COLLATE SQL_Latin1_General_CP1_CI_AS NULL
 );
-GO;
-
+GO
 CREATE PROCEDURE [dbo].[Host_GetAll]
 AS
 BEGIN
@@ -88,9 +77,7 @@ BEGIN
 	FROM
 		dbo.Host;
 END;
-
-GO;
-
+GO
 /*
 Description:
 Procedure for adding a new clone
@@ -172,8 +159,7 @@ BEGIN
 
 
 END;
-GO;
-
+GO
 /*
 Description:
 Procedure for adding a new host
@@ -233,8 +219,7 @@ BEGIN
 
 
 END;
-GO;
-
+GO
 /*
 Description:
 Procedure for adding a new image
@@ -305,8 +290,6 @@ BEGIN
 						  @DatabaseName = @DatabaseName,
 						  @DatabaseTimestamp = @DatabaseTimestamp;
 
-
-
 END;
-GO;
+
 

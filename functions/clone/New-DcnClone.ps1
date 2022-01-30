@@ -236,7 +236,7 @@
 
         # Check destination
         if (-not $Destination) {
-            $Destination = Join-PSFPath -Path $server.DefaultFile -Child "clone"
+            $Destination = [System.IO.Path]::Combine($server.DefaultFile, "clone")
         }
         else {
             # If the destination is a network path
@@ -383,7 +383,7 @@
             # Check if the clone vhd does not yet exist
             $clonePath = [System.IO.Path]::Combine($Destination, "$($CloneName).vhdx")
             if ($computer.IsLocalhost) {
-                if (Test-Path -Path "$($clonePath)" -Credential $DestinationCredential) {
+                if (Test-Path -Path $clonePath) {
                     Stop-PSFFunction -Message "Clone $CloneName already exists" -Target $accessPath -Continue
                 }
             }
@@ -442,7 +442,7 @@
 
                         # Get the disk based on the name of the vhd
                         $command = [ScriptBlock]::Create("
-                                `$diskImage = Get-DiskImage -ImagePath $($clonePath)
+                                `$diskImage = Get-DiskImage -ImagePath `"$($clonePath)`"
                                 Get-Disk | Where-Object Number -eq `$(`$diskImage.Number)
                             ")
                         $disk = Invoke-PSFCommand -ComputerName $computer -ScriptBlock $command -Credential $Credential

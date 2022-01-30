@@ -4,7 +4,7 @@
 
 # dbaclone
 
-<img src="https://psdatabaseclone.org/wp-content/uploads/2018/07/PSDatabaseClone_Logo_128.png" align="left" with="128px" height="131px"/> dbaclone is a PowerShell module for creating SQL Server database images and clones.
+<img src="https://raw.githubusercontent.com/wiki/sqlcollaborative/dbaclone/images/dbaclone_logo_120.png" align="left" with="120px" height="122px"/> dbaclone is a PowerShell module for creating SQL Server database images and clones.
 It enables administrator to supply environments with database copies that are a fraction of the original size.
 
 Do you have any ideas for new commands? Please propose them as [issues](https://github.com/sqlcollaborative/dbaclone/issues) and let us know what you'd like to see.
