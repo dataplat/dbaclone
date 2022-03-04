@@ -272,13 +272,8 @@
                 $newDatabase = $true
 
                 try {
-                    # Setup the query to create the database
-                    $query = "CREATE DATABASE [$Database]"
-
                     Write-PSFMessage -Message "Creating database $Database on $SqlInstance" -Level Verbose
-
-                    # Executing the query
-                    Invoke-DbaQuery -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database master -Query $query
+                    New-DbaDatabase -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Name $Database -RecoveryModel "Simple" -EnableException
                 }
                 catch {
                     Stop-PSFFunction -Message "Couldn't create database $Database on $SqlInstance" -ErrorRecord $_ -Target $SqlInstance
