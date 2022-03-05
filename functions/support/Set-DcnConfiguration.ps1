@@ -95,6 +95,9 @@
         [PSCredential]$SqlCredential,
         [parameter(ParameterSetName = "SQL")]
         [string]$Database,
+        [parameter(ParameterSetName = "SQL")]
+        [ValidateSet('Simple', 'Full', 'BulkLogged')]
+        [string]$RecoveryModel,
         [parameter(ParameterSetName = "File", Mandatory = $true)]
         [string]$Path,
         [parameter(ParameterSetName = "File")]
@@ -223,6 +226,11 @@
                 Stop-PSFFunction -Message "Could not create working directory" -ErrorRecord $_ -Target $SqlInstance
             }
         }
+
+        if (($InformationStore -eq 'SQL') -and (-not $RecoveryModel)) {
+            Write-PSFMessage -Message "Setting recovery model for database to 'Simple'" -Level Verbose
+            $RecoveryModel = 'Simple'
+        }
     }
 
     process {
@@ -273,7 +281,14 @@
 
                 try {
                     Write-PSFMessage -Message "Creating database $Database on $SqlInstance" -Level Verbose
-                    New-DbaDatabase -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Name $Database -RecoveryModel "Simple" -EnableException
+                    $params = @{
+                            SqlInstance = $SqlInstance 
+                            SqlCredential = $SqlCredential 
+                            Name = $Database 
+                            RecoveryModel = $RecoveryModel 
+                            EnableException = $true
+                    }
+                    New-DbaDatabase @params                
                 }
                 catch {
                     Stop-PSFFunction -Message "Couldn't create database $Database on $SqlInstance" -ErrorRecord $_ -Target $SqlInstance
