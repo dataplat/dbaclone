@@ -651,7 +651,7 @@
                         $params = @{
                             SqlInstance     = $DestinationSqlInstance
                             SqlCredential   = $DestinationSqlCredential
-                            DatabaseName    = $tempDbName
+                            Database        = $tempDbName
                             Query           = $ExecuteSQLCommand
                             EnableException = $EnableException
                         }
@@ -670,7 +670,7 @@
                         $params = @{
                             SqlInstance     = $DestinationSqlInstance
                             SqlCredential   = $DestinationSqlCredential
-                            DatabaseName    = $tempDbName
+                            Database        = $tempDbName
                             File            = $ExecuteSQLFile
                             EnableException = $EnableException
                         }

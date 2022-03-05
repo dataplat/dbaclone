@@ -239,21 +239,26 @@
                 if ($PSCmdlet.ShouldProcess($item.CloneLocation, "Dismounting the vhd")) {
                     # Dismounting the vhd
                     try {
-                        if (Test-Path -Path $item.CloneLocation) {
-                            if ($computer.IsLocalhost) {
+                        if ($computer.IsLocalhost) {
+                            if (Test-Path -Path $item.CloneLocation) {
                                 Write-PSFMessage -Message "Dismounting disk '$($item.CloneLocation)' from $($item.HostName)" -Level Verbose
                                 $null = Dismount-DiskImage -ImagePath $item.CloneLocation
                             }
                             else {
-                                $command = [ScriptBlock]::Create("Test-Path -Path '$($item.CloneLocation)'")
-                                Write-PSFMessage -Message "Dismounting disk '$($item.CloneLocation)' from $($item.HostName)" -Level Verbose
-                                $result = Invoke-PSFCommand -ComputerName $item.HostName -ScriptBlock $command -Credential $Credential
-                                $command = [scriptblock]::Create("Dismount-DiskImage -ImagePath '$($item.CloneLocation)'")
-                                $null = Invoke-PSFCommand -ComputerName $item.HostName -ScriptBlock $command -Credential $Credential
+                                Write-PSFMessage -Level Verbose -Message "Could not find clone file '$($item.CloneLocation)'"
                             }
                         }
                         else {
-                            Write-PSFMessage -Level Verbose -Message "Could not find clone file '$($item.CloneLocation)'"
+                            $command = [ScriptBlock]::Create("Test-Path -Path '$($item.CloneLocation)'")
+                            $result = Invoke-PSFCommand -ComputerName $item.HostName -ScriptBlock $command -Credential $Credential
+                            if ($result) {
+                                Write-PSFMessage -Message "Dismounting disk '$($item.CloneLocation)' from $($item.HostName)" -Level Verbose
+                                $command = [scriptblock]::Create("Dismount-DiskImage -ImagePath '$($item.CloneLocation)'")
+                                $null = Invoke-PSFCommand -ComputerName $item.HostName -ScriptBlock $command -Credential $Credential
+                            }
+                            else{
+                                Write-PSFMessage -Level Verbose -Message "Could not find clone file '$($item.CloneLocation)'"
+                            }
                         }
                     }
                     catch {
