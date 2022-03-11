@@ -30,6 +30,9 @@
     .PARAMETER ParentVhd
         Points to the parent VHD to create the clone from
 
+    .PARAMETER ImageId
+        Image ID to create the clone from
+
     .PARAMETER Destination
         Destination directory to save the clone to
 
