@@ -11,6 +11,9 @@
         The filter parameters Database and ExcludeDatabase work like wildcards.
         There is no need to include the asterisk (*). See the examples for more details
 
+    .PARAMETER CloneId
+        The clone id to remove
+
     .PARAMETER HostName
         The hostname to filter on
 
@@ -85,6 +88,7 @@
 
     param(
         [parameter(ParameterSetName = "HostName")]
+        [int[]]$CloneId,
         [string[]]$HostName,
         [PSCredential]$SqlCredential,
         [PSCredential]$DcnSqlCredential,
@@ -137,6 +141,11 @@
         $items += Get-DcnClone
 
         if (-not $All) {
+            if ($CloneId) {
+                Write-PSFMessage -Message "Filtering clone ID" -Level Verbose
+                $items = $items | Where-Object { $_.CloneID -in $CloneId }
+            }
+            
             if ($HostName) {
                 Write-PSFMessage -Message "Filtering hostnames" -Level Verbose
                 $items = $items | Where-Object { $_.HostName -in $HostName }
