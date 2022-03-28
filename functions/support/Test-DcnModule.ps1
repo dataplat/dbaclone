@@ -108,7 +108,10 @@ function Test-DcnModule {
                 'Microsoft Windows Server 2016 Datacenter',
                 'Microsoft Windows Server 2019 Standard',
                 'Microsoft Windows Server 2019 Enterprise',
-                'Microsoft Windows Server 2019 Datacenter'
+                'Microsoft Windows Server 2019 Datacenter',
+                'Microsoft Windows Server 2022 Standard',
+                'Microsoft Windows Server 2022 Enterprise',
+                'Microsoft Windows Server 2022 Datacenter'
             )
 
             # Get the OS details
