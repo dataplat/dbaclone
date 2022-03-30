@@ -30,6 +30,9 @@
     .PARAMETER ParentVhd
         Points to the parent VHD to create the clone from
 
+    .PARAMETER ImageId
+        Image ID to create the clone from
+
     .PARAMETER Destination
         Destination directory to save the clone to
 
@@ -97,6 +100,8 @@
         [PSCredential]$Credential,
         [parameter(Mandatory = $true, ParameterSetName = "ByParent")]
         [string]$ParentVhd,
+        [parameter(Mandatory = $true, ParameterSetName = "ByImage")]
+        [int]$ImageId,
         [string]$Destination,
         [string]$CloneName,
         [parameter(Mandatory = $true, ParameterSetName = "ByLatest")]
@@ -131,6 +136,11 @@
             Stop-PSFFunction -Message "Please enter a destination when using -SkipDatabaseMount" -Continue
         }
 
+        if ($ImageId) {
+            $result = Get-DcnImage | Where-Object ImageID -eq $ImageID
+            $ParentVhd = $result.ImageLocation
+        }
+
         # Check the available images
         if (-not $ParentVhd) {
             $images = Get-DcnImage
@@ -138,6 +148,9 @@
             if ($Database -notin $images.DatabaseName) {
                 Stop-PSFFunction -Message "There is no image for database '$Database'" -Continue
             }
+        } else {
+            $result = Get-DcnImage | Where-Object ImageLocation -eq $ParentVhd
+            $Database = $result.DatabaseName;
         }
 
         # Get the information store
