@@ -11,7 +11,7 @@
         The function will return an object with the results.
 
         The following information will be returned:
-        - ComputerName              : Which is the host entered at execution
+        - ComputerName          : Which is the host entered at execution
         - IsLocalHost           : If the host is a local host
         - Reachable             : Was the host reachable by a ping request
         - WSManServiceRunning   : Is the WSMan service running = $resultWSManService
