@@ -11,7 +11,7 @@
         The function will return an object with the results.
 
         The following information will be returned:
-        - HostName              : Which is the host entered at execution
+        - ComputerName              : Which is the host entered at execution
         - IsLocalHost           : If the host is a local host
         - Reachable             : Was the host reachable by a ping request
         - WSManServiceRunning   : Is the WSMan service running = $resultWSManService
@@ -48,12 +48,12 @@
         https://psdatabaseclone.org/
 
     .EXAMPLE
-        Test-DcnRemoting -HostName SQLDB1
+        Test-DcnRemoting -ComputerName SQLDB1
 
         Test the PS remoting for one host
 
     .EXAMPLE
-        Test-DcnRemoting -HostName SQLDB1, SQLDB2
+        Test-DcnRemoting -ComputerName SQLDB1, SQLDB2
 
         Test the PS remoting for multiple hosts
 
@@ -73,7 +73,7 @@
     begin {
 
         if (-not $ComputerName) {
-            Stop-PSFFunction -Message "Please enter one or more hostnames to test" -Target $ComputerName -Continue
+            Stop-PSFFunction -Message "Please enter one or more computernames to test" -Target $ComputerName -Continue
         }
 
     }
