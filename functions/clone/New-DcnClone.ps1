@@ -435,7 +435,7 @@
             }
 
             # Mount the vhd
-            if ($PSCmdlet.ShouldProcess("$($clonePath)", "Mounting clone clone")) {
+            if ($PSCmdlet.ShouldProcess("$($clonePath)", "Mounting clone")) {
                 try {
                     Write-PSFMessage -Message "Mounting clone" -Level Verbose
 
