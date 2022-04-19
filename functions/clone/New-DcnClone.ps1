@@ -148,7 +148,8 @@
             if ($Database -notin $images.DatabaseName) {
                 Stop-PSFFunction -Message "There is no image for database '$Database'" -Continue
             }
-        } else {
+        }
+        else {
             $result = Get-DcnImage | Where-Object ImageLocation -eq $ParentVhd
             $Database = $result.DatabaseName;
         }
@@ -310,6 +311,10 @@
                     Stop-PSFFunction -Message "No image could be found for database $db" -Target $pdcSqlInstance -Continue
                 }
                 else {
+                    if ($server.VersionMajor -lt $db.ServerVersion.Major) {
+                        Stop-PSFFunction -Message "The database $db is not compatible with the server version $($server.VersionMajor)" -Target $SqlInstance -Continue
+                    }
+
                     $ParentVhd = $result.ImageLocation
                 }
             }
@@ -418,7 +423,7 @@
                         Set-Content -Path './diskpart.txt' -Value `$command -Force
                         diskpart /s './diskpart.txt'
                     ")
-                      
+
                     # Check if computer is local
                     if ($computer.IsLocalhost) {
                         # Set the content of the diskpart script file
