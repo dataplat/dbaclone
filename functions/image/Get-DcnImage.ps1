@@ -127,6 +127,8 @@
                     SizeMB,
                     DatabaseName,
                     DatabaseTimestamp,
+                    SqlServerRelease,
+                    SqlServerVersion,
                     CreatedOn
                 FROM dbo.Image;
             "
@@ -189,6 +191,8 @@
                 SizeMB            = $result.SizeMB
                 DatabaseName      = $result.DatabaseName
                 DatabaseTimestamp = $result.DatabaseTimestamp
+                SqlServerRelease  = $result.SqlServerRelease
+                SqlServerVersion  = $result.SqlServerVersion
                 CreatedOn         = $result.CreatedOn
             }
         }

@@ -403,12 +403,13 @@
 
             # Setup the image variables
             $imageName = "$($db.Name)_$timestamp"
-            
+
             # Setup the access path
             $accessPath = $null
             if ($computer.IsLocalhost) {
                 $accessPath = Join-PSFPath -Path $ImageLocalPath -Child $imageName
-            }else{
+            }
+            else {
                 $command = [scriptblock]::Create("Join-PSFPath -Path $($ImageLocalPath) -Child $($imageName)");
                 $accessPath = Invoke-PSFCommand -ComputerName $computer -ScriptBlock $command -Credential $DestinationCredential
             }
@@ -491,10 +492,11 @@
             if ($computer.IsLocalhost) {
                 $imageDataFolder = Join-PSFPath -Path $imagePath -Child "$($imageName)\Data"
                 $imageLogFolder = Join-PSFPath -Path $imagePath -Child "$($imageName)\Log"
-            }else{
+            }
+            else {
                 $command = [scriptblock]::Create("Join-PSFPath -Path $($imagePath) -Child `"$($imageName)\Data`"");
                 $imageDataFolder = Invoke-PSFCommand -ComputerName $computer -ScriptBlock $command -Credential $DestinationCredential
-                
+
                 $command = [scriptblock]::Create("Join-PSFPath -Path $($imagePath) -Child `"$($imageName)\Log`"");
                 $imageLogFolder = Invoke-PSFCommand -ComputerName $computer -ScriptBlock $command -Credential $DestinationCredential
             }
@@ -545,7 +547,8 @@
 
                 if ($computer.IsLocalhost) {
                     $partition = Get-Partition -DiskNumber $disk.Number | Where-Object { $_.Type -ne "Reserved" } | Select-Object -First 1
-                }else{
+                }
+                else {
                     $command = [scriptblock]::Create("Get-Partition -DiskNumber $($disk.Number)");
                     $partition = Invoke-PSFCommand -ComputerName $computer -ScriptBlock $command -Credential $DestinationCredential | Where-Object { $_.Type -ne "Reserved" } | Select-Object -First 1
                 }
@@ -623,25 +626,32 @@
             if ($PSCmdlet.ShouldProcess($tempDbName, "Restoring database")) {
                 # Restore database to image folder
                 try {
-                    Write-PSFMessage -Message "Restoring database $db on $DestinationSqlInstance" -Level Verbose
-
-                    $global:dcnBackupInformation = $null
-                    $params = @{
-                        SqlInstance              = $DestinationSqlInstance
-                        SqlCredential            = $DestinationSqlCredential
-                        DatabaseName             = $tempDbName
-                        Path                     = $lastFullBackup.Path
-                        DestinationDataDirectory = $imageDataFolder
-                        DestinationLogDirectory  = $imageLogFolder
-                        GetBackupInformation     = "dcnBackupInformation"
-                        WithReplace              = $true
-                        EnableException          = $true
+                    # Check the SQL Server version with the database
+                    $destInstance = Connect-DbaInstance -Server $DestinationSqlInstance -Credential $DestinationCredential
+                    if ($destInstance.VersionMajor -lt $db.ServerVersion.Major) {
+                        Stop-PSFFunction -Message "The database version is not compatible with the SQL Server version" -Target $db -ErrorRecord $_ -Continue
                     }
+                    else {
+                        Write-PSFMessage -Message "Restoring database $db on $DestinationSqlInstance" -Level Verbose
 
-                    $restore = Restore-DbaDatabase @params
+                        $global:dcnBackupInformation = $null
+                        $params = @{
+                            SqlInstance              = $destInstance
+                            SqlCredential            = $DestinationSqlCredential
+                            DatabaseName             = $tempDbName
+                            Path                     = $lastFullBackup.Path
+                            DestinationDataDirectory = $imageDataFolder
+                            DestinationLogDirectory  = $imageLogFolder
+                            GetBackupInformation     = "dcnBackupInformation"
+                            WithReplace              = $true
+                            EnableException          = $true
+                        }
 
-                    if (-not $lastFullBackup.Start) {
-                        $lastFullBackup.Start = $global:dcnBackupInformation.Start
+                        $restore = Restore-DbaDatabase @params
+
+                        if (-not $lastFullBackup.Start) {
+                            $lastFullBackup.Start = $global:dcnBackupInformation.Start
+                        }
                     }
                 }
                 catch {
@@ -731,15 +741,33 @@
             $databaseName = $db.Name
             $databaseTS = $lastFullBackup.Start
 
+            $sqlserverRelease = switch ($db.ServerVersion.Major) {
+                6 { "6" }
+                6.5 { "6.5" }
+                7 { "7" }
+                8 { "2000" }
+                9 { "2005" }
+                10 { "2008" }
+                10.5 { "2008R2" }
+                11 { "2012" }
+                12 { "2014" }
+                13 { "2016" }
+                14 { "2017" }
+                15 { "2019" }
+                16 { "2022" }
+            }
+
             if ($informationStore -eq 'SQL') {
                 $query = "
                 DECLARE @ImageID INT;
-                EXECUTE dbo.Image_New @ImageID = @ImageID OUTPUT,				  -- int
+                EXECUTE dbo.Image_New @ImageID = @ImageID OUTPUT,				     -- int
                                     @ImageName = '$($imageName)',                    -- varchar(100)
-                                    @ImageLocation = '$($imageLocation)',			  -- varchar(255)
-                                    @SizeMB = $($sizeMB),							  -- int
-                                    @DatabaseName = '$($databaseName)',			  -- varchar(100)
+                                    @ImageLocation = '$($imageLocation)',			 -- varchar(255)
+                                    @SizeMB = $($sizeMB),							 -- int
+                                    @DatabaseName = '$($databaseName)',			     -- varchar(100)
                                     @DatabaseTimestamp = '$($databaseTS)'            -- datetime
+                                    @SqlServerRelease = '$($sqlserverRelease)'        -- varchar(10)
+                                    @SqlServerVersion = $($db.ServerVersion.Major) -- varchar(10)
 
                 SELECT @ImageID as ImageID
             "
@@ -786,6 +814,8 @@
                     SizeMB            = $sizeMB
                     DatabaseName      = $databaseName
                     DatabaseTimestamp = $databaseTS
+                    SqlServerRelease  = $sqlserverRelease
+                    SqlServerVersion  = $db.ServerVersion.Major
                     CreatedOn         = (Get-Date -format "yyyyMMddHHmmss")
                 }
 

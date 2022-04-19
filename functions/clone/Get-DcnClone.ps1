@@ -134,6 +134,8 @@
                     i.ImageID,
                     i.ImageName,
                     i.ImageLocation,
+                    i.SqlServerRelease,
+                    i.SqlServerVersion,
                     h.HostName
                 FROM dbo.Clone AS c
                     INNER JOIN dbo.Host AS h
@@ -204,16 +206,18 @@
         foreach ($result in $results) {
 
             [pscustomobject]@{
-                CloneID       = $result.CloneID
-                CloneLocation = $result.CloneLocation
-                AccessPath    = $result.AccessPath
-                SqlInstance   = $result.SqlInstance
-                DatabaseName  = $result.DatabaseName
-                IsEnabled     = $result.IsEnabled
-                ImageID       = $result.ImageID
-                ImageName     = $result.ImageName
-                ImageLocation = $result.ImageLocation
-                HostName      = $result.HostName
+                CloneID          = $result.CloneID
+                CloneLocation    = $result.CloneLocation
+                AccessPath       = $result.AccessPath
+                SqlInstance      = $result.SqlInstance
+                DatabaseName     = $result.DatabaseName
+                IsEnabled        = $result.IsEnabled
+                ImageID          = $result.ImageID
+                ImageName        = $result.ImageName
+                ImageLocation    = $result.ImageLocation
+                SqlServerRelease = $result.SqlServerRelease
+                SqlServerVersion = $result.SqlServerVersion
+                HostName         = $result.HostName
             }
         }
     }
