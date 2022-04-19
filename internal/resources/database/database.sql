@@ -1,13 +1,13 @@
 ﻿CREATE TABLE [dbo].[Clone]
 (
-	[CloneID]       [INT]           NOT NULL IDENTITY(1, 1)
-	,[ImageID]       [INT]           NOT NULL
-	,[HostID]        [INT]           NOT NULL
-	,[CloneLocation] [VARCHAR] (255) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL
-	,[AccessPath]    [VARCHAR] (255) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL
-	,[SqlInstance]   [VARCHAR] (50)  COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL
-	,[DatabaseName]  [VARCHAR] (100) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL
-	,[IsEnabled]     [BIT]           NOT NULL CONSTRAINT [DF_Clone_IsEnabled] DEFAULT ((1))
+	[CloneID] [INT] NOT NULL IDENTITY(1, 1),
+	[ImageID] [INT] NOT NULL,
+	[HostID] [INT] NOT NULL,
+	[CloneLocation] [VARCHAR] (255) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
+	[AccessPath] [VARCHAR] (255) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
+	[SqlInstance] [VARCHAR] (50) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
+	[DatabaseName] [VARCHAR] (100) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
+	[IsEnabled] [BIT] NOT NULL CONSTRAINT [DF_Clone_IsEnabled] DEFAULT ((1))
 );
 GO
 CREATE PROCEDURE [dbo].[Clone_GetAll]
@@ -17,26 +17,28 @@ BEGIN
 
 	SELECT
 		CloneID
-		,ImageID
-		,HostID
-		,CloneLocation
-		,AccessPath
-		,SqlInstance
-		,DatabaseName
-		,IsEnabled
+		, ImageID
+		, HostID
+		, CloneLocation
+		, AccessPath
+		, SqlInstance
+		, DatabaseName
+		, IsEnabled
 	FROM
 		dbo.Clone;
 END;
 GO
 CREATE TABLE [dbo].[Image]
 (
-	[ImageID]           [INT]           NOT NULL IDENTITY(1, 1)
-	,[ImageName]         [VARCHAR] (100) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL
-	,[ImageLocation]     [VARCHAR] (255) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL
-	,[SizeMB]            [INT]           NOT NULL
-	,[DatabaseName]      [VARCHAR] (100) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL
-	,[DatabaseTimestamp] [DATETIME]      NOT NULL
-	,[CreatedOn]         [DATETIME]      NOT NULL
+	[ImageID] [INT] NOT NULL IDENTITY(1, 1),
+	[ImageName] [VARCHAR] (100) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
+	[ImageLocation] [VARCHAR] (255) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
+	[SizeMB] [INT] NOT NULL,
+	[DatabaseName] [VARCHAR] (100) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
+	[DatabaseTimestamp] [DATETIME] NOT NULL,
+	[CreatedOn] [DATETIME] NOT NULL,
+	[SqlServerRelease] [VARCHAR] (10) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
+	[SqlServerVersion] [TINYINT] COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL
 );
 GO
 CREATE PROCEDURE [dbo].[Image_GetAll]
@@ -46,22 +48,22 @@ BEGIN
 
 	SELECT
 		ImageID
-		,ImageName
-		,ImageLocation
-		,SizeMB
-		,DatabaseName
-		,DatabaseTimestamp
-		,CreatedOn
+		, ImageName
+		, ImageLocation
+		, SizeMB
+		, DatabaseName
+		, DatabaseTimestamp
+		, CreatedOn
 	FROM
 		dbo.Image;
 END;
 GO
 CREATE TABLE [dbo].[Host]
 (
-	[HostID]    [INT]           NOT NULL IDENTITY(1, 1)
-	,[HostName]  [VARCHAR] (100) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL
-	,[IPAddress] [VARCHAR] (20)  COLLATE SQL_Latin1_General_CP1_CI_AS NULL
-	,[FQDN]      [VARCHAR] (255) COLLATE SQL_Latin1_General_CP1_CI_AS NULL
+	[HostID] [INT] NOT NULL IDENTITY(1, 1),
+	[HostName] [VARCHAR] (100) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
+	[IPAddress] [VARCHAR] (20) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	[FQDN] [VARCHAR] (255) COLLATE SQL_Latin1_General_CP1_CI_AS NULL
 );
 GO
 CREATE PROCEDURE [dbo].[Host_GetAll]
@@ -71,9 +73,9 @@ BEGIN
 
 	SELECT
 		HostID
-		,HostName
-		,IPAddress
-		,FQDN
+		, HostName
+		, IPAddress
+		, FQDN
 	FROM
 		dbo.Host;
 END;
@@ -88,14 +90,14 @@ Date		Who						Notes
 2018-06-20	Sander Stad				Initial procedure
 */
 CREATE PROCEDURE [dbo].[Clone_New]
-	@CloneID	   INT OUTPUT
-	,@ImageID	   INT
-	,@HostID		   INT
-	,@CloneLocation VARCHAR(255)
-	,@AccessPath	   VARCHAR(255)
-	,@SqlInstance   VARCHAR(50)
-	,@DatabaseName  VARCHAR(100)
-	,@IsEnabled	   BIT = 1
+	@CloneID	   INT OUTPUT,
+	@ImageID	   INT,
+	@HostID		   INT,
+	@CloneLocation VARCHAR(255),
+	@AccessPath	   VARCHAR(255),
+	@SqlInstance   VARCHAR(50),
+	@DatabaseName  VARCHAR(100),
+	@IsEnabled	   BIT = 1
 AS
 BEGIN
 
@@ -170,10 +172,10 @@ Date		Who						Notes
 2018-06-20	Sander Stad				Initial procedure
 */
 CREATE PROCEDURE [dbo].[Host_New]
-	@HostID	   INT OUTPUT
-	,@HostName  VARCHAR(100)
-	,@IPAddress VARCHAR(20)
-	,@FQDN	   VARCHAR(255)
+	@HostID	   INT OUTPUT,
+	@HostName  VARCHAR(100),
+	@IPAddress VARCHAR(20),
+	@FQDN	   VARCHAR(255)
 AS
 BEGIN
 
@@ -230,12 +232,12 @@ Date		Who						Notes
 2018-06-20	Sander Stad				Initial procedure
 */
 CREATE PROCEDURE [dbo].[Image_New]
-	@ImageID		   INT OUTPUT
-	,@ImageName		   VARCHAR(100)
-	,@ImageLocation	   VARCHAR(255)
-	,@SizeMB			   INT
-	,@DatabaseName	   VARCHAR(100)
-	,@DatabaseTimestamp DATETIME
+	@ImageID		   INT OUTPUT,
+	@ImageName		   VARCHAR(100),
+	@ImageLocation	   VARCHAR(255),
+	@SizeMB			   INT,
+	@DatabaseName	   VARCHAR(100),
+	@DatabaseTimestamp DATETIME
 AS
 BEGIN
 
@@ -255,6 +257,8 @@ BEGIN
 				SizeMB,
 				DatabaseName,
 				DatabaseTimestamp,
+				SqlServerRelease,
+				SqlServerVersion,
 				CreatedOn
 			)
 			VALUES
@@ -263,6 +267,8 @@ BEGIN
 				@SizeMB,			-- SizeMB - int
 				@DatabaseName,		-- DatabaseName - varchar(100)
 				@DatabaseTimestamp, -- DatabaseTimestamp - datetime
+				@SqlServerRelease, -- SqlServerRelease - varchar(10)
+				@SqlServerVersion, -- SqlServerVersion - tinyint
 				GETDATE()			-- CreatedOn - datetime
 				);
 
