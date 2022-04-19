@@ -625,6 +625,7 @@
                 try {
                     Write-PSFMessage -Message "Restoring database $db on $DestinationSqlInstance" -Level Verbose
 
+                    $global:dcnBackupInformation = $null
                     $params = @{
                         SqlInstance              = $DestinationSqlInstance
                         SqlCredential            = $DestinationSqlCredential
@@ -632,11 +633,16 @@
                         Path                     = $lastFullBackup.Path
                         DestinationDataDirectory = $imageDataFolder
                         DestinationLogDirectory  = $imageLogFolder
+                        GetBackupInformation     = "dcnBackupInformation"
                         WithReplace              = $true
                         EnableException          = $true
                     }
 
                     $restore = Restore-DbaDatabase @params
+
+                    if (-not $lastFullBackup.Start) {
+                        $lastFullBackup.Start = $global:dcnBackupInformation.Start
+                    }
                 }
                 catch {
                     Stop-PSFFunction -Message "Couldn't restore database $db as $tempDbName on $DestinationSqlInstance.`n$($_)" -Target $restore -ErrorRecord $_ -Continue
