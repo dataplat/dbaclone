@@ -32,6 +32,9 @@ function Test-DcnModule {
             - 'Microsoft Windows Server 2016 Enterprise',
             - 'Microsoft Windows Server 2016 Datacenter'
             - 'Microsoft Windows Server 2019 Datacenter'
+            - 'Microsoft Windows Server 2022 Standard',
+            - 'Microsoft Windows Server 2022 Enterprise'
+            - 'Microsoft Windows Server 2022 Datacenter'
 
     .PARAMETER WhatIf
         If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
