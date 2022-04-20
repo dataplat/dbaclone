@@ -274,7 +274,7 @@
                 }
             }
 
-            # If not root dir, remove the last "\" from the path it would mess up the mount of the VHD
+            # If not root dir, remove the last "\" from the path, else it would mess up the mount of the VHD
             if (($Destination | Select-String "\\" -AllMatches).Matches.Count -gt 1) {
                 if ($Destination.EndsWith("\")) {
                     $Destination = $Destination.Substring(0, $Destination.Length - 1)
