@@ -81,6 +81,10 @@
     .PARAMETER ExecuteSQLFile
         Execute a SQL file on the database before creating the image
 
+    .PARAMETER UseUncAdminPath
+        When using the UseLastFullBackup option, this will replace the drive letter in the backup file path with the respective UNC path, etc backup file is 
+        B:\SQL\Full\Database.bak, this will convert it to \\SourceSqlInstance\B$\SQL\Full\Database.bak
+
     .PARAMETER Force
         Forcefully execute commands when needed
 
@@ -142,6 +146,7 @@
         [switch]$CopyOnlyBackup,
         [string]$ExecuteSQLCommand,
         [string]$ExecuteSQLFile,
+        [switch]$UseUncAdminPath,
         [Alias('MaskingConfigFile', 'MaskingConfigFilePath')]
         [switch]$Force,
         [switch]$EnableException
@@ -440,7 +445,12 @@
                 Stop-PSFFunction -Message "No full backup could be found. Please use -CreateFullBackup or create a full backup manually" -Target $lastFullBackup
                 return
             }
-            elseif (-not (Test-Path -Path $lastFullBackup.Path)) {
+            
+            if ($UseUncAdminPath) {
+                $lastFullBackup.Path = $lastFullBackup.Path -replace '.:',"\\$SourceSqlInstance\$($(Split-Path -Qualifier $lastFullBackup.Path).TrimEnd(':'))$"
+            }
+
+            if (-not (Test-Path -Path $lastFullBackup.Path)) {
                 Stop-PSFFunction -Message "Could not access the full backup file. Check if it exists or that you have enough privileges to access it" -Target $lastFullBackup
                 return
             }
