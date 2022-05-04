@@ -274,10 +274,12 @@
                 }
             }
 
-            # Remove the last "\" from the path it would mess up the mount of the VHD
-            if ($Destination.EndsWith("\")) {
-                $Destination = $Destination.Substring(0, $Destination.Length - 1)
-            }
+            # If not root dir, remove the last "\" from the path, else it would mess up the mount of the VHD
+            if (($Destination | Select-String "\\" -AllMatches).Matches.Count -gt 1) {
+                if ($Destination.EndsWith("\")) {
+                    $Destination = $Destination.Substring(0, $Destination.Length - 1)
+                }
+            }   
 
             # Test if the destination can be reached
             # Check if computer is local
@@ -435,7 +437,7 @@
             }
 
             # Mount the vhd
-            if ($PSCmdlet.ShouldProcess("$($clonePath)", "Mounting clone clone")) {
+            if ($PSCmdlet.ShouldProcess("$($clonePath)", "Mounting clone")) {
                 try {
                     Write-PSFMessage -Message "Mounting clone" -Level Verbose
 

@@ -141,7 +141,7 @@
         }
         elseif ($informationStore -eq 'File') {
             try {
-                if (Test-Path -Path "DCNJSONFolder:\") {
+                if (($true -eq (Get-PSFConfigValue -FullName dbaclone.setup.status)) -and (Test-Path -Path "DCNJSONFolder:\")) {
                     # Get the clones
                     $results = Get-ChildItem -Path "DCNJSONFolder:\" -Filter "*images.json" | ForEach-Object { Get-Content $_.FullName | ConvertFrom-Json }
                 }
