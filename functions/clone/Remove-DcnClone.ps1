@@ -281,7 +281,7 @@
                         if ($computer.IsLocalhost) {
                             if (Test-Path -Path $item.AccessPath) {
                                 Write-PSFMessage -Message "Removing vhd access path" -Level Verbose
-                                $null = Remove-Item -Path "$($item.AccessPath)" -Credential $Credential -Force
+                                $null = Remove-Item -Path "$($item.AccessPath)" -Credential $Credential -Recurse -Force
                             }
 
                             if (Test-Path -Path $item.CloneLocation) {
@@ -294,7 +294,7 @@
                             $result = Invoke-PSFCommand -ComputerName $item.HostName -ScriptBlock $command -Credential $Credential
                             if ($result) {
                                 Write-PSFMessage -Message "Removing vhd access path" -Level Verbose
-                                $command = [scriptblock]::Create("Remove-Item -Path '$($item.AccessPath)' -Force")
+                                $command = [scriptblock]::Create("Remove-Item -Path '$($item.AccessPath)' -Recurse -Force")
                                 $null = Invoke-PSFCommand -ComputerName $item.HostName -ScriptBlock $command -Credential $Credential
                             }
 
