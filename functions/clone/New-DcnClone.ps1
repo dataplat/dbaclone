@@ -464,7 +464,7 @@
                     }
                 }
                 catch {
-                    Stop-PSFFunction -Message "Couldn't mount vhd $vhdPath" -ErrorRecord $_ -Target $disk -Continue
+                    Stop-PSFFunction -Message "Couldn't mount vhd $clonePath" -ErrorRecord $_ -Target $disk -Continue
                 }
             }
 
