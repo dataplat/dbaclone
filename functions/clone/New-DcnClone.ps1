@@ -419,7 +419,7 @@
                         `$command = `"create vdisk file='$($clonePath)' parent='$ParentVhd'`"
                         Set-Content -Path './diskpart.txt' -Value `$command -Force
                         diskpart /s './diskpart.txt
-                        Remove-Item -Path './diskpart,txt' -Force'
+                        Remove-Item -Path './diskpart.txt' -Force'
                     ")
                       
                     # Check if computer is local
