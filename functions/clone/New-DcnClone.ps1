@@ -418,7 +418,8 @@
                     $command = [ScriptBlock]::Create("
                         `$command = `"create vdisk file='$($clonePath)' parent='$ParentVhd'`"
                         Set-Content -Path './diskpart.txt' -Value `$command -Force
-                        diskpart /s './diskpart.txt'
+                        diskpart /s './diskpart.txt
+                        Remove-Item -Path './diskpart.txt' -Force'
                     ")
                       
                     # Check if computer is local
@@ -464,7 +465,7 @@
                     }
                 }
                 catch {
-                    Stop-PSFFunction -Message "Couldn't mount vhd $vhdPath" -ErrorRecord $_ -Target $disk -Continue
+                    Stop-PSFFunction -Message "Couldn't mount vhd $clonePath" -ErrorRecord $_ -Target $disk -Continue
                 }
             }
 
