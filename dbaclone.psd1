@@ -15,7 +15,7 @@
 	CompanyName       = 'SQLStad'
 
 	# Copyright statement for this module
-	Copyright         = 'Copyright (c) 2020 Sander Stad'
+	Copyright         = 'Copyright (c) 2022 Sander Stad'
 
 	# Description of the functionality provided by this module
 	Description       = 'Module for cloning SQL Server databases'

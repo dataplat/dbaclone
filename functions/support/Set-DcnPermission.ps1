@@ -1,11 +1,10 @@
 function Set-DcnPermission {
     <#
     .SYNOPSIS
-        New-DcnClone creates a new clone
+        Set-DcnPermission sets the correct permissions for a folder.
 
     .DESCRIPTION
-        New-DcnClone willcreate a new clone based on an image.
-        The clone will be created in a certain directory, mounted and attached to a database server.
+        For dbaclone to work properly, the permissions needs to be set. This command takes care of that.
 
     .PARAMETER Path
         Path to set the permissions for

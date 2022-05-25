@@ -30,6 +30,9 @@
     .PARAMETER ParentVhd
         Points to the parent VHD to create the clone from
 
+    .PARAMETER ImageId
+        Image ID to create the clone from
+
     .PARAMETER Destination
         Destination directory to save the clone to
 
@@ -97,6 +100,8 @@
         [PSCredential]$Credential,
         [parameter(Mandatory = $true, ParameterSetName = "ByParent")]
         [string]$ParentVhd,
+        [parameter(Mandatory = $true, ParameterSetName = "ByImage")]
+        [int]$ImageId,
         [string]$Destination,
         [string]$CloneName,
         [parameter(Mandatory = $true, ParameterSetName = "ByLatest")]
@@ -131,6 +136,11 @@
             Stop-PSFFunction -Message "Please enter a destination when using -SkipDatabaseMount" -Continue
         }
 
+        if ($ImageId) {
+            $result = Get-DcnImage | Where-Object ImageID -eq $ImageID
+            $ParentVhd = $result.ImageLocation
+        }
+
         # Check the available images
         if (-not $ParentVhd) {
             $images = Get-DcnImage
@@ -138,6 +148,9 @@
             if ($Database -notin $images.DatabaseName) {
                 Stop-PSFFunction -Message "There is no image for database '$Database'" -Continue
             }
+        } else {
+            $result = Get-DcnImage | Where-Object ImageLocation -eq $ParentVhd
+            $Database = $result.DatabaseName;
         }
 
         # Get the information store
@@ -261,10 +274,12 @@
                 }
             }
 
-            # Remove the last "\" from the path it would mess up the mount of the VHD
-            if ($Destination.EndsWith("\")) {
-                $Destination = $Destination.Substring(0, $Destination.Length - 1)
-            }
+            # If not root dir, remove the last "\" from the path, else it would mess up the mount of the VHD
+            if (($Destination | Select-String "\\" -AllMatches).Matches.Count -gt 1) {
+                if ($Destination.EndsWith("\")) {
+                    $Destination = $Destination.Substring(0, $Destination.Length - 1)
+                }
+            }   
 
             # Test if the destination can be reached
             # Check if computer is local
@@ -403,7 +418,8 @@
                     $command = [ScriptBlock]::Create("
                         `$command = `"create vdisk file='$($clonePath)' parent='$ParentVhd'`"
                         Set-Content -Path './diskpart.txt' -Value `$command -Force
-                        diskpart /s './diskpart.txt'
+                        diskpart /s './diskpart.txt
+                        Remove-Item -Path './diskpart.txt' -Force'
                     ")
                       
                     # Check if computer is local
@@ -422,7 +438,7 @@
             }
 
             # Mount the vhd
-            if ($PSCmdlet.ShouldProcess("$($clonePath)", "Mounting clone clone")) {
+            if ($PSCmdlet.ShouldProcess("$($clonePath)", "Mounting clone")) {
                 try {
                     Write-PSFMessage -Message "Mounting clone" -Level Verbose
 
@@ -449,7 +465,7 @@
                     }
                 }
                 catch {
-                    Stop-PSFFunction -Message "Couldn't mount vhd $vhdPath" -ErrorRecord $_ -Target $disk -Continue
+                    Stop-PSFFunction -Message "Couldn't mount vhd $clonePath" -ErrorRecord $_ -Target $disk -Continue
                 }
             }
 

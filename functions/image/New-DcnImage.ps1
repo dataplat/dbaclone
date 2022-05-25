@@ -81,6 +81,10 @@
     .PARAMETER ExecuteSQLFile
         Execute a SQL file on the database before creating the image
 
+    .PARAMETER UseUncAdminPath
+        When using the UseLastFullBackup option, this will replace the drive letter in the backup file path with the respective UNC path, etc backup file is 
+        B:\SQL\Full\Database.bak, this will convert it to \\SourceSqlInstance\B$\SQL\Full\Database.bak
+
     .PARAMETER Force
         Forcefully execute commands when needed
 
@@ -142,6 +146,7 @@
         [switch]$CopyOnlyBackup,
         [string]$ExecuteSQLCommand,
         [string]$ExecuteSQLFile,
+        [switch]$UseUncAdminPath,
         [Alias('MaskingConfigFile', 'MaskingConfigFilePath')]
         [switch]$Force,
         [switch]$EnableException
@@ -440,7 +445,12 @@
                 Stop-PSFFunction -Message "No full backup could be found. Please use -CreateFullBackup or create a full backup manually" -Target $lastFullBackup
                 return
             }
-            elseif (-not (Test-Path -Path $lastFullBackup.Path)) {
+            
+            if ($UseUncAdminPath) {
+                $lastFullBackup.Path = $lastFullBackup.Path -replace '.:',"\\$SourceSqlInstance\$($(Split-Path -Qualifier $lastFullBackup.Path).TrimEnd(':'))$"
+            }
+
+            if (-not (Test-Path -Path $lastFullBackup.Path)) {
                 Stop-PSFFunction -Message "Could not access the full backup file. Check if it exists or that you have enough privileges to access it" -Target $lastFullBackup
                 return
             }
@@ -625,6 +635,7 @@
                 try {
                     Write-PSFMessage -Message "Restoring database $db on $DestinationSqlInstance" -Level Verbose
 
+                    $global:dcnBackupInformation = $null
                     $params = @{
                         SqlInstance              = $DestinationSqlInstance
                         SqlCredential            = $DestinationSqlCredential
@@ -632,11 +643,16 @@
                         Path                     = $lastFullBackup.Path
                         DestinationDataDirectory = $imageDataFolder
                         DestinationLogDirectory  = $imageLogFolder
+                        GetBackupInformation     = "dcnBackupInformation"
                         WithReplace              = $true
                         EnableException          = $true
                     }
 
                     $restore = Restore-DbaDatabase @params
+
+                    if (-not $lastFullBackup.Start) {
+                        $lastFullBackup.Start = $global:dcnBackupInformation.Start
+                    }
                 }
                 catch {
                     Stop-PSFFunction -Message "Couldn't restore database $db as $tempDbName on $DestinationSqlInstance.`n$($_)" -Target $restore -ErrorRecord $_ -Continue
@@ -651,7 +667,7 @@
                         $params = @{
                             SqlInstance     = $DestinationSqlInstance
                             SqlCredential   = $DestinationSqlCredential
-                            DatabaseName    = $tempDbName
+                            Database        = $tempDbName
                             Query           = $ExecuteSQLCommand
                             EnableException = $EnableException
                         }
@@ -670,7 +686,7 @@
                         $params = @{
                             SqlInstance     = $DestinationSqlInstance
                             SqlCredential   = $DestinationSqlCredential
-                            DatabaseName    = $tempDbName
+                            Database        = $tempDbName
                             File            = $ExecuteSQLFile
                             EnableException = $EnableException
                         }
