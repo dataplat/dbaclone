@@ -653,6 +653,11 @@
                     if (-not $lastFullBackup.Start) {
                         $lastFullBackup.Start = $global:dcnBackupInformation.Start
                     }
+
+                    # If no size set yet, get from restored backup info
+                    if ($dbSizeMB -eq 1) {
+                        $dbSizeMB =  $global:dcnBackupInformation.TotalSize
+                    }
                 }
                 catch {
                     Stop-PSFFunction -Message "Couldn't restore database $db as $tempDbName on $DestinationSqlInstance.`n$($_)" -Target $restore -ErrorRecord $_ -Continue
