@@ -133,7 +133,7 @@
 
                 # Check if the parent of the clone can be reached
                 try {
-                    $drive = Get-PSDrive -Name ImagePath
+                    $drive = Get-PSDrive -Name ImagePath -ErrorAction SilentlyContinue
                     if (-not $drive) {
                         $null = New-PSDrive -Name ImagePath -Root (Split-Path $image.ImageLocation) -Credential $Credential -PSProvider FileSystem
                     }
