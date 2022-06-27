@@ -133,7 +133,10 @@
 
                 # Check if the parent of the clone can be reached
                 try {
-                    $null = New-PSDrive -Name ImagePath -Root (Split-Path $image.ImageLocation) -Credential $Credential -PSProvider FileSystem
+                    $drive = Get-PSDrive -Name ImagePath
+                    if (-not $drive) {
+                        $null = New-PSDrive -Name ImagePath -Root (Split-Path $image.ImageLocation) -Credential $Credential -PSProvider FileSystem
+                    }
                 }
                 catch {
                     Stop-PSFFunction -Message "Could not create drive for image path '$($image.ImageLocation)'" -ErrorRecord $_ -Continue
