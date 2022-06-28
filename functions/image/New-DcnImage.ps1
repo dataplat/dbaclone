@@ -656,7 +656,7 @@
 
                     # If no size set yet, get from restored backup info
                     if ($dbSizeMB -eq 1) {
-                        $dbSizeMB =  $global:dcnBackupInformation.TotalSize
+                        $dbSizeMB = [math]::Round($global:dcnBackupInformation.TotalSize.Megabyte)
                     }
                 }
                 catch {
