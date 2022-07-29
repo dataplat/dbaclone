@@ -359,7 +359,7 @@
             # Check if the database is already present
             if (-not $SkipDatabaseMount) {
                 if ($PSCmdlet.ShouldProcess($cloneDatabase, "Verifying database existence")) {
-                    $existingDatabase = Get-DbaDatabase -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database $cloneDatabase -OnlyAccessible -EnableException
+                    $existingDatabase = $server | Get-DbaDatabase -Database $cloneDatabase -OnlyAccessible -EnableException
                     if ($existingDatabase) {
                         Stop-PSFFunction -Message "Database $cloneDatabase is already present on $SqlInstance" -Target $SqlInstance
                     }
