@@ -20,6 +20,7 @@ function Test-DcnModule {
 
         Windows version should be in
             - 'Microsoft Windows 10 Pro',
+            - 'Microsoft Windows 10 Pro Education',
             - 'Microsoft Windows 10 Enterprise',
             - 'Microsoft Windows 10 Education',
             - 'Microsoft Windows Server 2008 R2 Standard',
@@ -97,6 +98,7 @@ function Test-DcnModule {
         if ($WindowsVersion) {
             $supportedVersions = @(
                 'Microsoft Windows 10 Pro',
+                'Microsoft Windows 10 Pro Education',
                 'Microsoft Windows 10 Enterprise',
                 'Microsoft Windows 10 Education',
                 'Microsoft Windows 11 Pro Insider Preview',
