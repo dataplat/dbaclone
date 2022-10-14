@@ -187,7 +187,7 @@
         }
 
         # Set the location where to save the diskpart command
-        $diskpartScriptFile = Get-PSFConfigValue -FullName dbaclone.diskpart.scriptfile -Fallback "$env:APPDATA\dbaclone\diskpartcommand.txt"
+        $diskpartScriptFile = Get-PSFConfigValue -FullName dbaclone.diskpart.scriptfile -Fallback "$env:APPDATA\dbaclone\diskpartcommand-$(New-Guid).txt"
 
         if (-not (Test-Path -Path $diskpartScriptFile)) {
             try {
@@ -414,12 +414,12 @@
             if ($PSCmdlet.ShouldProcess($ParentVhd, "Creating clone")) {
                 try {
                     Write-PSFMessage -Message "Creating clone from $ParentVhd" -Level Verbose
-
+                    $diskPartFile = "diskpart-$(New-Guid).txt"
                     $command = [ScriptBlock]::Create("
                         `$command = `"create vdisk file='$($clonePath)' parent='$ParentVhd'`"
-                        Set-Content -Path './diskpart.txt' -Value `$command -Force
-                        diskpart /s './diskpart.txt'
-                        Remove-Item -Path './diskpart.txt' -Force
+                        Set-Content -Path './$($diskPartFile)' -Value `$command -Force
+                        diskpart /s './$($diskPartFile)'
+                        Remove-Item -Path './$($diskPartFile)' -Force
                     ")
                       
                     # Check if computer is local
