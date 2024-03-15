@@ -133,7 +133,7 @@
 
             try {
                 $results = @()
-                $results += Invoke-DbaQuery -SqlInstance $pdcSqlInstance -SqlCredential $DcnSqlCredential -Database $pdcDatabase -Query $query -As PSObject
+                $results += Invoke-DbaQuery -SqlInstance $pdcSqlInstance -SqlCredential $pdcCredential -Database $pdcDatabase -Query $query -As PSObject
             }
             catch {
                 Stop-PSFFunction -Message "Could retrieve images from database $pdcDatabase" -ErrorRecord $_ -Target $query
